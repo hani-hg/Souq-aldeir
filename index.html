@@ -1,185 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوق دير الزور المفتوح</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <!-- شريط التنقل العلوي -->
-    <nav class="navbar">
-        <div class="container nav-container">
-            <div class="logo">
-                <i class="fas fa-store"></i>
-                <h1>سوق دير الزور</h1>
-            </div>
-            <div class="nav-links">
-                <a href="#home"><i class="fas fa-home"></i> الرئيسية</a>
-                <a href="#products"><i class="fas fa-shopping-bag"></i> المنتجات</a>
-                <a href="#add"><i class="fas fa-plus-circle"></i> إضافة إعلان</a>
-            </div>
-            <button class="menu-btn" id="menuBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-    </nav>
-
-    <!-- القسم الرئيسي -->
-    <main class="container">
-        <!-- قسم الترحيب -->
-        <section class="hero" id="home">
-            <div class="hero-content">
-                <h2>🛒 سوق دير الزور المفتوح</h2>
-                <p>منصة مجانية لعرض وبيع المنتجات داخل دير الزور وضواحيها</p>
-                <div class="stats">
-                    <div class="stat">
-                        <i class="fas fa-users"></i>
-                        <span>+500 مستخدم</span>
-                    </div>
-                    <div class="stat">
-                        <i class="fas fa-box"></i>
-                        <span>+200 منتج</span>
-                    </div>
-                    <div class="stat">
-                        <i class="fas fa-handshake"></i>
-                        <span>90% رضا</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- قسم المنتجات -->
-        <section class="products-section" id="products">
-            <div class="section-header">
-                <h2><i class="fas fa-box-open"></i> المنتجات المتاحة</h2>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-filter="all">الكل</button>
-                    <button class="filter-btn" data-filter="electronics">إلكترونيات</button>
-                    <button class="filter-btn" data-filter="home">منزلية</button>
-                    <button class="filter-btn" data-filter="vehicles">مركبات</button>
-                </div>
-            </div>
-
-            <div class="products-grid" id="productsGrid">
-                <!-- المنتجات تضاف هنا عبر JavaScript -->
-            </div>
-        </section>
-
-        <!-- قسم إضافة إعلان جديد -->
-        <section class="add-product-section" id="add">
-            <div class="section-header">
-                <h2><i class="fas fa-plus-circle"></i> أضف إعلانك المجاني</h2>
-                <p>بيع أو اشترِ بكل سهولة ويسر</p>
-            </div>
-
-            <form class="product-form" id="productForm">
-                <div class="form-group">
-                    <label for="productName"><i class="fas fa-tag"></i> اسم المنتج</label>
-                    <input type="text" id="productName" placeholder="مثال: هاتف سامسونج جديد" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="productPrice"><i class="fas fa-dollar-sign"></i> السعر ($)</label>
-                    <input type="number" id="productPrice" placeholder="مثال: 150" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="productCategory"><i class="fas fa-folder"></i> الفئة</label>
-                    <select id="productCategory" required>
-                        <option value="">اختر الفئة</option>
-                        <option value="electronics">إلكترونيات</option>
-                        <option value="home">أدوات منزلية</option>
-                        <option value="vehicles">مركبات</option>
-                        <option value="other">أخرى</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="productDescription"><i class="fas fa-file-alt"></i> الوصف</label>
-                    <textarea id="productDescription" rows="3" placeholder="صف منتجك بالتفصيل..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="productImage"><i class="fas fa-image"></i> صورة المنتج (رابط)</label>
-                    <input type="url" id="productImage" placeholder="https://example.com/image.jpg">
-                    <small class="hint">يمكنك استخدام: https://via.placeholder.com/300x200</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="sellerPhone"><i class="fas fa-phone"></i> رقم التواصل</label>
-                    <input type="tel" id="sellerPhone" placeholder="09xx xxx xxx" required>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="submit-btn">
-                        <i class="fas fa-paper-plane"></i> نشر الإعلان
-                    </button>
-                    <button type="button" class="preview-btn" id="previewBtn">
-                        <i class="fas fa-eye"></i> معاينة
-                    </button>
-                </div>
-            </form>
-
-            <!-- معاينة المنتج -->
-            <div class="product-preview" id="productPreview">
-                <h3><i class="fas fa-eye"></i> معاينة المنتج</h3>
-                <div class="preview-content">
-                    <!-- تعبأ المعاينة هنا عبر JavaScript -->
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- الفوتر -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3><i class="fas fa-store"></i> سوق دير الزور</h3>
-                    <p>منصة مجانية لتبادل المنافع بين أهالي دير الزور</p>
-                </div>
-                <div class="footer-section">
-                    <h3><i class="fas fa-link"></i> روابط سريعة</h3>
-                    <a href="#home">الرئيسية</a>
-                    <a href="#products">المنتجات</a>
-                    <a href="#add">إضافة إعلان</a>
-                </div>
-                <div class="footer-section">
-                    <h3><i class="fas fa-phone"></i> تواصل معنا</h3>
-                    <p><i class="fas fa-envelope"></i> info@souq-dear.com</p>
-                    <p><i class="fas fa-phone"></i> 0935-XXX-XXX</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© 2024 سوق دير الزور المفتوح - جميع الحقوق محفوظة</p>
-                <p class="footer-note">هذا موقع تجريبي لأغراض التعلم والتطوير</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- نموذج المنتج (قالب) -->
-    <template id="productTemplate">
-        <div class="product-card" data-category="">
-            <div class="product-img">
-                <img src="" alt="صورة المنتج">
-                <span class="product-category"></span>
-            </div>
-            <div class="product-info">
-                <h3 class="product-title"></h3>
-                <p class="product-desc"></p>
-                <div class="product-meta">
-                    <span class="product-price"></span>
-                    <span class="product-phone"><i class="fas fa-phone"></i></span>
-                </div>
-                <button class="contact-btn">
-                    <i class="fas fa-comment"></i> تواصل مع البائع
-                </button>
-            </div>
-        </div>
-    </template>
-
-    <script src="app.js"></script>
-</body>
-</html>
