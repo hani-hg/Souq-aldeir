@@ -1,38 +1,37 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوق دير الزور المفتوح</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>سوق دير الزور المفتوح</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a7cff">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <header>
-        <h1>سوق دير الزور المفتوح</h1>
-        <p>منصة مجانية لعرض وبيع المنتجات داخل دير الزور</p>
-    </header>
 
-    <main>
-        <section id="products">
-            <h2>المنتجات</h2>
-            <div class="product">
-                <h3>هاتف مستعمل</h3>
-                <p>حالة جيدة – بطارية ممتازة</p>
-                <span class="price">150 $</span>
-            </div>
-            <div class="product">
-                <h3>دراجة هوائية</h3>
-                <p>مناسبة للأطفال</p>
-                <span class="price">80 $</span>
-            </div>
-        </section>
-    </main>
+<header class="top">
+  <h1>🛒 سوق دير الزور</h1>
+</header>
 
-    <footer>
-        <p>© 2024 سوق دير الزور المفتوح - جميع الحقوق محفوظة</p>
-        <p class="info">هذا موقع تجريبي لأغراض التعلم</p>
-    </footer>
+<main id="products"></main>
 
-    <script src="app.js"></script>
+<button class="add-btn" onclick="openForm()">＋</button>
+
+<div class="modal" id="formModal">
+  <div class="modal-content">
+    <h3>إضافة إعلان</h3>
+    <input id="title" placeholder="اسم المنتج">
+    <input id="price" placeholder="السعر">
+    <input id="phone" placeholder="رقم واتساب">
+    <textarea id="desc" placeholder="الوصف"></textarea>
+    <button onclick="addProduct()">نشر</button>
+    <button class="close" onclick="closeForm()">إلغاء</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
