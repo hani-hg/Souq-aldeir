@@ -1,106 +1,85 @@
-/* تهيئة عامة */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
-    line-height: 1.6;
-    text-align: right;
-    direction: rtl;
+  margin: 0;
+  font-family: Tahoma, Arial;
+  background: #f2f2f2;
 }
 
-/* الهيدر */
-header {
-    background: linear-gradient(135deg, #2c3e50, #4a6491);
-    color: white;
-    padding: 2rem 0;
-    text-align: center;
-    border-bottom: 5px solid #e74c3c;
+.top {
+  background: #0a7cff;
+  color: white;
+  padding: 15px;
+  text-align: center;
 }
 
-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+#products {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
 }
 
-header p {
-    font-size: 1.2rem;
-    opacity: 0.9;
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
 }
 
-/* الأقسام الرئيسية */
-main {
-    padding: 2rem 20px;
+.card h4 {
+  margin: 0 0 5px;
 }
 
-section {
-    margin: 2rem 0;
-    padding: 2rem;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+.card p {
+  font-size: 13px;
+  color: #555;
 }
 
-h2 {
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
-    border-right: 4px solid #e74c3c;
-    padding-right: 15px;
+.card a {
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  background: #25d366;
+  color: white;
+  padding: 6px;
+  border-radius: 6px;
+  text-decoration: none;
 }
 
-/* المنتجات */
-.product {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    transition: transform 0.3s;
+.add-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: #0a7cff;
+  color: white;
+  border: none;
+  font-size: 30px;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
 }
 
-.product:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: none;
 }
 
-.product h3 {
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
+.modal-content {
+  background: white;
+  margin: 60px auto;
+  padding: 15px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 10px;
 }
 
-.price {
-    display: inline-block;
-    background: #2ecc71;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 20px;
-    margin-top: 10px;
-    font-weight: bold;
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px;
 }
 
-/* الفوتر */
-footer {
-    background: #2c3e50;
-    color: white;
-    text-align: center;
-    padding: 2rem 20px;
-    margin-top: 3rem;
-}
-
-.info {
-    font-size: 0.9rem;
-    opacity: 0.7;
-    margin-top: 0.5rem;
-}
-
-/* التجاوب */
-@media (max-width: 768px) {
-    header h1 {
-        font-size: 2rem;
-    }
+.close {
+  background: #aaa;
 }
