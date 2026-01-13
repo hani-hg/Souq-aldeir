@@ -1,34 +1,38 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>سوق دير الزور المفتوح</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0a7cff">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سوق دير الزور</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1976d2">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header class="top">
-  <h1>🛒 سوق دير الزور</h1>
+<header class="header">
+  <span class="logo">🛒 سوق دير الزور</span>
 </header>
 
-<main id="products"></main>
+<main id="products" class="products"></main>
 
-<button class="add-btn" onclick="openForm()">＋</button>
+<button class="fab" onclick="openForm()">＋</button>
 
-<div class="modal" id="formModal">
-  <div class="modal-content">
+<div class="overlay" id="overlay">
+  <div class="form">
     <h3>إضافة إعلان</h3>
+
     <input id="title" placeholder="اسم المنتج">
     <input id="price" placeholder="السعر">
     <input id="phone" placeholder="رقم واتساب">
     <textarea id="desc" placeholder="الوصف"></textarea>
-    <button onclick="addProduct()">نشر</button>
-    <button class="close" onclick="closeForm()">إلغاء</button>
+
+    <div class="actions">
+      <button onclick="addProduct()">نشر</button>
+      <button class="cancel" onclick="closeForm()">إلغاء</button>
+    </div>
   </div>
 </div>
 
