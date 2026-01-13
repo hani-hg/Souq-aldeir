@@ -1,59 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوق دير الزور</title>
-    <meta name="theme-color" content="#2c3e50">
-</head>
-<body style="background:#3498db; color:white; text-align:center; padding:20px; font-family:Arial;">
-    
-    <h1 style="font-size:40px;">🛒 سوق دير الزور</h1>
-    <p>تطبيق البيع والشراء في دير الزور</p>
-    
-    <button id="installBtn" style="background:#2ecc71; color:white; border:none; padding:15px; border-radius:10px; font-size:18px; margin:20px 0; display:none;">
-        ⬇️ تثبيت التطبيق
-    </button>
-    
-    <div style="background:white; color:#333; padding:20px; margin:20px 0; border-radius:15px; text-align:right;">
-        <h3>هاتف سامسونج جديد</h3>
-        <p>جديد - ضمان سنة</p>
-        <div style="color:#e74c3c; font-size:30px; font-weight:bold; margin:10px 0;">$300</div>
-        <button onclick="contact()" style="background:#3498db; color:white; border:none; padding:12px; width:100%; border-radius:8px; font-size:16px;">
-            📞 تواصل مع البائع
-        </button>
-    </div>
-    
-    <div style="background:white; color:#333; padding:20px; margin:20px 0; border-radius:15px; text-align:right;">
-        <h3>دراجة هوائية</h3>
-        <p>مناسبة للأطفال</p>
-        <div style="color:#e74c3c; font-size:30px; font-weight:bold; margin:10px 0;">$80</div>
-        <button onclick="contact()" style="background:#3498db; color:white; border:none; padding:12px; width:100%; border-radius:8px; font-size:16px;">
-            📞 تواصل مع البائع
-        </button>
-    </div>
-    
-    <script>
-        // زر التثبيت
-        let installPrompt;
-        const installBtn = document.getElementById('installBtn');
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            installPrompt = e;
-            installBtn.style.display = 'block';
-        });
-        
-        installBtn.addEventListener('click', () => {
-            installBtn.style.display = 'none';
-            installPrompt.prompt();
-        });
-        
-        // التواصل
-        function contact() {
-            alert('📞 سيتم التواصل معك قريباً\nرقم البائع: 0935-XXX-XXX');
-        }
-    </script>
-    
-</body>
-</html> نسخة مبسطة
