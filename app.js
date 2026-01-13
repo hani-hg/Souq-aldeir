@@ -1,9 +1,5 @@
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-
 const productsEl = document.getElementById("products");
-const modal = document.getElementById("formModal");
+const overlay = document.getElementById("overlay");
 
 let products = JSON.parse(localStorage.getItem("products")) || [];
 
@@ -22,11 +18,11 @@ function render() {
 }
 
 function openForm() {
-  modal.style.display = "block";
+  overlay.style.display = "flex";
 }
 
 function closeForm() {
-  modal.style.display = "none";
+  overlay.style.display = "none";
 }
 
 function addProduct() {
