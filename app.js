@@ -26,12 +26,18 @@ function closeForm() {
 }
 
 function addProduct() {
+  if (!title.value || !price.value || !phone.value) {
+    alert("يرجى ملء كل الحقول");
+    return;
+  }
+
   const p = {
     title: title.value,
     price: price.value,
     phone: phone.value,
     desc: desc.value
   };
+
   products.unshift(p);
   localStorage.setItem("products", JSON.stringify(products));
   closeForm();
@@ -39,3 +45,4 @@ function addProduct() {
 }
 
 render();
+closeForm(); // 👈 سطر حاسم
