@@ -5,19 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سوق دير الزور - الإعلانات المبوبة الشاملة</title>
     
-    <!-- مكتبات Firebase (سنستخدمها لاحقاً) -->
+    <!-- مكتبات Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     
+    <!-- تهيئة Firebase -->
+    <script src="firebase-config.js"></script>
+    
     <style>
-        /* إعادة تعيين عام */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
             --primary: #1a237e;
@@ -26,14 +24,43 @@
             --danger: #f44336;
             --light: #f5f5f5;
             --dark: #212121;
-            --gray: #757575;
         }
         
         body {
-            font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Segoe UI', 'Tahoma', sans-serif;
+            background: #f8f9fa;
             color: #333;
-            line-height: 1.6;
+        }
+        
+        /* شريط الحالة */
+        .firebase-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .status-dot.connected { background: #4CAF50; }
+        .status-dot.disconnected { background: #f44336; }
+        .status-dot.connecting { background: #FF9800; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         
         /* شريط التنقل */
@@ -64,30 +91,6 @@
             gap: 10px;
         }
         
-        .logo-icon {
-            color: var(--secondary);
-            font-size: 2rem;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 25px;
-            align-items: center;
-        }
-        
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 8px 15px;
-            border-radius: 20px;
-            transition: all 0.3s;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255,255,255,0.15);
-        }
-        
         .post-ad-btn {
             background: var(--secondary);
             color: white;
@@ -99,42 +102,25 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: transform 0.3s;
         }
         
-        .post-ad-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(255,152,0,0.3);
-        }
-        
-        /* الهيرو سيكشن */
+        /* الهيرو */
         .hero {
-            background: linear-gradient(rgba(26, 35, 126, 0.85), rgba(40, 53, 147, 0.9)), 
-                        url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
-            background-size: cover;
-            background-position: center;
+            background: linear-gradient(rgba(26, 35, 126, 0.85), rgba(40, 53, 147, 0.9));
             color: white;
             text-align: center;
-            padding: 80px 20px;
+            padding: 60px 20px;
             margin-bottom: 40px;
         }
         
         .hero h1 {
-            font-size: 3rem;
+            font-size: 2.5rem;
             margin-bottom: 15px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .hero p {
-            font-size: 1.3rem;
-            max-width: 800px;
-            margin: 0 auto 30px;
-            opacity: 0.9;
         }
         
         .search-box {
             max-width: 700px;
-            margin: 0 auto;
+            margin: 30px auto 0;
             background: white;
             border-radius: 50px;
             padding: 5px;
@@ -145,24 +131,23 @@
         .search-input {
             flex: 1;
             border: none;
-            padding: 18px 25px;
+            padding: 15px 25px;
             border-radius: 50px 0 0 50px;
-            font-size: 1.1rem;
-            outline: none;
+            font-size: 1rem;
         }
         
         .search-btn {
             background: var(--secondary);
             color: white;
             border: none;
-            padding: 0 35px;
+            padding: 0 30px;
             border-radius: 0 50px 50px 0;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
         }
         
-        /* الفئات الرئيسية */
+        /* الفئات */
         .categories-section {
             max-width: 1300px;
             margin: 40px auto;
@@ -174,20 +159,6 @@
             color: var(--primary);
             margin-bottom: 30px;
             text-align: center;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .section-title:after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            right: 50%;
-            transform: translateX(50%);
-            width: 80px;
-            height: 4px;
-            background: var(--secondary);
-            border-radius: 2px;
         }
         
         .categories-grid {
@@ -203,21 +174,18 @@
             padding: 25px 15px;
             text-align: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s;
             cursor: pointer;
-            border: 2px solid transparent;
+            transition: all 0.3s;
         }
         
         .category-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-            border-color: var(--secondary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         
         .category-icon {
             font-size: 2.5rem;
             margin-bottom: 15px;
-            color: var(--primary);
         }
         
         .category-name {
@@ -225,47 +193,18 @@
             color: var(--dark);
         }
         
-        .category-count {
-            color: var(--gray);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-        
-        /* الإعلانات الحديثة */
+        /* الإعلانات */
         .ads-section {
             max-width: 1300px;
             margin: 60px auto;
             padding: 0 20px;
         }
         
-        .ads-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        
-        .filter-controls {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-select {
-            padding: 10px 20px;
-            border-radius: 25px;
-            border: 1px solid #ddd;
-            background: white;
-            font-size: 1rem;
-            min-width: 150px;
-        }
-        
         .ads-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 30px;
+            margin-top: 30px;
         }
         
         .ad-card {
@@ -277,8 +216,8 @@
         }
         
         .ad-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.12);
         }
         
         .ad-image {
@@ -293,7 +232,7 @@
         }
         
         .ad-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
             margin-bottom: 10px;
             color: var(--dark);
@@ -308,26 +247,6 @@
             margin: 10px 0;
         }
         
-        .ad-meta {
-            display: flex;
-            justify-content: space-between;
-            color: var(--gray);
-            font-size: 0.9rem;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-        
-        .ad-category {
-            background: #e8f4fd;
-            color: var(--primary);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        
         /* مودال نشر الإعلان */
         .modal {
             display: none;
@@ -338,35 +257,24 @@
             height: 100%;
             background: rgba(0,0,0,0.7);
             z-index: 2000;
-            overflow-y: auto;
         }
         
         .modal-content {
             background: white;
             margin: 50px auto;
             width: 90%;
-            max-width: 800px;
+            max-width: 600px;
             border-radius: 20px;
             overflow: hidden;
-            animation: modalSlide 0.3s ease;
-        }
-        
-        @keyframes modalSlide {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
         }
         
         .modal-header {
             background: var(--primary);
             color: white;
-            padding: 25px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        
-        .modal-header h2 {
-            font-size: 1.8rem;
         }
         
         .close-modal {
@@ -375,179 +283,83 @@
             color: white;
             font-size: 2rem;
             cursor: pointer;
-            line-height: 1;
         }
         
         .modal-body {
-            padding: 30px;
+            padding: 20px;
         }
         
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         .form-label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--dark);
         }
         
         .form-control {
             width: 100%;
-            padding: 15px;
+            padding: 12px;
             border: 1px solid #ddd;
             border-radius: 10px;
             font-size: 1rem;
-            transition: border 0.3s;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary);
-            outline: none;
-        }
-        
-        .image-upload {
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .image-upload:hover {
-            border-color: var(--primary);
-            background: #f8f9ff;
         }
         
         .submit-btn {
             background: var(--secondary);
             color: white;
             border: none;
-            padding: 18px 40px;
+            padding: 15px;
             border-radius: 10px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
-            transition: background 0.3s;
-        }
-        
-        .submit-btn:hover {
-            background: #f57c00;
         }
         
         /* الفوتر */
         footer {
             background: var(--dark);
             color: white;
-            padding: 60px 0 30px;
+            padding: 40px 0 20px;
             margin-top: 80px;
-        }
-        
-        .footer-content {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-        }
-        
-        .footer-section h3 {
-            font-size: 1.4rem;
-            margin-bottom: 25px;
-            color: var(--secondary);
-        }
-        
-        .footer-links a {
-            display: block;
-            color: #ccc;
-            text-decoration: none;
-            margin-bottom: 12px;
-            transition: color 0.3s;
-        }
-        
-        .footer-links a:hover {
-            color: white;
-            padding-right: 5px;
-        }
-        
-        .copyright {
             text-align: center;
-            padding: 30px 0 0;
-            margin-top: 40px;
-            border-top: 1px solid #444;
-            color: #999;
-            font-size: 0.95rem;
         }
         
-        /* تصميم متجاوب */
-        @media (max-width: 992px) {
-            .nav-links {
-                display: none;
-            }
-            
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
+        /* تصميم الجوال */
+        @media (max-width: 768px) {
             .categories-grid {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             }
             
             .ads-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .hero {
-                padding: 60px 15px;
+                grid-template-columns: 1fr;
             }
             
             .hero h1 {
-                font-size: 2rem;
-            }
-            
-            .search-box {
-                flex-direction: column;
-                border-radius: 15px;
-            }
-            
-            .search-input, .search-btn {
-                border-radius: 15px;
-                width: 100%;
-            }
-            
-            .ads-header {
-                flex-direction: column;
-                align-items: flex-start;
+                font-size: 1.8rem;
             }
         }
     </style>
 </head>
 <body>
+    <!-- مؤشر حالة Firebase -->
+    <div class="firebase-status" id="firebaseStatus">
+        <span class="status-dot connecting" id="statusDot"></span>
+        <span id="statusText">جاري الاتصال بقاعدة البيانات...</span>
+    </div>
+
     <!-- شريط التنقل -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <span class="logo-icon">🏪</span>
+                <span>🏪</span>
                 <span>سوق دير الزور</span>
             </div>
-            
-            <div class="nav-links">
-                <a href="#" class="nav-link active">الرئيسية</a>
-                <a href="#" class="nav-link">جميع الإعلانات</a>
-                <a href="#" class="nav-link">الفئات</a>
-                <a href="#" class="nav-link">المدونة</a>
-                <a href="#" class="nav-link">اتصل بنا</a>
-                <a href="#" class="nav-link">تسجيل الدخول</a>
-            </div>
-            
             <button class="post-ad-btn" id="openAdModal">
-                <span>➕ نشر إعلان</span>
+                ➕ نشر إعلان
             </button>
         </div>
     </nav>
@@ -555,121 +367,62 @@
     <!-- قسم الهيرو -->
     <section class="hero">
         <h1>سوق دير الزور للإعلانات المبوبة</h1>
-        <p>منصة شاملة للبيع والشراء والإعلان عن الخدمات - كل ما تبحث عنه في مكان واحد</p>
+        <p>منصة شاملة للبيع والشراء والإعلان عن الخدمات</p>
         
         <div class="search-box">
-            <input type="text" class="search-input" placeholder="ما الذي تبحث عنه؟ (سيارات، عقارات، وظائف...)">
-            <select class="form-control" style="width: auto; border: none; border-left: 1px solid #ddd; border-radius: 0;">
-                <option value="">جميع الفئات</option>
-                <option value="vehicles">سيارات ومركبات</option>
-                <option value="realestate">عقارات</option>
-                <option value="electronics">إلكترونيات</option>
-                <option value="jobs">وظائف</option>
-                <option value="services">خدمات</option>
-                <option value="animals">حيوانات</option>
-            </select>
+            <input type="text" class="search-input" placeholder="ما الذي تبحث عنه؟">
             <button class="search-btn">بحث</button>
         </div>
     </section>
 
     <!-- الفئات الرئيسية -->
     <section class="categories-section">
-        <h2 class="section-title">تصفح الفئات الرئيسية</h2>
-        
+        <h2 class="section-title">تصفح الفئات</h2>
         <div class="categories-grid" id="categoriesContainer">
-            <!-- الفئات سيتم إضافتها بالجافاسكريبت -->
+            <!-- الفئات تظهر هنا -->
         </div>
     </section>
 
     <!-- الإعلانات الحديثة -->
     <section class="ads-section">
-        <div class="ads-header">
-            <h2 class="section-title" style="text-align: right; margin: 0;">أحدث الإعلانات</h2>
-            
-            <div class="filter-controls">
-                <select class="filter-select" id="sortBy">
-                    <option value="newest">الأحدث أولاً</option>
-                    <option value="price-low">السعر: منخفض إلى مرتفع</option>
-                    <option value="price-high">السعر: مرتفع إلى منخفض</option>
-                </select>
-                
-                <select class="filter-select" id="filterCategory">
-                    <option value="">جميع الفئات</option>
-                    <option value="vehicles">سيارات</option>
-                    <option value="realestate">عقارات</option>
-                    <option value="electronics">إلكترونيات</option>
-                    <option value="jobs">وظائف</option>
-                </select>
-            </div>
-        </div>
-        
+        <h2 class="section-title">أحدث الإعلانات</h2>
         <div class="ads-grid" id="adsContainer">
-            <!-- الإعلانات سيتم إضافتها بالجافاسكريبت -->
+            <!-- الإعلانات تظهر هنا -->
         </div>
     </section>
 
-    <!-- مودال نشر إعلان جديد -->
+    <!-- مودال نشر الإعلان -->
     <div class="modal" id="adModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>نشر إعلان جديد</h2>
                 <button class="close-modal" id="closeModal">&times;</button>
             </div>
-            
             <div class="modal-body">
                 <form id="adForm">
                     <div class="form-group">
                         <label class="form-label">عنوان الإعلان *</label>
-                        <input type="text" class="form-control" id="adTitle" placeholder="مثال: سيارة تويوتا كامري 2020 للبيع" required>
+                        <input type="text" class="form-control" id="adTitle" required>
                     </div>
-                    
                     <div class="form-group">
                         <label class="form-label">وصف مفصل *</label>
-                        <textarea class="form-control" id="adDescription" rows="5" placeholder="صف منتجك أو خدمتك بشكل مفصل..." required></textarea>
+                        <textarea class="form-control" id="adDescription" rows="4" required></textarea>
                     </div>
-                    
                     <div class="form-group">
                         <label class="form-label">السعر ($) *</label>
-                        <input type="number" class="form-control" id="adPrice" placeholder="أدخل السعر" required>
+                        <input type="number" class="form-control" id="adPrice" required>
                     </div>
-                    
                     <div class="form-group">
-                        <label class="form-label">الفئة الرئيسية *</label>
+                        <label class="form-label">الفئة *</label>
                         <select class="form-control" id="adCategory" required>
                             <option value="">اختر الفئة</option>
-                            <option value="vehicles">سيارات ومركبات</option>
-                            <option value="realestate">عقارات</option>
-                            <option value="electronics">إلكترونيات وأجهزة</option>
-                            <option value="phones">هواتف وأرقام</option>
-                            <option value="jobs">وظائف وخدمات</option>
-                            <option value="animals">حيوانات وطيور</option>
-                            <option value="home">أثاث ومنزل</option>
-                            <option value="fashion">موضة وأزياء</option>
-                            <option value="other">أخرى</option>
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">المدينة / المنطقة</label>
-                        <input type="text" class="form-control" id="adLocation" placeholder="أدخل موقعك">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">صور الإعلان (يمكن رفع حتى 5 صور)</label>
-                        <div class="image-upload" id="imageUpload">
-                            <div style="font-size: 3rem;">📷</div>
-                            <p>انقر لرفع الصور أو اسحبها هنا</p>
-                            <input type="file" id="adImages" multiple accept="image/*" style="display: none;">
-                        </div>
-                        <div id="imagePreview" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;"></div>
-                    </div>
-                    
                     <div class="form-group">
                         <label class="form-label">رقم التواصل *</label>
-                        <input type="tel" class="form-control" id="adPhone" placeholder="رقم الهاتف للتواصل" required>
+                        <input type="tel" class="form-control" id="adPhone" required>
                     </div>
-                    
-                    <button type="submit" class="submit-btn">نشر الإعلان الآن</button>
+                    <button type="submit" class="submit-btn">نشر الإعلان</button>
                 </form>
             </div>
         </div>
@@ -677,441 +430,373 @@
 
     <!-- الفوتر -->
     <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>سوق دير الزور</h3>
-                <p>السوق الإلكتروني الأول في المنطقة للبيع والشراء والإعلانات المبوبة منذ 2024.</p>
-                <p>نقدم منصة آمنة وسهلة لربط البائعين والمشترين.</p>
-            </div>
-            
-            <div class="footer-section">
-                <h3>روابط سريعة</h3>
-                <div class="footer-links">
-                    <a href="#">كيفية البيع</a>
-                    <a href="#">كيفية الشراء</a>
-                    <a href="#">شروط الاستخدام</a>
-                    <a href="#">سياسة الخصوصية</a>
-                    <a href="#">الأسئلة الشائعة</a>
-                </div>
-            </div>
-            
-            <div class="footer-section">
-                <h3>الفئات الشائعة</h3>
-                <div class="footer-links">
-                    <a href="#">سيارات ومركبات</a>
-                    <a href="#">عقارات وشقق</a>
-                    <a href="#">هواتف وأجهزة</a>
-                    <a href="#">وظائف وتوظيف</a>
-                    <a href="#">خدمات منزلية</a>
-                </div>
-            </div>
-            
-            <div class="footer-section">
-                <h3>اتصل بنا</h3>
-                <p>📧 info@souq-aldeir.com</p>
-                <p>📞 +963 123 456 789</p>
-                <p>📍 دير الزور، سوريا</p>
-            </div>
-        </div>
-        
-        <div class="copyright">
-            <p>© 2024 سوق دير الزور. جميع الحقوق محفوظة.</p>
-            <p>نسخة: الإعلانات المبوبة الشاملة | souq-aldeir.vercel.app</p>
-        </div>
+        <p>© 2024 سوق دير الزور. جميع الحقوق محفوظة.</p>
+        <p style="margin-top: 10px; opacity: 0.8;">نسخة: قاعدة بيانات Firebase حقيقية</p>
+        <p style="margin-top: 5px;">souq-aldeir.vercel.app</p>
     </footer>
 
-    <!-- الكود الجافاسكريبت -->
     <script>
-        // بيانات الموقع (بديل مؤقت حتى ربط Firebase)
-        const siteData = {
-            categories: [
-                {id: 'vehicles', name: 'سيارات ومركبات', icon: '🚗', count: 1245},
-                {id: 'realestate', name: 'عقارات وشقق', icon: '🏠', count: 876},
-                {id: 'electronics', name: 'إلكترونيات', icon: '💻', count: 2100},
-                {id: 'phones', name: 'هواتف وأرقام', icon: '📱', count: 1543},
-                {id: 'jobs', name: 'وظائف وخدمات', icon: '💼', count: 654},
-                {id: 'animals', name: 'حيوانات وطيور', icon: '🐕', count: 432},
-                {id: 'home', name: 'أثاث ومنزل', icon: '🛋️', count: 987},
-                {id: 'fashion', name: 'موضة وأزياء', icon: '👕', count: 765},
-                {id: 'business', name: 'تجارة وأعمال', icon: '📊', count: 321},
-                {id: 'education', name: 'تعليم ودروس', icon: '🎓', count: 543},
-                {id: 'travel', name: 'سفر وسياحة', icon: '✈️', count: 234},
-                {id: 'other', name: 'أخرى', icon: '📦', count: 1200}
-            ],
-            
-            ads: [
-                {
-                    id: 1,
-                    title: 'سيارة تويوتا كامري 2020 للبيع',
-                    description: 'سيارة بحالة ممتازة، موديل 2020، لون أبيض، كامل المواصفات، بدون حوادث، صيانة دورية في الوكالة.',
-                    price: 18500,
-                    category: 'vehicles',
-                    location: 'دير الزور',
-                    date: 'منذ 3 ساعات',
-                    seller: 'أحمد',
-                    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-                },
-                {
-                    id: 2,
-                    title: 'شقة للايجار في حي الزهور',
-                    description: 'شقة طابق ثالث، 3 غرف نوم، صالة كبيرة، مطبخ مجهز، 2 حمام، تكييف مركزي، موقف سيارات.',
-                    price: 350,
-                    category: 'realestate',
-                    location: 'الحسكة',
-                    date: 'منذ يوم',
-                    seller: 'محمد',
-                    image: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-                },
-                {
-                    id: 3,
-                    title: 'لابتوب ديل جديد للبيع',
-                    description: 'لابتوب ديل اكس بي اس 13، معالج i7، ذاكرة 16 جيجا، شاشة لمس، بطارية جديدة، ضمان سنة.',
-                    price: 1200,
-                    category: 'electronics',
-                    location: 'الرقة',
-                    date: 'منذ يومين',
-                    seller: 'سارة',
-                    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-                },
-                {
-                    id: 4,
-                    title: 'مطلوب معلم بناء',
-                    description: 'مطلوب معلم بناء للعمل في مشروع سكني، خبرة لا تقل عن 5 سنوات، راتب مجزي حسب الخبرة.',
-                    price: 0,
-                    category: 'jobs',
-                    location: 'دير الزور',
-                    date: 'منذ 5 ساعات',
-                    seller: 'شركة التعمير',
-                    image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-                },
-                {
-                    id: 5,
-                    title: 'جرو هاسكي للتبني',
-                    description: 'جرو هاسكي عمر 3 شهور، تطعيماته كاملة، هادئ ومدرب على القفص، مع أوراقه.',
-                    price: 200,
-                    category: 'animals',
-                    location: 'الحسكة',
-                    date: 'منذ 6 ساعات',
-                    seller: 'خالد',
-                    image: 'https://images.unsplash.com/photo-1518373714866-3f1478910cc0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-                },
-                {
-                    id: 6,
-                    title: 'خدمة نقل عفش وتغليف',
-                    description: 'نقدم خدمة نقل العفش مع الفك والتركيب والتغليف، أسعار مناسبة، عمالة مدربة، تغطية جميع المناطق.',
-                    price: 0,
-                    category: 'services',
-                    location: 'دير الزور',
-                    date: 'منذ 8 ساعات',
-                    seller: 'مؤسسة النقل السريع',
-                    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-                }
-            ]
+        // ============================================
+        // إدارة حالة Firebase
+        // ============================================
+        
+        let firebaseState = {
+            connected: false,
+            checking: true,
+            lastCheck: null
         };
-
-        // تهيئة الموقع
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 موقع سوق دير الزور للإعلانات المبوبة - الإصدار المتكامل');
+        
+        function updateFirebaseStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
             
-            // عرض الفئات
-            renderCategories();
+            if (firebaseState.checking) {
+                statusDot.className = 'status-dot connecting';
+                statusText.textContent = 'جاري الاتصال بقاعدة البيانات...';
+                return;
+            }
             
-            // عرض الإعلانات
-            renderAds();
+            if (firebaseState.connected) {
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = `✅ قاعدة البيانات نشطة`;
+            } else {
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = '❌ غير متصل - وضع تجريبي';
+            }
+        }
+        
+        async function checkFirebaseStatus() {
+            firebaseState.checking = true;
+            updateFirebaseStatus();
             
-            // إعداد أحداث المودال
-            setupModalEvents();
-            
-            // إعداد أحداث البحث والتصفية
-            setupFilterEvents();
-        });
-
-        // عرض الفئات
-        function renderCategories() {
+            try {
+                if (!window.FirebaseApp || !FirebaseApp.isInitialized) {
+                    throw new Error('Firebase غير مهيأ');
+                }
+                
+                const connection = await FirebaseApp.checkConnection();
+                firebaseState.connected = connection.connected;
+                firebaseState.lastCheck = new Date();
+                
+                if (connection.connected) {
+                    console.log('✅ اتصال Firebase ناجح');
+                    
+                    // تهيئة قاعدة البيانات إذا كانت جديدة
+                    const initResult = await FirebaseApp.initializeDatabase();
+                    console.log('نتيجة التهيئة:', initResult);
+                    
+                    // تحميل البيانات
+                    await loadCategories();
+                    await loadAds();
+                    
+                } else {
+                    console.warn('⚠️ وضع تجريبي - بدون اتصال');
+                    loadSampleData();
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في الاتصال:', error);
+                firebaseState.connected = false;
+                loadSampleData();
+            } finally {
+                firebaseState.checking = false;
+                updateFirebaseStatus();
+            }
+        }
+        
+        // ============================================
+        // تحميل البيانات
+        // ============================================
+        
+        async function loadCategories() {
             const container = document.getElementById('categoriesContainer');
-            container.innerHTML = '';
             
-            siteData.categories.forEach(category => {
-                const categoryCard = document.createElement('div');
-                categoryCard.className = 'category-card';
-                categoryCard.innerHTML = `
+            try {
+                const result = await FirebaseApp.getCategories();
+                
+                if (result.success && result.categories.length > 0) {
+                    container.innerHTML = '';
+                    
+                    result.categories.forEach(category => {
+                        const card = document.createElement('div');
+                        card.className = 'category-card';
+                        card.innerHTML = `
+                            <div class="category-icon">${category.icon || '📦'}</div>
+                            <div class="category-name">${category.name}</div>
+                            <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                                ${category.count || 0} إعلان
+                            </div>
+                        `;
+                        
+                        card.onclick = () => filterByCategory(category.id);
+                        container.appendChild(card);
+                    });
+                    
+                    // ملء خيارات الفئة في النموذج
+                    const select = document.getElementById('adCategory');
+                    select.innerHTML = '<option value="">اختر الفئة</option>';
+                    result.categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        select.appendChild(option);
+                    });
+                    
+                } else {
+                    showDefaultCategories();
+                }
+                
+            } catch (error) {
+                console.error('خطأ في تحميل الفئات:', error);
+                showDefaultCategories();
+            }
+        }
+        
+        function showDefaultCategories() {
+            const container = document.getElementById('categoriesContainer');
+            const defaultCategories = [
+                { id: 'vehicles', name: 'سيارات', icon: '🚗' },
+                { id: 'realestate', name: 'عقارات', icon: '🏠' },
+                { id: 'electronics', name: 'إلكترونيات', icon: '💻' },
+                { id: 'phones', name: 'هواتف', icon: '📱' },
+                { id: 'jobs', name: 'وظائف', icon: '💼' },
+                { id: 'animals', name: 'حيوانات', icon: '🐕' }
+            ];
+            
+            container.innerHTML = '';
+            defaultCategories.forEach(category => {
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `
                     <div class="category-icon">${category.icon}</div>
                     <div class="category-name">${category.name}</div>
-                    <div class="category-count">${category.count} إعلان</div>
                 `;
-                
-                categoryCard.addEventListener('click', function() {
-                    filterAdsByCategory(category.id);
-                });
-                
-                container.appendChild(categoryCard);
+                container.appendChild(card);
             });
         }
-
-        // عرض الإعلانات
-        function renderAds(filteredAds = null) {
+        
+        async function loadAds(filters = {}) {
             const container = document.getElementById('adsContainer');
-            container.innerHTML = '';
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#666;">جاري تحميل الإعلانات...</div>';
             
-            const adsToShow = filteredAds || siteData.ads;
+            try {
+                const result = await FirebaseApp.getAds(filters);
+                
+                if (result.success) {
+                    displayAds(result.ads);
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                console.error('خطأ في تحميل الإعلانات:', error);
+                loadSampleAds();
+            }
+        }
+        
+        function displayAds(ads) {
+            const container = document.getElementById('adsContainer');
             
-            if (adsToShow.length === 0) {
+            if (!ads || ads.length === 0) {
                 container.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--gray);">
-                        <div style="font-size: 4rem;">📭</div>
+                    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #666;">
+                        <div style="font-size: 3rem;">📭</div>
                         <h3 style="margin: 20px 0 10px;">لا توجد إعلانات</h3>
-                        <p>لا توجد إعلانات تطابق بحثك. حاول تغيير كلمات البحث أو الفلاتر.</p>
+                        <p>كن أول من ينشر إعلاناً!</p>
                     </div>
                 `;
                 return;
             }
             
-            adsToShow.forEach(ad => {
-                const adCard = document.createElement('div');
-                adCard.className = 'ad-card';
+            container.innerHTML = '';
+            
+            ads.forEach(ad => {
+                const card = document.createElement('div');
+                card.className = 'ad-card';
                 
-                const priceText = ad.price > 0 ? `$${ad.price}` : 'السعر: قابل للتفاوض';
+                const imageUrl = ad.images && ad.images.length > 0 
+                    ? ad.images[0] 
+                    : `https://via.placeholder.com/300x200/3498db/ffffff?text=${encodeURIComponent(ad.title.substring(0, 10))}`;
                 
-                adCard.innerHTML = `
-                    <img src="${ad.image}" alt="${ad.title}" class="ad-image">
+                card.innerHTML = `
+                    <img src="${imageUrl}" alt="${ad.title}" class="ad-image">
                     <div class="ad-content">
-                        <span class="ad-category">${getCategoryName(ad.category)}</span>
                         <h3 class="ad-title">${ad.title}</h3>
-                        <p style="color: var(--gray); margin-bottom: 15px; height: 60px; overflow: hidden;">${ad.description}</p>
-                        <div class="ad-price">${priceText}</div>
-                        <div class="ad-meta">
+                        <p style="color: #666; margin-bottom: 10px; height: 60px; overflow: hidden;">
+                            ${ad.description.substring(0, 100)}${ad.description.length > 100 ? '...' : ''}
+                        </p>
+                        <div class="ad-price">$${ad.price}</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 15px; color: #888; font-size: 0.9rem;">
                             <span>📍 ${ad.location}</span>
-                            <span>${ad.date}</span>
+                            <span>👁️ ${ad.views || 0}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-                            <span>👤 ${ad.seller}</span>
-                            <button class="contact-btn" onclick="viewAdDetails(${ad.id})" style="background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
-                                عرض التفاصيل
-                            </button>
-                        </div>
+                        <button onclick="viewAd('${ad.id}')" style="
+                            background: var(--primary); 
+                            color: white; 
+                            border: none; 
+                            padding: 10px; 
+                            width: 100%; 
+                            border-radius: 8px; 
+                            margin-top: 10px; 
+                            cursor: pointer;">
+                            عرض التفاصيل
+                        </button>
                     </div>
                 `;
                 
-                container.appendChild(adCard);
+                container.appendChild(card);
             });
         }
-
-        // الحصول على اسم الفئة من ID
-        function getCategoryName(categoryId) {
-            const category = siteData.categories.find(cat => cat.id === categoryId);
-            return category ? category.name : 'عام';
+        
+        function loadSampleData() {
+            console.log('📂 تحميل البيانات التجريبية');
+            showDefaultCategories();
+            loadSampleAds();
         }
-
-        // إعداد أحداث المودال
+        
+        function loadSampleAds() {
+            const sampleAds = [
+                {
+                    id: '1',
+                    title: 'مثال: سيارة للبيع',
+                    description: 'هذا إعلان تجريبي. عندما يتصل الموقع بقاعدة البيانات، ستظهر الإعلانات الحقيقية هنا.',
+                    price: 10000,
+                    location: 'دير الزور',
+                    views: 0
+                },
+                {
+                    id: '2',
+                    title: 'مثال: شقة للإيجار',
+                    description: 'هذا إعلان تجريبي. جرب نشر إعلانك الحقيقي!',
+                    price: 500,
+                    location: 'الحسكة',
+                    views: 0
+                }
+            ];
+            
+            displayAds(sampleAds);
+        }
+        
+        // ============================================
+        // معالجة النموذج
+        // ============================================
+        
+        async function handleAdSubmit(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('adTitle').value;
+            const description = document.getElementById('adDescription').value;
+            const price = document.getElementById('adPrice').value;
+            const category = document.getElementById('adCategory').value;
+            const phone = document.getElementById('adPhone').value;
+            
+            if (!title || !description || !price || !category || !phone) {
+                alert('الرجاء ملء جميع الحقول المطلوبة');
+                return;
+            }
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'جاري النشر...';
+            submitBtn.disabled = true;
+            
+            try {
+                const adData = {
+                    title: title,
+                    description: description,
+                    price: Number(price),
+                    category: category,
+                    sellerName: 'مستخدم جديد',
+                    sellerPhone: phone,
+                    location: 'دير الزور'
+                };
+                
+                const result = await FirebaseApp.saveNewAd(adData);
+                
+                if (result.success) {
+                    alert(`✅ تم نشر إعلانك "${title}" بنجاح!`);
+                    
+                    // إغلاق المودال وإعادة تعيين النموذج
+                    document.getElementById('adModal').style.display = 'none';
+                    document.getElementById('adForm').reset();
+                    
+                    // تحديث قائمة الإعلانات
+                    setTimeout(() => loadAds(), 1000);
+                    
+                } else {
+                    throw new Error(result.error || 'فشل نشر الإعلان');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في النشر:', error);
+                alert(`❌ فشل نشر الإعلان: ${error.message}`);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // ============================================
+        // أحداث الواجهة
+        // ============================================
+        
         function setupModalEvents() {
             const modal = document.getElementById('adModal');
             const openBtn = document.getElementById('openAdModal');
             const closeBtn = document.getElementById('closeModal');
-            const imageUpload = document.getElementById('imageUpload');
-            const fileInput = document.getElementById('adImages');
             
-            // فتح المودال
-            openBtn.addEventListener('click', function() {
+            openBtn.onclick = () => {
                 modal.style.display = 'block';
                 document.body.style.overflow = 'hidden';
-            });
+            };
             
-            // إغلاق المودال
-            closeBtn.addEventListener('click', function() {
+            closeBtn.onclick = () => {
                 modal.style.display = 'none';
                 document.body.style.overflow = 'auto';
-            });
+            };
             
-            // إغلاق بالنقر خارج المحتوى
-            modal.addEventListener('click', function(e) {
+            modal.onclick = (e) => {
                 if (e.target === modal) {
                     modal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                 }
-            });
-            
-            // رفع الصور
-            imageUpload.addEventListener('click', function() {
-                fileInput.click();
-            });
-            
-            fileInput.addEventListener('change', function(e) {
-                const preview = document.getElementById('imagePreview');
-                preview.innerHTML = '';
-                
-                for (let i = 0; i < e.target.files.length && i < 5; i++) {
-                    const file = e.target.files[i];
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(event) {
-                        const img = document.createElement('img');
-                        img.src = event.target.result;
-                        img.style.width = '80px';
-                        img.style.height = '80px';
-                        img.style.objectFit = 'cover';
-                        img.style.borderRadius = '8px';
-                        img.style.margin = '5px';
-                        preview.appendChild(img);
-                    };
-                    
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            // معالجة نموذج الإعلان
-            document.getElementById('adForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const title = document.getElementById('adTitle').value;
-                const price = document.getElementById('adPrice').value;
-                
-                if (!title || !price) {
-                    alert('الرجاء ملء جميع الحقول المطلوبة');
-                    return;
-                }
-                
-                // هنا سيتم إرسال البيانات إلى Firebase
-                alert(`✅ تم إنشاء الإعلان "${title}" بنجاح!\n\nسيتم ربط هذا مع Firebase في المرحلة القادمة.`);
-                
-                // إغلاق المودال
-                modal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-                
-                // إعادة تعيين النموذج
-                e.target.reset();
-                document.getElementById('imagePreview').innerHTML = '';
-            });
+            };
         }
-
-        // إعداد أحداث البحث والتصفية
-        function setupFilterEvents() {
-            const sortSelect = document.getElementById('sortBy');
-            const categorySelect = document.getElementById('filterCategory');
-            
-            sortSelect.addEventListener('change', function() {
-                filterAndSortAds();
-            });
-            
-            categorySelect.addEventListener('change', function() {
-                filterAndSortAds();
-            });
-            
-            // حدث البحث
-            document.querySelector('.search-btn').addEventListener('click', function() {
-                const searchInput = document.querySelector('.search-input').value;
-                const searchCategory = document.querySelector('.search-box select').value;
-                
-                filterAdsBySearch(searchInput, searchCategory);
-            });
+        
+        function filterByCategory(categoryId) {
+            loadAds({ category: categoryId });
         }
-
-        // تصفية وترتيب الإعلانات
-        function filterAndSortAds() {
-            const sortBy = document.getElementById('sortBy').value;
-            const category = document.getElementById('filterCategory').value;
-            
-            let filteredAds = [...siteData.ads];
-            
-            // التصفية بالفئة
-            if (category) {
-                filteredAds = filteredAds.filter(ad => ad.category === category);
-            }
-            
-            // الترتيب
-            if (sortBy === 'price-low') {
-                filteredAds.sort((a, b) => a.price - b.price);
-            } else if (sortBy === 'price-high') {
-                filteredAds.sort((a, b) => b.price - a.price);
-            } else {
-                // الأحدث (حسب التاريخ - في حالتنا حسب الافتراضي)
-                filteredAds.reverse();
-            }
-            
-            renderAds(filteredAds);
+        
+        function viewAd(adId) {
+            alert(`🔍 عرض تفاصيل الإعلان (ID: ${adId})\n\nهذه الميزة قيد التطوير. ستظهر التفاصيل الكاملة قريباً.`);
         }
-
-        // تصفية الإعلانات حسب الفئة
-        function filterAdsByCategory(categoryId) {
-            document.getElementById('filterCategory').value = categoryId;
-            filterAndSortAds();
+        
+        // ============================================
+        // تهيئة الصفحة
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 سوق دير الزور - تهيئة Firebase');
             
-            // التمرير إلى قسم الإعلانات
-            document.querySelector('.ads-section').scrollIntoView({behavior: 'smooth'});
-        }
-
-        // تصفية الإعلانات حسب البحث
-        function filterAdsBySearch(query, category) {
-            let filteredAds = siteData.ads.filter(ad => {
-                const matchesText = ad.title.toLowerCase().includes(query.toLowerCase()) || 
-                                   ad.description.toLowerCase().includes(query.toLowerCase());
-                const matchesCategory = !category || ad.category === category;
-                
-                return matchesText && matchesCategory;
-            });
+            // إعداد المودال
+            setupModalEvents();
             
-            renderAds(filteredAds);
+            // إعداد نموذج الإعلان
+            document.getElementById('adForm').onsubmit = handleAdSubmit;
             
-            // تحديث عناصر التحكم
-            if (category) {
-                document.getElementById('filterCategory').value = category;
-            }
-        }
-
-        // عرض تفاصيل الإعلان
-        function viewAdDetails(adId) {
-            const ad = siteData.ads.find(a => a.id === adId);
-            
-            if (ad) {
-                const priceText = ad.price > 0 ? `السعر: $${ad.price}` : 'السعر: قابل للتفاوض';
-                
-                const details = `
-                    🏷️ <strong>${ad.title}</strong>
-                    
-                    📝 <strong>الوصف:</strong>
-                    ${ad.description}
-                    
-                    💰 <strong>${priceText}</strong>
-                    
-                    🗺️ <strong>الموقع:</strong> ${ad.location}
-                    
-                    👤 <strong>البائع:</strong> ${ad.seller}
-                    
-                    📅 <strong>تاريخ النشر:</strong> ${ad.date}
-                    
-                    🏷️ <strong>الفئة:</strong> ${getCategoryName(ad.category)}
-                    
-                    📞 <strong>للتواصل:</strong> 09XX XXX XXX (رقم وهمي للعرض)
-                `;
-                
-                alert(details.replace(/\n/g, '\n\n'));
-            }
-        }
-
-        // تهيئة Firebase (جاهزة للربط)
-        function initializeFirebase() {
-            // إعدادات Firebase الحقيقية ستأتي هنا
-            const firebaseConfig = {
-                apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
-                authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
-                projectId: "souq-aldeir-4ed7b",
-                storageBucket: "souq-aldeir-4ed7b.firebasestorage.app",
-                messagingSenderId: "925621854708",
-                appId: "1:925621854708:web:0a830d0684bc75f6be99a1"
+            // إعداد البحث
+            document.querySelector('.search-btn').onclick = () => {
+                const query = document.querySelector('.search-input').value;
+                alert(`🔍 البحث عن: "${query}"\n\nميزة البحث قيد التطوير.`);
             };
             
-            try {
-                if (firebase.apps.length === 0) {
-                    firebase.initializeApp(firebaseConfig);
-                    console.log("✅ Firebase مهيأ - جاهز للربط");
-                }
-            } catch (error) {
-                console.warn("⚠️ Firebase غير متصل - الوضع التجريبي يعمل", error);
-            }
-        }
-
-        // تهيئة Firebase عند تحميل الصفحة
-        window.addEventListener('load', function() {
-            setTimeout(initializeFirebase, 1000);
+            // التحقق من Firebase
+            setTimeout(() => {
+                checkFirebaseStatus();
+            }, 1000);
+            
+            // تحديث دوري كل دقيقة
+            setInterval(checkFirebaseStatus, 60000);
         });
     </script>
 </body>
