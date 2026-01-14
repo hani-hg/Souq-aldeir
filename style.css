@@ -1,0 +1,60 @@
+/* 🔹 تنسيقات بطاقات الإعلانات الجديدة 🔹 */
+.latest-ads-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+    padding: 20px;
+}
+
+.ad-card {
+    background: white;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eaeaea;
+    transition: all 0.3s ease;
+    font-family: system-ui, -apple-system, 'Segoe UI', 'Cairo', sans-serif;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+}
+
+.ad-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.ad-card h3 {
+    color: #2d3436;
+    font-size: 1.4em;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    border-bottom: 2px solid #f8f9fa;
+    padding-bottom: 10px;
+}
+
+.ad-card p {
+    color: #636e72;
+    line-height: 1.7;
+    flex-grow: 1;
+    margin-bottom: 20px;
+}
+
+.ad-price {
+    color: #27ae60;
+    font-size: 1.8em;
+    font-weight: 800;
+    direction: ltr;
+    text-align: left;
+    margin: 15px 0;
+}
+
+.ad-meta {
+    display: flex;
+    justify-content: space-between;
+    color: #888;
+    font-size: 0.9em;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
