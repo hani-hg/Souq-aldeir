@@ -431,5 +431,61 @@ setTimeout(() => {
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
+<!-- زر اختبار Firebase -->
+<button onclick="testFirebase()" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #e74c3c;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 25px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+">
+  🔥 اختبار الاتصال
+</button>
+
+<script>
+function testFirebase() {
+  if (window.firebase && firebase.app) {
+    const projectId = firebase.app().options.projectId;
+    
+    // إنشاء رسالة نجاح
+    const msg = document.createElement('div');
+    msg.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #27ae60;
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        z-index: 10001;
+        text-align: center;
+        max-width: 300px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      ">
+        <div style="font-size: 24px; margin-bottom: 10px;">✅</div>
+        <div style="font-weight: bold; font-size: 18px;">نجاح الاتصال!</div>
+        <div style="margin: 15px 0; font-size: 14px;">المشروع: ${projectId}</div>
+        <button onclick="this.parentElement.parentElement.remove()" 
+                style="background: white; color: #27ae60; border: none; padding: 8px 20px; border-radius: 20px;">
+          تم
+        </button>
+      </div>
+    `;
+    document.body.appendChild(msg);
+    
+  } else {
+    alert("❌ لم يتم تحميل Firebase\nتحقق من الأخطاء في المتصفح");
+  }
+}
+</script>
 </body>
 </html>
