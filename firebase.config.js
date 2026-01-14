@@ -1,4 +1,4 @@
-// إعدادات Firebase لتطبيق سوق دير الزور
+// إعدادات Firebase الصحيحة لتطبيق سوق دير الزور
 const firebaseConfig = {
   apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
   authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
@@ -9,7 +9,22 @@ const firebaseConfig = {
   measurementId: "G-J14JVX1HW4"
 };
 
-// تهيئة Firebase (الطريقة التقليدية للCDN)
-firebase.initializeApp(firebaseConfig);
+// تأكد من تهيئة Firebase مرة واحدة فقط
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+  console.log("✅ تم إصلاح Firebase على الهاتف!");
+}
 
-console.log("✅ تم تهيئة Firebase بنجاح!");
+// حل إضافي: إعادة تعريف دالة التسجيل
+window.fixFirebase = function() {
+  const email = "test_" + Date.now() + "@souq.com";
+  const password = "123456";
+  
+  firebase.auth().createUserWithEmailAndPassword(email, password)
+    .then(() => {
+      alert("✅ تم التسجيل بنجاح!\nبريد: " + email);
+    })
+    .catch(error => {
+      alert("❌ خطأ: " + error.message);
+    });
+};
