@@ -485,5 +485,33 @@ setTimeout(() => {
         };
     </script>
     <script>console.log('🔥 Test from mobile');</script>
+    <!-- زر الإصلاح للهاتف -->
+<div style="position:fixed; bottom:20px; left:20px; z-index:9999;">
+  <button onclick="mobileFix()" 
+          style="background:#e74c3c; color:white; padding:15px; 
+                 border-radius:50%; border:none; font-size:20px;">
+    🔧 إصلاح
+  </button>
+</div>
+
+<script>
+function mobileFix() {
+  // إعادة تحميل مكتبات Firebase
+  const script = document.createElement('script');
+  script.src = 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+  document.head.appendChild(script);
+  
+  script.onload = function() {
+    // التهيئة بالمفتاح الصحيح
+    firebase.initializeApp({
+      apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
+      authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
+      projectId: "souq-aldeir-4ed7b"
+    });
+    
+    alert("✅ تم الإصلاح! جرب التسجيل الآن");
+  };
+}
+</script>
 </body>
 </html>
