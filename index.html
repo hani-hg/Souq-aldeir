@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سوق دير الزور</title>
     
-    <!-- مكتبات Firebase (الإصدار 8.10.0 التقليدي) -->
+    <!-- مكتبات Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -24,11 +24,9 @@
         };
 
         // تهيئة Firebase مرة واحدة فقط
-        if (typeof firebase !== 'undefined') {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-                console.log("✅ تم تهيئة Firebase بنجاح - مشروع: souq-aldeir-4ed7b");
-            }
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("✅ تم تهيئة Firebase - مشروع: souq-aldeir-4ed7b");
         }
     </script>
     
@@ -126,10 +124,12 @@
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             transition: transform 0.3s;
+            border: 1px solid #eee;
         }
         
         .product-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
         }
         
         .product-image {
@@ -138,6 +138,7 @@
             object-fit: cover;
             border-radius: 10px;
             margin-bottom: 15px;
+            background: #f8f9fa;
         }
         
         .product-title {
@@ -145,6 +146,7 @@
             font-weight: bold;
             margin-bottom: 10px;
             color: #2c3e50;
+            min-height: 60px;
         }
         
         .product-price {
@@ -164,6 +166,33 @@
             width: 100%;
             font-size: 16px;
             margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        .contact-btn:hover {
+            background: #2980b9;
+        }
+        
+        /* زر الإدارة */
+        .admin-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 50px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(155, 89, 182, 0.4);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .admin-btn:hover {
+            transform: scale(1.05);
         }
         
         /* رسائل التنبيه */
@@ -178,6 +207,7 @@
             z-index: 10000;
             animation: slideIn 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 350px;
         }
         
         .alert.success {
@@ -186,6 +216,10 @@
         
         .alert.error {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .alert.info {
+            background: linear-gradient(135deg, #3498db, #2980b9);
         }
         
         @keyframes slideIn {
@@ -197,6 +231,28 @@
                 transform: translateX(0);
                 opacity: 1;
             }
+        }
+        
+        /* شريط التحميل */
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        .loader-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         /* الفوتر */
@@ -214,6 +270,7 @@
             .products-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
                 padding: 10px;
+                gap: 15px;
             }
             
             .container {
@@ -226,6 +283,13 @@
             
             .logo {
                 font-size: 2rem;
+            }
+            
+            .admin-btn {
+                bottom: 70px;
+                right: 15px;
+                font-size: 14px;
+                padding: 12px 15px;
             }
         }
     </style>
@@ -247,54 +311,34 @@
         </button>
         
         <!-- قسم المنتجات -->
-        <h2 style="text-align: center; margin: 30px 0; color: #2c3e50;">المنتجات المتاحة</h2>
+        <h2 style="text-align: center; margin: 30px 0; color: #2c3e50;" id="productsTitle">
+            المنتجات المتاحة <span id="productsCount" style="font-size:0.9em; color:#7f8c8d;"></span>
+        </h2>
         
-        <div class="products-grid">
-            <!-- منتج 1 -->
-            <div class="product-card">
-                <img src="https://via.placeholder.com/300x200/3498db/ffffff?text=دراجة+هوائية" alt="دراجة هوائية" class="product-image">
-                <h3 class="product-title">دراجة هوائية للأطفال</h3>
-                <p>مناسبة للأطفال 5-10 سنوات - لون أزرق - عجلتين إضافيتين - جرس</p>
-                <div class="product-price">$350</div>
-                <button class="contact-btn">تواصل مع البائع</button>
-            </div>
-            
-            <!-- منتج 2 -->
-            <div class="product-card">
-                <img src="https://via.placeholder.com/300x200/e74c3c/ffffff?text=هاتف+ذكي" alt="هاتف ذكي" class="product-image">
-                <h3 class="product-title">هاتف ذكي مستعمل</h3>
-                <p>سامسونج جالاكسي - حالة جيدة - شاشة 6 بوصة - ذاكرة 64 جيجا</p>
-                <div class="product-price">$150</div>
-                <button class="contact-btn">تواصل مع البائع</button>
-            </div>
-            
-            <!-- منتج 3 -->
-            <div class="product-card">
-                <img src="https://via.placeholder.com/300x200/2ecc71/ffffff?text=كتب+مدرسية" alt="كتب مدرسية" class="product-image">
-                <h3 class="product-title">كتب مدرسية</h3>
-                <p>كتب الصف الثامن - جميع المواد - طبعة جديدة - حالة ممتازة</p>
-                <div class="product-price">$45</div>
-                <button class="contact-btn">تواصل مع البائع</button>
-            </div>
+        <!-- حاوية المنتجات (ستملأ ديناميكياً) -->
+        <div class="products-grid" id="productsContainer">
+            <!-- المنتجات ستظهر هنا من قاعدة البيانات -->
         </div>
     </main>
 
     <!-- زر الإصلاح -->
-    <button class="fix-btn" onclick="fixFirebase()">🔧</button>
+    <button class="fix-btn" onclick="fixFirebase()" title="إصلاح Firebase">🔧</button>
 
     <!-- الفوتر -->
     <footer>
         <div class="container">
             <p>© 2024 سوق دير الزور. جميع الحقوق محفوظة.</p>
-            <p style="margin-top: 10px; opacity: 0.8;">نسخة: Firebase 8.10.0</p>
+            <p style="margin-top: 10px; opacity: 0.8;">نسخة: قاعدة بيانات Firebase حقيقية</p>
         </div>
     </footer>
 
     <!-- أكواد JavaScript -->
     <script>
         // ===========================================
-        // 1. دالة عرض رسائل التنبيه
+        // 1. دوال المساعدة
         // ===========================================
+        
+        // دالة عرض رسائل التنبيه
         function showMessage(message, type = 'info') {
             // إزالة أي رسالة سابقة
             const oldAlert = document.querySelector('.alert');
@@ -313,18 +357,44 @@
                 }
             }, 5000);
         }
-
+        
+        // دالة إنشاء شريط تحميل
+        function showLoader() {
+            const container = document.getElementById('productsContainer');
+            container.innerHTML = `
+                <div class="loader">
+                    <div class="loader-spinner"></div>
+                    <p>جاري تحميل المنتجات من قاعدة البيانات...</p>
+                </div>
+            `;
+        }
+        
+        // دالة عرض رسالة فارغة
+        function showEmptyMessage() {
+            const container = document.getElementById('productsContainer');
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#95a5a6;">
+                    <p style="font-size:18px; margin-bottom:10px;">📭 لا توجد منتجات للعرض بعد</p>
+                    <p>كن أول من يعرض منتجاً للبيع!</p>
+                    <button onclick="addNewProduct()" style="background:#3498db; color:white; 
+                            border:none; padding:10px 20px; border-radius:5px; margin-top:20px;">
+                        ➕ إضافة أول منتج
+                    </button>
+                </div>
+            `;
+        }
+        
         // ===========================================
-        // 2. دالة تسجيل مستخدم تجريبي
+        // 2. دوال Firebase الأساسية
         // ===========================================
+        
+        // دالة تسجيل مستخدم تجريبي
         function signupTestUser() {
-            // التحقق من أن Firebase محمل
             if (typeof firebase === 'undefined' || !firebase.auth) {
                 showMessage('❌ مكتبات Firebase غير محملة', 'error');
                 return;
             }
             
-            // التحقق من أن Firebase مهيأ
             if (!firebase.apps.length) {
                 showMessage('❌ Firebase غير مهيأ', 'error');
                 return;
@@ -332,20 +402,17 @@
             
             showMessage('🔄 جاري إنشاء مستخدم تجريبي...', 'info');
             
-            // إنشاء بريد إلكتروني عشوائي
             const timestamp = Date.now();
             const testEmail = `test_${timestamp}@souq.com`;
             const testPassword = '123456';
             
-            // محاولة إنشاء المستخدم
             firebase.auth().createUserWithEmailAndPassword(testEmail, testPassword)
                 .then(function(userCredential) {
-                    // نجاح
                     const user = userCredential.user;
                     showMessage(`✅ تم إنشاء مستخدم تجريبي بنجاح!\nالبريد: ${testEmail}`, 'success');
                     console.log('المستخدم المنشأ:', user.uid);
                     
-                    // حذف المستخدم بعد التأكد (اختياري)
+                    // حذف المستخدم بعد 3 ثواني
                     setTimeout(() => {
                         user.delete().then(() => {
                             console.log('تم حذف المستخدم التجريبي');
@@ -355,7 +422,6 @@
                     }, 3000);
                 })
                 .catch(function(error) {
-                    // فشل
                     let errorMessage = '❌ خطأ في التسجيل: ';
                     
                     switch(error.code) {
@@ -379,18 +445,15 @@
                     console.error('تفاصيل الخطأ:', error);
                 });
         }
-
-        // ===========================================
-        // 3. دالة إصلاح Firebase (إذا كانت هناك مشاكل)
-        // ===========================================
+        
+        // دالة إصلاح Firebase
         function fixFirebase() {
             showMessage('🔧 جاري إصلاح Firebase...', 'info');
             
-            // 1. حذف مكتبات Firebase القديمة
+            // إعادة تحميل مكتبات Firebase
             const oldScripts = document.querySelectorAll('script[src*="firebasejs"]');
             oldScripts.forEach(script => script.remove());
             
-            // 2. إعادة تحميل مكتبات Firebase 8.10.0
             const scripts = [
                 'https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js',
                 'https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js',
@@ -404,19 +467,15 @@
                 script.onload = () => {
                     loaded++;
                     if (loaded === scripts.length) {
-                        // بعد تحميل جميع المكتبات
                         setTimeout(() => {
-                            // إعادة التهيئة
                             if (window.firebase) {
                                 try {
-                                    // حذف أي تهيئة سابقة
                                     if (firebase.apps.length > 0) {
                                         firebase.apps.forEach(app => {
                                             try { app.delete(); } catch(e) {}
                                         });
                                     }
                                     
-                                    // التهيئة بالإعدادات الصحيحة
                                     firebase.initializeApp({
                                         apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
                                         authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
@@ -428,6 +487,7 @@
                                     
                                     showMessage('✅ تم إصلاح Firebase بنجاح!', 'success');
                                     console.log('✅ Firebase معاد تهيئته');
+                                    setTimeout(loadProducts, 1000); // إعادة تحميل المنتجات
                                 } catch(error) {
                                     showMessage('❌ خطأ في إعادة التهيئة: ' + error.message, 'error');
                                 }
@@ -438,320 +498,385 @@
                 document.head.appendChild(script);
             });
         }
-
-        // ===========================================
-        // 4. اختبار تلقائي عند تحميل الصفحة
-        // ===========================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📱 صفحة سوق دير الزور محملة');
-            
-            // انتظر 2 ثانية ثم تحقق من Firebase
-            setTimeout(() => {
-                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                    const app = firebase.apps[0];
-                    console.log('✅ Firebase مهيأ:', {
-                        projectId: app.options.projectId,
-                        apiKey: app.options.apiKey.substring(0, 20) + '...'
-                    });
-                } else {
-                    console.warn('⚠️ Firebase غير مهيأ بشكل صحيح');
-                }
-            }, 2000);
-        });
-
-        // ===========================================
-        // 5. اختصارات لوحة المفاتيح (للتطوير)
-        // ===========================================
-        document.addEventListener('keydown', function(event) {
-            // Ctrl + Shift + F لإصلاح Firebase
-            if (event.ctrlKey && event.shiftKey && event.key === 'F') {
-                event.preventDefault();
-                fixFirebase();
-            }
-            
-            // Ctrl + Shift + T لاختبار التسجيل
-            if (event.ctrlKey && event.shiftKey && event.key === 'T') {
-                event.preventDefault();
-                signupTestUser();
-            }
-        });
-    </script>
-    
-    <!-- ملف التطبيق الرئيسي (إذا كان موجوداً) -->
-    <script src="app.js"></script>
-    <script>
-// كود إصلاح Firebase - سيشتغل تلقائياً
-setTimeout(function() {
-    console.log("🔧 جاري إصلاح Firebase...");
-    
-    if (typeof firebase !== 'undefined') {
-        alert("🎉 تم تشغيل إصلاح Firebase!");
         
-        // هنا ضع الكود الكامل الذي أرسلته لك
-        // سأكتبه لك في الخطوة التالية...
+        // ===========================================
+        // 3. دوال قاعدة البيانات Firestore (الخطوة 2)
+        // ===========================================
         
-    } else {
-        console.error("❌ Firebase غير محمل");
-    }
-}, 3000);
-</script>
-<script>
-// ============================================
-// كود إصلاح وعرض قاعدة البيانات
-// سيشتغل تلقائياً عند فتح الموقع
-// ============================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 بدء تحميل كود Firebase...");
-    
-    // انتظر 3 ثوان حتى يتم تحميل مكتبات Firebase
-    setTimeout(async function() {
-        // التحقق من أن Firebase محمل
-        if (typeof firebase === 'undefined') {
-            console.error("❌ مكتبات Firebase غير محملة");
-            return;
-        }
+        let db = null; // متغير قاعدة البيانات
         
-        console.log("✅ Firebase جاهز!");
-        
-        try {
-            // تهيئة Firestore
-            const db = firebase.firestore();
-            
-            // 1. التحقق من وجود منتجات
-            console.log("🔍 جاري التحقق من قاعدة البيانات...");
-            const snapshot = await db.collection('products').limit(1).get();
-            
-            // 2. إذا كانت فارغة، أضف منتجاً افتراضياً
-            if (snapshot.empty) {
-                console.log("📭 القاعدة فارغة، جاري إضافة منتج أولي...");
-                
-                const newProduct = {
-                    name: "ساعة ذكية جديدة",
-                    description: "ساعة رياضية ذكية - مقاومة للماء - تعقب للنوم والخطوات",
-                    price: 120,
-                    category: "electronics",
-                    imageUrl: "https://via.placeholder.com/300x200/1abc9c/ffffff?text=ساعة+ذكية",
-                    sellerName: "أحمد",
-                    status: "active",
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                await db.collection('products').add(newProduct);
-                console.log("✅ تم إضافة المنتج الأول!");
-                
-                // إشعار للمستخدم
-                showTempMessage("🎉 تم إنشاء قاعدة البيانات بنجاح!", "success");
+        // تهيئة قاعدة البيانات
+        function initFirestore() {
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                db = firebase.firestore();
+                console.log("✅ Firestore جاهز");
+                return true;
             } else {
-                console.log("✅ قاعدة البيانات تحتوي على", snapshot.size, "منتج");
+                console.warn("⚠️ Firestore غير مهيأ");
+                return false;
+            }
+        }
+        
+        // التحقق وإضافة منتج افتراضي إذا كانت القاعدة فارغة
+        async function initializeDatabase() {
+            if (!initFirestore()) {
+                showMessage('❌ قاعدة البيانات غير متاحة', 'error');
+                return false;
             }
             
-            // 3. عرض المنتجات في الصفحة
-            await displayProductsFromFirestore();
-            
-            // 4. إضافة زر للإدارة
-            addAdminButton();
-            
-        } catch (error) {
-            console.error("❌ خطأ:", error);
-            showTempMessage("❌ خطأ في الاتصال بقاعدة البيانات", "error");
+            try {
+                console.log("🔍 التحقق من قاعدة البيانات...");
+                const snapshot = await db.collection('products').limit(1).get();
+                
+                if (snapshot.empty) {
+                    console.log("📭 القاعدة فارغة، جاري إضافة منتج أولي...");
+                    
+                    const newProduct = {
+                        name: "ساعة ذكية جديدة",
+                        description: "ساعة رياضية ذكية - مقاومة للماء - تعقب للنوم والخطوات",
+                        price: 120,
+                        category: "electronics",
+                        imageUrl: "https://via.placeholder.com/300x200/1abc9c/ffffff?text=ساعة+ذكية",
+                        sellerName: "أحمد",
+                        status: "active",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    const docRef = await db.collection('products').add(newProduct);
+                    console.log("✅ تم إضافة المنتج الأول! المعرف:", docRef.id);
+                    
+                    // إشعار للمستخدم
+                    setTimeout(() => {
+                        showMessage("🎉 تم إنشاء قاعدة البيانات بنجاح!", "success");
+                    }, 1000);
+                    
+                    return true;
+                } else {
+                    console.log("✅ قاعدة البيانات تحتوي على", snapshot.size, "منتج(ات)");
+                    return false;
+                }
+            } catch (error) {
+                console.error("❌ خطأ في الاتصال بقاعدة البيانات:", error);
+                showMessage("❌ فشل الاتصال بقاعدة البيانات: " + error.message, "error");
+                return false;
+            }
         }
-    }, 3000);
-    
-    // دالة عرض رسائل مؤقتة
-    function showTempMessage(message, type) {
-        const msgDiv = document.createElement('div');
-        msgDiv.textContent = message;
-        msgDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#27ae60' : '#e74c3c'};
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            z-index: 10000;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            animation: fadeIn 0.3s;
-        `;
-        document.body.appendChild(msgDiv);
         
-        setTimeout(() => msgDiv.remove(), 5000);
-    }
-    
-    // دالة عرض المنتجات من Firestore
-    async function displayProductsFromFirestore() {
-        try {
-            const db = firebase.firestore();
-            const snapshot = await db.collection('products')
-                .where('status', '==', 'active')
-                .orderBy('createdAt', 'desc')
-                .limit(20)
-                .get();
+        // تحميل وعرض المنتجات
+        async function loadProducts() {
+            showLoader(); // عرض شريط التحميل
             
-            const productsContainer = document.querySelector('.products-grid') || 
-                                     document.querySelector('body > div:nth-child(3)') ||
-                                     createProductsContainer();
-            
-            if (snapshot.empty) {
-                productsContainer.innerHTML = `
-                    <div style="text-align:center; padding:40px;">
-                        <p style="color:#7f8c8d; font-size:18px;">📭 لا توجد منتجات للعرض بعد</p>
-                    </div>
-                `;
+            if (!initFirestore()) {
+                showEmptyMessage();
                 return;
             }
             
-            // مسح المنتجات القديمة
-            productsContainer.innerHTML = '';
-            
-            // إضافة المنتجات الجديدة
-            snapshot.forEach((doc) => {
-                const product = doc.data();
+            try {
+                const snapshot = await db.collection('products')
+                    .where('status', '==', 'active')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .get();
                 
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                productCard.innerHTML = `
-                    <img src="${product.imageUrl || 'https://via.placeholder.com/300x200/3498db/ffffff?text=منتج'}" 
-                         alt="${product.name}" 
-                         style="width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:15px;">
-                    <h3 style="font-size:1.3rem; font-weight:bold; margin-bottom:10px; color:#2c3e50;">
-                        ${product.name}
-                    </h3>
-                    <p style="color:#555; margin-bottom:10px;">${product.description}</p>
-                    <div style="color:#e74c3c; font-size:1.5rem; font-weight:bold; margin:10px 0;">
-                        $${product.price}
+                const container = document.getElementById('productsContainer');
+                const countSpan = document.getElementById('productsCount');
+                
+                if (snapshot.empty) {
+                    showEmptyMessage();
+                    countSpan.textContent = '(0)';
+                    return;
+                }
+                
+                // مسح الحاوية
+                container.innerHTML = '';
+                
+                // إضافة كل منتج
+                snapshot.forEach((doc) => {
+                    const product = doc.data();
+                    const productId = doc.id;
+                    
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+                    productCard.innerHTML = `
+                        <img src="${product.imageUrl || 'https://via.placeholder.com/300x200/3498db/ffffff?text=منتج'}" 
+                             alt="${product.name}" 
+                             class="product-image"
+                             onerror="this.src='https://via.placeholder.com/300x200/3498db/ffffff?text=صورة+غير+متاحة'">
+                        <h3 class="product-title">${product.name}</h3>
+                        <p style="color:#555; margin-bottom:10px; min-height:60px;">${product.description}</p>
+                        <div class="product-price">$${product.price}</div>
+                        <p style="color:#7f8c8d; font-size:14px; margin:5px 0;">
+                            👤 البائع: ${product.sellerName || 'بائع'}
+                            <br>
+                            📅 ${product.createdAt ? new Date(product.createdAt.toDate()).toLocaleDateString('ar-SA') : 'غير محدد'}
+                        </p>
+                        <button class="contact-btn" onclick="viewProductDetails('${productId}')">
+                            👁️ عرض التفاصيل
+                        </button>
+                    `;
+                    
+                    container.appendChild(productCard);
+                });
+                
+                // تحديث العداد
+                countSpan.textContent = `(${snapshot.size})`;
+                console.log("✅ تم عرض", snapshot.size, "منتج");
+                
+                // إضافة زر الإدارة إذا لم يكن موجوداً
+                if (!document.querySelector('.admin-btn')) {
+                    addAdminButton();
+                }
+                
+            } catch (error) {
+                console.error("❌ خطأ في تحميل المنتجات:", error);
+                const container = document.getElementById('productsContainer');
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px; color:#e74c3c;">
+                        <p>⚠️ تعذر تحميل المنتجات من الخادم</p>
+                        <p style="font-size:14px; margin-top:10px;">${error.message}</p>
+                        <button onclick="loadProducts()" style="background:#3498db; color:white; 
+                                border:none; padding:10px 20px; border-radius:5px; margin-top:20px;">
+                            🔄 إعادة المحاولة
+                        </button>
                     </div>
-                    <p style="color:#7f8c8d; font-size:14px; margin:5px 0;">
-                        👤 البائع: ${product.sellerName || 'بائع'}
-                    </p>
-                    <button onclick="alert('تفاصيل: ${product.name}\\nالسعر: $${product.price}\\nالبائع: ${product.sellerName}')" 
-                            style="background:#3498db; color:white; border:none; padding:10px; 
-                                   border-radius:8px; cursor:pointer; width:100%; margin-top:10px;">
-                        👁️ عرض التفاصيل
-                    </button>
                 `;
-                
-                productsContainer.appendChild(productCard);
-            });
-            
-            console.log("✅ تم عرض", snapshot.size, "منتج");
-            
-        } catch (error) {
-            console.error("❌ خطأ في عرض المنتجات:", error);
-        }
-    }
-    
-    // إنشاء حاوية للمنتجات إذا لم تكن موجودة
-    function createProductsContainer() {
-        const container = document.createElement('div');
-        container.className = 'products-grid';
-        container.style.cssText = `
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            margin: 30px 20px;
-            padding: 20px;
-        `;
-        
-        // إيجاد مكان مناسب للإدراج
-        const target = document.querySelector('h2') || document.querySelector('h1');
-        if (target) {
-            target.parentNode.insertBefore(container, target.nextSibling);
-        } else {
-            document.body.appendChild(container);
-        }
-        
-        return container;
-    }
-    
-    // إضافة زر الإدارة
-    function addAdminButton() {
-        const btn = document.createElement('button');
-        btn.innerHTML = '➕ إدارة المنتجات';
-        btn.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #9b59b6, #8e44ad);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 50px;
-            border: none;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 9999;
-            box-shadow: 0 4px 20px rgba(155, 89, 182, 0.4);
-            cursor: pointer;
-        `;
-        
-        btn.onclick = function() {
-            const action = prompt(
-                "اختر إجراء:\n1. عرض عدد المنتجات\n2. إضافة منتج جديد\n3. تحديث الصفحة",
-                "1"
-            );
-            
-            if (action === "1") {
-                firebase.firestore().collection('products').get()
-                    .then(snap => alert(`عدد المنتجات: ${snap.size}`));
-            } else if (action === "2") {
-                addNewProduct();
-            } else if (action === "3") {
-                location.reload();
             }
-        };
-        
-        document.body.appendChild(btn);
-    }
-    
-    // دالة إضافة منتج جديد
-    async function addNewProduct() {
-        const name = prompt("اسم المنتج:", "منتج جديد");
-        if (!name) return;
-        
-        const price = prompt("السعر:", "100");
-        if (!price) return;
-        
-        const product = {
-            name: name,
-            description: prompt("الوصف:", "وصف المنتج") || "وصف المنتج",
-            price: Number(price),
-            category: prompt("الفئة (electronics/books/other):", "electronics") || "electronics",
-            imageUrl: "https://via.placeholder.com/300x200/3498db/ffffff?text=" + encodeURIComponent(name),
-            sellerName: prompt("اسم البائع:", "بائع"),
-            status: "active",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        try {
-            await firebase.firestore().collection('products').add(product);
-            alert(`✅ تم إضافة "${name}" بنجاح!`);
-            location.reload();
-        } catch (error) {
-            alert("❌ خطأ: " + error.message);
         }
-    }
-});
-</script>
-
-<style>
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.product-card {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    transition: transform 0.3s;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-}
-</style>
+        
+        // عرض تفاصيل المنتج
+        function viewProductDetails(productId) {
+            showMessage(`🔍 جاري تحميل تفاصيل المنتج...`, 'info');
+            
+            if (!db) initFirestore();
+            
+            db.collection('products').doc(productId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const product = doc.data();
+                        const details = `
+                            🏷️ <strong>${product.name}</strong>
+                            
+                            📝 ${product.description}
+                            
+                            💰 السعر: $${product.price}
+                            
+                            👤 البائع: ${product.sellerName}
+                            
+                            📅 تاريخ الإضافة: ${product.createdAt ? new Date(product.createdAt.toDate()).toLocaleString('ar-SA') : 'غير محدد'}
+                            
+                            🔗 <a href="${product.imageUrl}" target="_blank">عرض الصورة</a>
+                        `;
+                        
+                        alert(details.replace(/\n/g, '\n\n'));
+                    } else {
+                        showMessage('❌ المنتج غير موجود', 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('❌ خطأ في تحميل التفاصيل: ' + error.message, 'error');
+                });
+        }
+        
+        // ===========================================
+        // 4. إدارة المنتجات (زر الإدارة)
+        // ===========================================
+        
+        // إضافة زر الإدارة
+        function addAdminButton() {
+            // تحقق إذا كان الزر موجوداً بالفعل
+            if (document.querySelector('.admin-btn')) return;
+            
+            const btn = document.createElement('button');
+            btn.className = 'admin-btn';
+            btn.innerHTML = '➕ إدارة المنتجات';
+            btn.title = 'إضافة منتج جديد أو إدارة المنتجات';
+            
+            btn.onclick = function() {
+                const action = prompt(
+                    "👨‍💼 لوحة إدارة المنتجات\n\n" +
+                    "اختر الإجراء المطلوب:\n" +
+                    "1️⃣ - عرض عدد المنتجات\n" +
+                    "2️⃣ - إضافة منتج جديد\n" +
+                    "3️⃣ - تحديث قائمة المنتجات\n" +
+                    "4️⃣ - فحص اتصال قاعدة البيانات\n\n" +
+                    "أدخل رقم الإجراء (1-4):",
+                    "1"
+                );
+                
+                if (action === "1") {
+                    // عرض عدد المنتجات
+                    if (!db) initFirestore();
+                    db.collection('products').get()
+                        .then(snap => {
+                            alert(`📊 إحصائيات المنتجات:\n\nإجمالي المنتجات: ${snap.size}\n\n` +
+                                  `(المنتجات النشطة: ${snap.docs.filter(d => d.data().status === 'active').length})`);
+                        });
+                        
+                } else if (action === "2") {
+                    // إضافة منتج جديد
+                    addNewProduct();
+                    
+                } else if (action === "3") {
+                    // تحديث الصفحة
+                    showMessage('🔄 جاري تحديث المنتجات...', 'info');
+                    loadProducts();
+                    
+                } else if (action === "4") {
+                    // فحص الاتصال
+                    testDatabaseConnection();
+                }
+            };
+            
+            document.body.appendChild(btn);
+        }
+        
+        // دالة إضافة منتج جديد
+        async function addNewProduct() {
+            if (!initFirestore()) {
+                showMessage('❌ قاعدة البيانات غير متاحة', 'error');
+                return;
+            }
+            
+            const name = prompt("📝 أدخل اسم المنتج:", "منتج جديد");
+            if (!name) return;
+            
+            const price = prompt("💰 أدخل سعر المنتج (بالدولار):", "100");
+            if (!price || isNaN(price)) {
+                showMessage('❌ السعر غير صحيح', 'error');
+                return;
+            }
+            
+            const description = prompt("📋 أدخل وصف المنتج:", "وصف المنتج الجديد");
+            const category = prompt("🏷️ أدخل فئة المنتج (electronics/books/vehicles/home/other):", "electronics");
+            const sellerName = prompt("👤 أدخل اسم البائع:", "بائع");
+            
+            const product = {
+                name: name,
+                description: description || "وصف المنتج",
+                price: Number(price),
+                category: category || "electronics",
+                imageUrl: `https://via.placeholder.com/300x200/3498db/ffffff?text=${encodeURIComponent(name.substring(0, 20))}`,
+                sellerName: sellerName || "بائع",
+                status: "active",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            try {
+                await db.collection('products').add(product);
+                showMessage(`✅ تم إضافة "${name}" بنجاح!`, 'success');
+                
+                // تحديث قائمة المنتجات بعد 1.5 ثانية
+                setTimeout(() => {
+                    loadProducts();
+                }, 1500);
+                
+            } catch (error) {
+                showMessage('❌ فشل إضافة المنتج: ' + error.message, 'error');
+            }
+        }
+        
+        // فحص اتصال قاعدة البيانات
+        async function testDatabaseConnection() {
+            showMessage('🔍 جاري فحص اتصال قاعدة البيانات...', 'info');
+            
+            if (!initFirestore()) {
+                showMessage('❌ فشل الاتصال بقاعدة البيانات', 'error');
+                return;
+            }
+            
+            try {
+                const startTime = Date.now();
+                const snapshot = await db.collection('products').limit(1).get();
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                if (snapshot.empty) {
+                    showMessage(`✅ الاتصال ناجح! (${responseTime}ms)\n\nالقاعدة البيانات موجودة ولكنها فارغة.`, 'success');
+                } else {
+                    showMessage(`✅ الاتصال ناجح! (${responseTime}ms)\n\nتم العثور على ${snapshot.size} منتج.`, 'success');
+                }
+                
+            } catch (error) {
+                showMessage(`❌ فشل الاتصال: ${error.message}`, 'error');
+            }
+        }
+        
+        // ===========================================
+        // 5. تهيئة الصفحة عند التحميل
+        // ===========================================
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 صفحة سوق دير الزور - الإصدار مع قاعدة بيانات');
+            
+            // انتظر 2 ثانية حتى يتم تحميل Firebase
+            setTimeout(async () => {
+                console.log('🔍 فحص حالة Firebase...');
+                
+                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                    console.log('✅ Firebase مهيأ بشكل صحيح');
+                    
+                    // 1. تهيئة قاعدة البيانات
+                    await initializeDatabase();
+                    
+                    // 2. تحميل المنتجات
+                    await loadProducts();
+                    
+                    // 3. إضافة زر الإدارة
+                    addAdminButton();
+                    
+                } else {
+                    console.warn('⚠️ Firebase غير مهيأ');
+                    showMessage('⚠️ Firebase غير مهيأ، اضغط على زر 🔧 للإصلاح', 'error');
+                    
+                    // عرض المنتجات القديمة كنسخة احتياطية
+                    const container = document.getElementById('productsContainer');
+                    container.innerHTML = `
+                        <div class="product-card">
+                            <img src="https://via.placeholder.com/300x200/3498db/ffffff?text=دراجة+هوائية" 
+                                 alt="دراجة هوائية" class="product-image">
+                            <h3 class="product-title">دراجة هوائية للأطفال</h3>
+                            <p>مناسبة للأطفال 5-10 سنوات - لون أزرق - عجلتين إضافيتين - جرس</p>
+                            <div class="product-price">$350</div>
+                            <button class="contact-btn">تواصل مع البائع</button>
+                        </div>
+                        
+                        <div class="product-card">
+                            <img src="https://via.placeholder.com/300x200/e74c3c/ffffff?text=هاتف+ذكي" 
+                                 alt="هاتف ذكي" class="product-image">
+                            <h3 class="product-title">هاتف ذكي مستعمل</h3>
+                            <p>سامسونج جالاكسي - حالة جيدة - شاشة 6 بوصة - ذاكرة 64 جيجا</p>
+                            <div class="product-price">$150</div>
+                            <button class="contact-btn">تواصل مع البائع</button>
+                        </div>
+                    `;
+                }
+            }, 2000);
+        });
+        
+        // ===========================================
+        // 6. اختصارات لوحة المفاتيح (للتطوير)
+        // ===========================================
+        
+        document.addEventListener('keydown', function(event) {
+            // Ctrl + Shift + L لتحديث المنتجات
+            if (event.ctrlKey && event.shiftKey && event.key === 'L') {
+                event.preventDefault();
+                loadProducts();
+                showMessage('🔄 جاري تحديث المنتجات...', 'info');
+            }
+            
+            // Ctrl + Shift + A لإضافة منتج جديد
+            if (event.ctrlKey && event.shiftKey && event.key === 'A') {
+                event.preventDefault();
+                addNewProduct();
+            }
+            
+            // Ctrl + Shift + D لفحص قاعدة البيانات
+            if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+                event.preventDefault();
+                testDatabaseConnection();
+            }
+        });
+    </script>
 </body>
 </html>
