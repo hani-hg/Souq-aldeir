@@ -390,6 +390,41 @@
                 e.returnValue = 'هل تريد مغادرة التطبيق؟';
             }
         });
-    </script>
+    </script><script>
+// كود تأكيد الاتصال - يعمل تلقائيًا عند فتح الموقع
+setTimeout(() => {
+  let status = "❌ غير متصل";
+  let color = "#e74c3c";
+  
+  if (window.firebase && firebase.app) {
+    try {
+      const projectId = firebase.app().options.projectId;
+      status = `✅ متصل بـ: ${projectId}`;
+      color = "#2ecc71";
+      
+      // عرض إشعار على الصفحة نفسها (بدون تنبيه مزعج)
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <div style="position:fixed; top:10px; right:10px; background:${color}; 
+                    color:white; padding:12px; border-radius:8px; z-index:9999;
+                    font-size:14px; box-shadow:0 3px 10px rgba(0,0,0,0.2);">
+          <strong>${status}</strong>
+          <div style="font-size:12px; margin-top:5px;">
+            🔐 Auth | 🗄️ Firestore | 📦 Storage
+          </div>
+        </div>
+      `;
+      document.body.appendChild(div);
+      
+      console.log("🔥 Firebase Connected! Project:", projectId);
+    } catch(e) {
+      status = "❌ خطأ: " + e.message;
+    }
+  }
+  
+  // إذا أردت تنبيهًا (اختياري)
+  // alert(status);
+}, 2000);
+</script>
 </body>
 </html>
