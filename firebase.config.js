@@ -1,4 +1,4 @@
-// firebase-config.js
+// تكوين Firebase - استبدل القيم ببياناتك
 const firebaseConfig = {
   apiKey: "AIzaSyBqD...eE4mI",
   authDomain: "souq-dier.firebaseapp.com",
