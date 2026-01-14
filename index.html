@@ -24,28 +24,34 @@
             padding: 0 15px;
         }
         
-        /* ===== الهيدر والشعار ===== */
-        header {
-            text-align: center;
-            padding: 30px 0;
-            border-bottom: 1px solid #eaeaea;
-            margin-bottom: 30px;
-        }
+        /* ===== الهيدر والشعار ===== */<header>
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 20px 15px;">
+        <!-- الشعار على اليسار -->
+        <div class="logo">
+            <span>🏪</span> سوق دير الزور
+        </div>
         
-        .logo {
-            font-size: 2.5rem;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        
-        .logo span {
-            color: #27ae60;
-        }
-        
-        .tagline {
-            color: #7f8c8d;
-            font-size: 1.1rem;
-        }
+        <!-- أزرار المستخدم على اليمين -->
+        <div id="auth-buttons" style="display: flex; gap: 10px;">
+            <!-- هذه الأزرار تظهر عندما يكون المستخدم غير مسجل -->
+            <button id="login-btn" onclick="showLoginModal()" style="padding: 8px 20px; border: 1px solid #27ae60; background: white; color: #27ae60; border-radius: 5px; cursor: pointer;">
+                تسجيل دخول
+            </button>
+            <button id="signup-btn" onclick="showSignupModal()" style="padding: 8px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                إنشاء حساب
+            </button>
+            
+            <!-- هذه المنطقة تظهر فقط عندما يكون المستخدم مسجلاً -->
+            <div id="user-info" style="display: none; display: flex; align-items: center; gap: 10px;">
+                <span id="user-email" style="color: #2c3e50; font-weight: 600;"></span>
+                <button onclick="logoutUser()" style="padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    خروج
+                </button>
+            </div>
+        </div>
+    </div>
+    <p class="tagline">منصة الإعلانات المبوبة الأولى في المنطقة</p>
+</header>
         
         /* ===== قسم الفئات ===== */
         .section-title {
