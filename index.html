@@ -3,55 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوق دير الزور</title><!-- مكتبات Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-
-<!-- ملف التهيئة الخاص بنا -->
-<script src="firebase-config.js"></script>
+    <title>سوق دير الزور</title>
     
-    <!-- PWA إعدادات -->
+    <!-- PWA -->
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     
-    <!-- الأيقونة -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%232c3e50%22 rx=%2215%22/><text x=%2250%22 y=%2265%22 font-size=%2245%22 text-anchor=%22middle%22 fill=%22white%22>🛒</text></svg>">
+    <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
     
-    <!-- التصميم -->
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        /* أساسيات */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui;
             background: linear-gradient(145deg, #2c3e50, #4a6491);
             color: white;
             min-height: 100vh;
             text-align: center;
-        }
-        
-        /* حاوية التطبيق */
-        .app {
-            max-width: 500px;
-            margin: 0 auto;
             padding: 20px;
         }
         
-        /* الهيدر */
-        .header {
-            padding: 30px 0;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 25px;
-            margin-bottom: 30px;
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
             backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
+        
+        .header {
+            padding: 25px 0;
+            margin-bottom: 30px;
         }
         
         .app-title {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -59,433 +55,413 @@
             margin-bottom: 10px;
         }
         
-        .app-subtitle {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-        
-        /* زر التثبيت */
-        .install-box {
-            background: rgba(46, 204, 113, 0.2);
-            border: 2px solid #2ecc71;
-            border-radius: 15px;
-            padding: 20px;
-            margin: 25px 0;
-            display: none;
-        }
-        
-        #installBtn {
-            background: linear-gradient(to right, #2ecc71, #27ae60);
-            color: white;
-            border: none;
-            padding: 18px 30px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
-        }
-        
-        /* الإحصائيات */
         .stats {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 25px;
             margin: 25px 0;
             flex-wrap: wrap;
         }
         
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .stat i {
-            font-size: 1.8rem;
-            color: #3498db;
-        }
-        
-        /* المنتجات */
-        .products {
-            margin: 30px 0;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            color: #ecf0f1;
+        .stat-box {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 12px;
+            min-width: 100px;
         }
         
         .product-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             color: #2c3e50;
-            border-radius: 18px;
-            padding: 25px;
+            border-radius: 15px;
+            padding: 20px;
             margin: 20px 0;
             text-align: right;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            transition: transform 0.3s;
-        }
-        
-        .product-card:hover {
-            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
         
         .product-name {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             margin-bottom: 10px;
             color: #2c3e50;
         }
         
         .product-desc {
-            color: #7f8c8d;
+            color: #666;
             margin-bottom: 15px;
-            line-height: 1.5;
+            font-size: 0.95rem;
         }
         
         .product-price {
             background: linear-gradient(to right, #e74c3c, #c0392b);
             color: white;
             display: inline-block;
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-size: 1.3rem;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1.2rem;
             font-weight: bold;
             margin: 10px 0;
         }
         
-        .action-btn {
-            background: linear-gradient(to right, #3498db, #2980b9);
+        .test-btn {
+            background: #e74c3c;
             color: white;
             border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 1rem;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
             font-weight: bold;
+            margin: 20px 0;
             width: 100%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-top: 15px;
             transition: all 0.3s;
         }
         
-        .action-btn:hover {
-            background: linear-gradient(to right, #2980b9, #1c6ea4);
+        .test-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
         }
         
-        /* الفوتر */
-        .app-footer {
+        .register-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin: 10px 0;
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .auth-panel {
+            background: rgba(52, 152, 219, 0.2);
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        footer {
             margin-top: 40px;
-            padding-top: 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.7);
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
             font-size: 0.9rem;
         }
         
-        /* الهاتف */
         @media (max-width: 600px) {
-            .app { padding: 15px; }
-            .app-title { font-size: 2rem; }
-            .stats { gap: 20px; }
-            .product-card { padding: 20px; }
+            .container { padding: 15px; }
+            .app-title { font-size: 1.8rem; }
         }
     </style>
-    
-    <!-- أيقونات Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- التطبيق -->
-    <div class="app">
-        <!-- الهيدر -->
+    <div class="container">
+        <!-- Header -->
         <header class="header">
             <h1 class="app-title">
                 <i class="fas fa-store"></i>
                 سوق دير الزور
             </h1>
-            <p class="app-subtitle">تطبيق البيع والشراء الأول في دير الزور</p>
+            <p>تطبيق البيع والشراء الأول في دير الزور</p>
             
-            <!-- إحصائيات -->
+            <!-- Stats -->
             <div class="stats">
-                <div class="stat">
+                <div class="stat-box">
                     <i class="fas fa-users"></i>
-                    <span>+500 مستخدم</span>
+                    <div>+500 مستخدم</div>
                 </div>
-                <div class="stat">
+                <div class="stat-box">
                     <i class="fas fa-box"></i>
-                    <span>+200 منتج</span>
+                    <div>+200 منتج</div>
                 </div>
-                <div class="stat">
+                <div class="stat-box">
                     <i class="fas fa-star"></i>
-                    <span>94% رضا</span>
+                    <div>94% رضا</div>
                 </div>
             </div>
             
-            <!-- زر تثبيت PWA -->
-            <div class="install-box" id="installBox">
-                <p style="margin-bottom: 15px; font-size: 1rem;">
-                    <i class="fas fa-mobile-alt"></i> <strong>ثبّت التطبيق على هاتفك</strong>
-                </p>
-                <button id="installBtn">
-                    <i class="fas fa-download"></i>
-                    تثبيت التطبيق مجاناً
+            <!-- Firebase Test Panel -->
+            <div class="auth-panel">
+                <h3><i class="fas fa-plug"></i> اتصال Firebase</h3>
+                <p>اختبر اتصال تطبيقك بقاعدة البيانات</p>
+                
+                <button class="test-btn" onclick="testFirebaseConnection()">
+                    <i class="fas fa-bolt"></i>
+                    اختبار الاتصال الآن
+                </button>
+                
+                <div id="testResult" style="margin-top: 15px; display: none;">
+                    <!-- Results will appear here -->
+                </div>
+            </div>
+            
+            <!-- Registration Panel -->
+            <div class="auth-panel" id="registrationPanel" style="display: none;">
+                <h3><i class="fas fa-user-plus"></i> تسجيل مستخدم تجريبي</h3>
+                <button class="register-btn" onclick="registerTestUser()">
+                    <i class="fas fa-user"></i>
+                    إنشاء حساب تجريبي
                 </button>
             </div>
         </header>
         
-        <!-- المنتجات -->
-        <section class="products">
-            <h2 class="section-title">
+        <!-- Products -->
+        <section style="margin: 30px 0;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 20px;">
                 <i class="fas fa-box-open"></i>
                 المنتجات المتاحة
             </h2>
             
-            <!-- المنتج 1 -->
+            <!-- Product 1 -->
             <div class="product-card">
                 <h3 class="product-name">هاتف سامسونج S23 جديد</h3>
                 <p class="product-desc">جديد بالكرتونة - ضمان سنتين - شاشة 6.7 بوصة - ذاكرة 256GB</p>
                 <div class="product-price">$350</div>
-                <button class="action-btn" onclick="contactSeller('هاتف سامسونج S23', '$350')">
-                    <i class="fas fa-comment-dots"></i>
+                <button class="register-btn" onclick="contactSeller('هاتف سامسونج S23', '350')">
+                    <i class="fas fa-comment"></i>
                     تواصل مع البائع
                 </button>
             </div>
             
-            <!-- المنتج 2 -->
+            <!-- Product 2 -->
             <div class="product-card">
                 <h3 class="product-name">دراجة هوائية للأطفال</h3>
                 <p class="product-desc">مناسبة للأطفال 5-10 سنوات - لون أزرق - عجلتين إضافيتين - جرس</p>
                 <div class="product-price">$85</div>
-                <button class="action-btn" onclick="contactSeller('دراجة هوائية للأطفال', '$85')">
-                    <i class="fas fa-comment-dots"></i>
+                <button class="register-btn" onclick="contactSeller('دراجة هوائية للأطفال', '85')">
+                    <i class="fas fa-comment"></i>
                     تواصل مع البائع
                 </button>
             </div>
             
-            <!-- المنتج 3 -->
+            <!-- Product 3 -->
             <div class="product-card">
                 <h3 class="product-name">كنبة جلدية 3 مقاعد</h3>
                 <p class="product-desc">جلد طبيعي - لون بني فاتح - حالة ممتازة - مريحة جداً</p>
                 <div class="product-price">$220</div>
-                <button class="action-btn" onclick="contactSeller('كنبة جلدية 3 مقاعد', '$220')">
-                    <i class="fas fa-comment-dots"></i>
+                <button class="register-btn" onclick="contactSeller('كنبة جلدية 3 مقاعد', '220')">
+                    <i class="fas fa-comment"></i>
                     تواصل مع البائع
                 </button>
             </div>
         </section>
         
-        <!-- الفوتر -->
-        <footer class="app-footer">
+        <!-- Footer -->
+        <footer>
             <p><i class="fas fa-copyright"></i> 2024 تطبيق سوق دير الزور المفتوح</p>
-            <p style="margin-top: 10px; font-size: 0.8rem;">
-                <i class="fas fa-info-circle"></i> تطبيق PWA - يمكن تثبيته على الهاتف
+            <p style="margin-top: 10px; font-size: 0.85rem;">
+                <i class="fas fa-mobile-alt"></i> تطبيق PWA - يمكن تثبيته على الهاتف
             </p>
         </footer>
     </div>
-
-    <!-- JavaScript -->
+    
+    <!-- Firebase JavaScript -->
     <script>
-        // ========== PWA: Service Worker ==========
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
-                    .catch(err => console.log('❌ Service Worker خطأ:', err));
-            });
-        }
-        
-        // ========== PWA: زر التثبيت ==========
-        let deferredPrompt;
-        const installBox = document.getElementById('installBox');
-        const installBtn = document.getElementById('installBtn');
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBox.style.display = 'block';
+        // ====================
+        // 🔥 اختبار اتصال Firebase
+        // ====================
+        async function testFirebaseConnection() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
             
-            installBtn.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
+            // اختبار 1: مكتبات Firebase
+            resultDiv.innerHTML = `
+                <div style="background: #f8f9fa; color: #333; padding: 15px; border-radius: 10px; text-align: right;">
+                    <h4><i class="fas fa-cog fa-spin"></i> جاري الاختبار...</h4>
+                    <div style="margin-top: 10px;">
+                        <div id="step1">1. فحص مكتبات Firebase...</div>
+                        <div id="step2">2. فحص التهيئة...</div>
+                        <div id="step3">3. فحص الخدمات...</div>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(async () => {
+                // الخطوة 1: مكتبات Firebase
+                if (typeof firebase === 'undefined') {
+                    document.getElementById('step1').innerHTML = '❌ 1. مكتبات Firebase غير محملة';
+                    document.getElementById('step1').style.color = '#e74c3c';
+                    return;
+                }
+                document.getElementById('step1').innerHTML = '✅ 1. مكتبات Firebase محملة';
+                document.getElementById('step1').style.color = '#27ae60';
                 
-                installBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التثبيت...';
-                installBtn.disabled = true;
-                
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                
-                if (outcome === 'accepted') {
-                    installBox.innerHTML = `
-                        <p style="color:#2ecc71; font-weight:bold;">
-                            <i class="fas fa-check-circle"></i> تم التثبيت بنجاح!
-                        </p>
-                        <p>ابحث عن التطبيق على شاشة هاتفك الرئيسية</p>
-                    `;
-                } else {
-                    installBtn.innerHTML = '<i class="fas fa-download"></i> تثبيت التطبيق';
-                    installBtn.disabled = false;
+                // الخطوة 2: التهيئة
+                try {
+                    const app = firebase.app();
+                    const projectId = app.options.projectId;
+                    document.getElementById('step2').innerHTML = `✅ 2. Firebase مهيأ (المشروع: ${projectId})`;
+                    document.getElementById('step2').style.color = '#27ae60';
+                    
+                    // الخطوة 3: الخدمات
+                    const services = [
+                        { name: 'المصادقة', check: () => !!firebase.auth },
+                        { name: 'قاعدة البيانات', check: () => !!firebase.firestore },
+                        { name: 'التخزين', check: () => !!firebase.storage }
+                    ];
+                    
+                    let allServicesOk = true;
+                    let servicesHtml = '';
+                    
+                    services.forEach(service => {
+                        const isOk = service.check();
+                        if (!isOk) allServicesOk = false;
+                        
+                        servicesHtml += `
+                            <div style="margin: 5px 0; color: ${isOk ? '#27ae60' : '#e74c3c'}">
+                                ${isOk ? '✅' : '❌'} ${service.name}
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('step3').innerHTML = `3. حالة الخدمات:`;
+                    
+                    // عرض النتيجة النهائية
+                    if (allServicesOk) {
+                        resultDiv.innerHTML = `
+                            <div style="background: #d4edda; color: #155724; padding: 20px; border-radius: 10px; border: 2px solid #c3e6cb;">
+                                <h4 style="color: #155724;"><i class="fas fa-check-circle"></i> اتصال ناجح!</h4>
+                                <div style="margin: 15px 0;">
+                                    <div><strong>المشروع:</strong> ${projectId}</div>
+                                    <div><strong>النطاق:</strong> ${app.options.authDomain}</div>
+                                </div>
+                                <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                                    <h5 style="margin-bottom: 10px;">✅ جميع الخدمات نشطة:</h5>
+                                    ${servicesHtml}
+                                </div>
+                                <button onclick="showRegistrationPanel()" 
+                                        style="background: #28a745; color: white; border: none; padding: 12px 25px; 
+                                               border-radius: 8px; margin-top: 15px; width: 100%; cursor: pointer;">
+                                    <i class="fas fa-arrow-right"></i> التالي: تسجيل مستخدم تجريبي
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 10px;">
+                                <h4><i class="fas fa-exclamation-triangle"></i> مشكلة في بعض الخدمات</h4>
+                                <div style="margin: 15px 0;">
+                                    ${servicesHtml}
+                                </div>
+                                <p style="font-size: 0.9rem;">تحقق من مكتبات Firebase في قسم &lt;head&gt;</p>
+                            </div>
+                        `;
+                    }
+                    
+                } catch (error) {
+                    document.getElementById('step2').innerHTML = `❌ 2. خطأ في التهيئة: ${error.message}`;
+                    document.getElementById('step2').style.color = '#e74c3c';
                 }
                 
-                deferredPrompt = null;
-            });
-        });
+            }, 1000);
+        }
         
-        // إذا كان مثبتاً مسبقاً
-        window.addEventListener('appinstalled', () => {
-            console.log('✅ تطبيق PWA مثبت');
-            installBox.style.display = 'none';
-        });
+        // ====================
+        // 👤 تسجيل مستخدم تجريبي
+        // ====================
+        function showRegistrationPanel() {
+            document.getElementById('registrationPanel').style.display = 'block';
+            document.getElementById('registrationPanel').scrollIntoView({ behavior: 'smooth' });
+        }
         
-        // ========== التواصل مع البائع ==========
-        function contactSeller(productName, price) {
-            const phoneNumber = '0935-XXX-XXX';
-            const sellerName = 'أبو محمد';
+        async function registerTestUser() {
+            const email = `test_${Date.now()}@souq-dier.com`;
+            const password = '123456';
+            const name = 'مستخدم تجريبي';
             
-            if (confirm(`📞 تواصل مع البائع\n\n` +
-                       `👤 البائع: ${sellerName}\n` +
-                       `📦 المنتج: ${productName}\n` +
-                       `💰 السعر: ${price}\n` +
-                       `📱 رقم التواصل: ${phoneNumber}\n\n` +
-                       `هل تريد حفظ هذا الرقم؟`)) {
+            try {
+                // إنشاء المستخدم في Authentication
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
                 
-                alert(`✅ تم حفظ معلومات البائع:\n\n` +
-                      `المنتج: ${productName}\n` +
-                      `رقم التواصل: ${phoneNumber}\n\n` +
-                      `يمكنك الاتصال الآن!`);
+                // تحديث الاسم
+                await userCredential.user.updateProfile({
+                    displayName: name
+                });
                 
-                // محاولة فتح تطبيق الهاتف
-                setTimeout(() => {
-                    window.open(`tel:${phoneNumber}`, '_blank');
-                }, 500);
+                // حفظ في Firestore
+                await firebase.firestore().collection('users').doc(userCredential.user.uid).set({
+                    name: name,
+                    email: email,
+                    phone: '0935-XXX-XXX',
+                    city: 'دير الزور',
+                    createdAt: new Date(),
+                    role: 'user'
+                });
+                
+                // عرض رسالة النجاح
+                alert(`
+                    ✅ تم إنشاء حساب تجريبي بنجاح!
+                    
+                    📧 البريد: ${email}
+                    🔐 كلمة المرور: ${password}
+                    👤 الاسم: ${name}
+                    
+                    يمكنك الآن:
+                    1. فتح صفحة Authentication في Firebase Console
+                    2. سترى هذا المستخدم في القائمة
+                    3. جرب تسجيل الدخول بهذا الحساب
+                `);
+                
+                // عرض زر تسجيل الدخول
+                document.getElementById('registrationPanel').innerHTML = `
+                    <div style="background: #d4edda; padding: 20px; border-radius: 10px;">
+                        <h4><i class="fas fa-user-check"></i> حساب جاهز!</h4>
+                        <p>الحساب التجريبي جاهز للاستخدام</p>
+                        <button onclick="loginWithTestAccount()" 
+                                style="background: #3498db; color: white; border: none; padding: 12px; 
+                                       border-radius: 8px; width: 100%; margin-top: 10px; cursor: pointer;">
+                            <i class="fas fa-sign-in-alt"></i> تسجيل الدخول بهذا الحساب
+                        </button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                alert(`❌ خطأ في التسجيل: ${error.message}`);
             }
         }
         
-        // ========== عند تحميل الصفحة ==========
-        window.addEventListener('load', () => {
-            console.log('🚀 تطبيق سوق دير الزور جاهز للعمل!');
-            
-            // إذا كان يعمل كتطبيق مثبت
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                console.log('📱 يعمل كتطبيق PWA مثبت');
+        async function loginWithTestAccount() {
+            try {
+                await firebase.auth().signInWithEmailAndPassword('test_@souq-dier.com', '123456');
+                alert('✅ تم تسجيل الدخول!');
+            } catch (error) {
+                alert(`❌ خطأ في تسجيل الدخول: ${error.message}`);
             }
-        });
+        }
         
-        // ========== تأكيد الخروج ==========
-        window.addEventListener('beforeunload', (e) => {
-            if (document.querySelector('.install-box').style.display === 'block') {
-                e.preventDefault();
-                e.returnValue = 'هل تريد مغادرة التطبيق؟';
-            }
-        });
-    </script><script>
-// كود تأكيد الاتصال - يعمل تلقائيًا عند فتح الموقع
-setTimeout(() => {
-  let status = "❌ غير متصل";
-  let color = "#e74c3c";
-  
-  if (window.firebase && firebase.app) {
-    try {
-      const projectId = firebase.app().options.projectId;
-      status = `✅ متصل بـ: ${projectId}`;
-      color = "#2ecc71";
-      
-      // عرض إشعار على الصفحة نفسها (بدون تنبيه مزعج)
-      const div = document.createElement('div');
-      div.innerHTML = `
-        <div style="position:fixed; top:10px; right:10px; background:${color}; 
-                    color:white; padding:12px; border-radius:8px; z-index:9999;
-                    font-size:14px; box-shadow:0 3px 10px rgba(0,0,0,0.2);">
-          <strong>${status}</strong>
-          <div style="font-size:12px; margin-top:5px;">
-            🔐 Auth | 🗄️ Firestore | 📦 Storage
-          </div>
-        </div>
-      `;
-      document.body.appendChild(div);
-      
-      console.log("🔥 Firebase Connected! Project:", projectId);
-    } catch(e) {
-      status = "❌ خطأ: " + e.message;
-    }
-  }
-  
-  // إذا أردت تنبيهًا (اختياري)
-  // alert(status);
-}, 2000);
-</script><!-- مكتبات Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-<script src="firebase-config.js"></script>
-<!-- زر اختبار Firebase -->
-<button onclick="testFirebase()" style="
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #e74c3c;
-  color: white;
-  padding: 15px 25px;
-  border-radius: 25px;
-  border: none;
-  font-size: 16px;
-  font-weight: bold;
-  z-index: 10000;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-">
-  🔥 اختبار الاتصال
-</button>
-
-<script>
-function testFirebase() {
-  if (window.firebase && firebase.app) {
-    const projectId = firebase.app().options.projectId;
-    
-    // إنشاء رسالة نجاح
-    const msg = document.createElement('div');
-    msg.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #27ae60;
-        color: white;
-        padding: 30px;
-        border-radius: 15px;
-        z-index: 10001;
-        text-align: center;
-        max-width: 300px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      ">
-        <div style="font-size: 24px; margin-bottom: 10px;">✅</div>
-        <div style="font-weight: bold; font-size: 18px;">نجاح الاتصال!</div>
-        <div style="margin: 15px 0; font-size: 14px;">المشروع: ${projectId}</div>
-        <button onclick="this.parentElement.parentElement.remove()" 
-                style="background: white; color: #27ae60; border: none; padding: 8px 20px; border-radius: 20px;">
-          تم
-        </button>
-      </div>
-    `;
-    document.body.appendChild(msg);
-    
-  } else {
-    alert("❌ لم يتم تحميل Firebase\nتحقق من الأخطاء في المتصفح");
-  }
-}
-</script>
+        // ====================
+        // 📞 التواصل مع البائع
+        // ====================
+        function contactSeller(productName, price) {
+            alert(`
+                📞 تواصل مع البائع
+                
+                المنتج: ${productName}
+                السعر: $${price}
+                
+                رقم البائع: 0935-XXX-XXX
+                اسم البائع: أبو محمد
+                
+                يمكنك الاتصال الآن أو حفظ الرقم
+            `);
+        }
+        
+        // ====================
+        // 🔄 فحص تلقائي عند التحميل
+        // ====================
+        window.onload = function() {
+            setTimeout(() => {
+                if (typeof firebase !== 'undefined') {
+                    console.log('🔥 Firebase detected on page load');
+                }
+            }, 2000);
+        };
+    </script>
 </body>
 </html>
