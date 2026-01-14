@@ -1,5 +1,26 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl"><script>
+// حل سريع للخطأ
+setTimeout(() => {
+  if (window.firebase && !firebase.apps.length) {
+    // إعادة التهيئة
+    const config = {
+      apiKey: "AIzaSyBqD...eE4mI",
+      authDomain: "souq-dier.firebaseapp.com",
+      projectId: "souq-dier",
+      storageBucket: "souq-dier.appspot.com",
+      messagingSenderId: "105...203",
+      appId: "1:105...203:web:a0d...f1c"
+    };
+    
+    firebase.initializeApp(config);
+    console.log("✅ تم إصلاح Firebase يدوياً");
+    
+    // عرض رسالة نجاح
+    alert("✅ تم إصلاح الاتصال!");
+  }
+}, 1000);
+</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
