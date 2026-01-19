@@ -1,8 +1,7 @@
 // 📁 firebase-config.js
-// إعدادات مشروع Firebase لـ "سوق دير الزور"
-
+// إعدادات Firebase (استخدم إعداداتك من console.firebase.google.com)
 const firebaseConfig = {
-    apiKey: "AIzaSyA2FhsRLX4SMpGhzfI0oq_lArSsPTGHUsY", // ← استبدل بمفتاحك الكامل
+    apiKey: "AIzaSyA2FhsRLX4SMpGhzfI0oq_lArSsPTGHUsY",
     authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
     databaseURL: "https://souq-aldeir-4ed7b.firebaseio.com",
     projectId: "souq-aldeir-4ed7b",
@@ -14,54 +13,52 @@ const firebaseConfig = {
 // تهيئة Firebase
 let firebaseApp, firestoreDb;
 
-try {
-    // تحميل مكتبات Firebase أولاً
-    if (typeof firebase !== 'undefined') {
-        if (!firebase.apps.length) {
+// تحميل Firebase عند توفر المكتبات
+function initFirebase() {
+    try {
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebaseApp = firebase.initializeApp(firebaseConfig);
-            console.log("✅ Firebase تم تهيئته بنجاح!");
-        } else {
-            firebaseApp = firebase.app();
-            console.log("✅ Firebase مثبت مسبقاً");
+            console.log("✅ Firebase مهيأ");
+            firestoreDb = firebase.firestore();
+            return true;
         }
-        
-        firestoreDb = firebase.firestore();
-        console.log("🚀 Firestore جاهز للاستخدام");
-    } else {
-        console.warn("⚠️ مكتبات Firebase غير محملة بعد");
+        return false;
+    } catch (error) {
+        console.warn("⚠️ وضع تجريبي بدون Firebase");
+        return false;
     }
-} catch (error) {
-    console.error("❌ خطأ في تهيئة Firebase:", error);
 }
 
 // دوال العمل مع Firebase
 window.FirebaseApp = {
+    init: initFirebase,
     config: firebaseConfig,
-    db: firestoreDb,
-    app: firebaseApp,
     
-    // دالة التحقق من الاتصال
-    async checkConnection() {
+    async getCategories() {
+        if (!firestoreDb) return { success: false, categories: [] };
         try {
-            if (!this.db) return { connected: false, error: "Firestore غير مهيأ" };
-            
-            const startTime = Date.now();
-            await this.db.collection("_test").limit(1).get();
-            const endTime = Date.now();
-            
-            return {
-                connected: true,
-                responseTime: endTime - startTime,
-                message: "الاتصال بقاعدة البيانات ناجح"
-            };
+            const snapshot = await firestoreDb.collection('categories').get();
+            const categories = [];
+            snapshot.forEach(doc => categories.push({ id: doc.id, ...doc.data() }));
+            return { success: true, categories };
         } catch (error) {
-            return {
-                connected: false,
-                error: error.message,
-                message: "فشل الاتصال بقاعدة البيانات"
-            };
+            return { success: false, categories: [] };
+        }
+    },
+    
+    async getAds() {
+        if (!firestoreDb) return { success: false, ads: [] };
+        try {
+            const snapshot = await firestoreDb.collection('ads')
+                .where('status', '==', 'active')
+                .orderBy('createdAt', 'desc')
+                .limit(50)
+                .get();
+            const ads = [];
+            snapshot.forEach(doc => ads.push({ id: doc.id, ...doc.data() }));
+            return { success: true, ads };
+        } catch (error) {
+            return { success: false, ads: [] };
         }
     }
 };
-
-console.log("🎯 إعدادات Firebase جاهزة لسوق دير الزور");
