@@ -5,934 +5,573 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سوق دير الزور - منصة الإعلانات المبوبة</title>
     
-    <!-- روابط خارجية -->const firebaseConfig = {
-    apiKey: "AIzaSyA2FhsRIX4SMpGhzflOoq_IArSsPTGHUsY",
-    authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
-    projectId: "souq-aldeir-4ed7b",
-    storageBucket: "souq-aldeir-4ed7b.firebasestorage.app",
-    messagingSenderId: "925621854708",
-    appId: "1:925621854708:web:97c1b7718cc6ea25be99a1",
-    measurementId: "G-XT1Y4WHXEO"
-};
+    <!-- مكتبات Firebase (للمستقبل) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
     
     <style>
-        /* ========== إعدادات عامة ========== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* أساسيات */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; color: #333; }
         
-        body {
-            font-family: 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-            color: #333;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        
-        /* ========== الهيدر ========== */
-        .main-header {
-            background: white;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            padding: 15px 0;
-        }
-        
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo-icon {
-            font-size: 2.2rem;
-            color: #27ae60;
-        }
-        
-        .logo-text {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #2c3e50;
-        }
-        
-        .tagline {
-            color: #7f8c8d;
-            font-size: 0.95rem;
-            margin-top: 3px;
-        }
-        
-        /* ========== أزرار المستخدم ========== */
-        .auth-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .auth-btn {
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            font-family: 'Cairo', sans-serif;
-        }
-        
-        .login-btn {
-            background: white;
-            color: #27ae60;
-            border: 2px solid #27ae60;
-        }
-        
-        .login-btn:hover {
-            background: #f0f9f0;
-            transform: translateY(-2px);
-        }
-        
-        .signup-btn {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        /* الهيدر */
+        .header {
+            background: linear-gradient(135deg, #1a237e, #283593);
             color: white;
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
+        .logo { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
         
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            display: none; /* مخفي افتراضياً */
-        }
-        
-        .user-email {
-            background: #f8f9fa;
-            padding: 8px 16px;
-            border-radius: 20px;
-            color: #2c3e50;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        
-        .logout-btn {
-            background: #e74c3c;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.3s;
-        }
-        
-        .logout-btn:hover {
-            background: #c0392b;
-        }
-        
-        /* ========== النوافذ المنبثقة ========== */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            display: none; /* مخفي افتراضياً */
-        }
-        
-        .modal {
+        /* شريط الحالة */
+        .status-bar {
             background: white;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 420px;
-            padding: 30px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-            animation: modalSlide 0.4s ease;
-        }
-        
-        @keyframes modalSlide {
-            from { transform: translateY(-30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-        
-        .modal-title {
-            font-size: 1.6rem;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            color: #95a5a6;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        
-        .close-modal:hover {
-            color: #e74c3c;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e0e6ed;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-family: 'Cairo', sans-serif;
-            transition: border 0.3s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #27ae60;
-        }
-        
-        .submit-btn {
-            width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
-            border: none;
+            margin: 15px;
             border-radius: 10px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-            font-family: 'Cairo', sans-serif;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
-        }
-        
-        .form-footer {
             text-align: center;
-            margin-top: 20px;
-            color: #7f8c8d;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        .switch-form {
-            color: #27ae60;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: underline;
+        .status-dot {
+            width: 12px; height: 12px; border-radius: 50%; display: inline-block;
         }
+        .connected { background: #4CAF50; }
+        .disconnected { background: #f44336; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
-        .error-message {
-            background: #ffeaea;
-            color: #e74c3c;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-        }
-        
-        /* ========== المحتوى الرئيسي ========== */
-        .main-container {
+        /* الفئات */
+        .categories {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
+            margin: 30px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
         }
-        
-        .section-title {
-            font-size: 1.8rem;
-            color: #2c3e50;
-            margin: 40px 0 25px;
-            padding-right: 15px;
-            border-right: 5px solid #27ae60;
-            position: relative;
-        }
-        
-        .section-title i {
-            margin-left: 10px;
-            color: #27ae60;
-        }
-        
-        /* ========== الفئات ========== */
         .categories-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 20px;
-            margin-bottom: 50px;
+            margin-top: 20px;
         }
-        
         .category-card {
-            background: white;
-            border-radius: 16px;
+            background: #f8f9fa;
             padding: 25px 15px;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s ease;
             cursor: pointer;
+            transition: all 0.3s;
             border: 2px solid transparent;
         }
-        
         .category-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-            border-color: #27ae60;
+            background: white;
+            border-color: #FF9800;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
+        .category-icon { font-size: 2.8rem; margin-bottom: 15px; }
         
-        .category-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            display: block;
-            height: 60px;
+        /* الإعلانات */
+        .ads {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
         }
-        
-        .category-name {
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-        }
-        
-        .category-count {
-            background: #f1f8ff;
-            color: #3498db;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            display: inline-block;
-        }
-        
-        /* ========== الإعلانات ========== */
         .ads-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px;
-            margin-bottom: 60px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
         }
-        
         .ad-card {
             background: white;
-            border-radius: 18px;
+            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
-            transition: all 0.4s ease;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.09);
+            transition: all 0.3s;
+            border: 1px solid #eee;
         }
-        
         .ad-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         }
-        
         .ad-image {
-            height: 200px;
             width: 100%;
+            height: 200px;
             object-fit: cover;
+            background: linear-gradient(135deg, #667eea, #764ba2);
         }
+        .ad-content { padding: 20px; }
+        .ad-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #1a237e; }
+        .ad-price { color: #FF5722; font-size: 1.6rem; font-weight: bold; margin: 10px 0; }
         
-        .ad-content {
-            padding: 25px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
+        /* الأزرار */
+        .btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
         }
+        .btn:hover { background: #F57C00; transform: translateY(-2px); }
         
-        .ad-category {
-            color: #3498db;
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
+        /* مودال نشر إعلان */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
         }
-        
-        .ad-category i {
-            margin-left: 8px;
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 15px;
+            overflow: hidden;
         }
-        
-        .ad-title {
-            font-size: 1.35rem;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-        
-        .ad-description {
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.7;
-            flex-grow: 1;
-        }
-        
-        .ad-price {
-            color: #27ae60;
-            font-size: 1.9rem;
-            font-weight: 800;
-            margin: 20px 0;
-            direction: ltr;
-            text-align: left;
-        }
-        
-        .ad-meta {
+        .modal-header {
+            background: #1a237e;
+            color: white;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-top: 20px;
-            border-top: 1px solid #f0f0f0;
-            color: #777;
-            font-size: 0.9rem;
         }
+        .modal-body { padding: 25px; }
         
-        .ad-location {
-            display: flex;
-            align-items: center;
-        }
-        
-        .ad-location i {
-            margin-left: 6px;
-            color: #e74c3c;
-        }
-        
-        /* ========== الفوتر ========== */
+        /* الفوتر */
         footer {
-            background: #2c3e50;
+            background: #1a237e;
             color: white;
             text-align: center;
             padding: 30px 20px;
-            margin-top: 60px;
+            margin-top: 50px;
         }
         
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        /* ========== التجاوب مع الشاشات ========== */
+        /* متجاوب */
         @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            
-            .categories-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 15px;
-            }
-            
-            .ads-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 20px;
-            }
-            
-            .logo-text {
-                font-size: 1.5rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .categories-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .ads-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .auth-section {
-                flex-direction: column;
-                width: 100%;
-            }
-            
-            .auth-btn {
-                width: 100%;
-            }
+            .categories-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            .ads-grid { grid-template-columns: 1fr; }
+            .logo { font-size: 2rem; }
         }
     </style>
 </head>
 <body>
-    <!-- ========== الهيدر مع أزرار المستخدم ========== -->
-    <header class="main-header">
-        <div class="header-container">
-            <!-- الشعار -->
-            <div class="logo">
-                <div class="logo-icon">🏪</div>
-                <div>
-                    <div class="logo-text">سوق دير الزور</div>
-                    <div class="tagline">منصة الإعلانات المبوبة الأولى في المنطقة</div>
-                </div>
-            </div>
-            
-            <!-- أزرار المستخدم -->
-            <div class="auth-section">
-                <!-- تظهر عندما يكون المستخدم غير مسجل -->
-                <div id="guest-buttons">
-                    <button class="auth-btn login-btn" onclick="showLoginModal()">
-                        <i class="fas fa-sign-in-alt"></i> تسجيل دخول
-                    </button>
-                    <button class="auth-btn signup-btn" onclick="showSignupModal()">
-                        <i class="fas fa-user-plus"></i> إنشاء حساب
-                    </button>
-                </div>
-                
-                <!-- تظهر عندما يكون المستخدم مسجل -->
-                <div id="user-info" class="user-info">
-                    <span class="user-email" id="user-email-display"></span>
-                    <button class="logout-btn" onclick="logoutUser()">
-                        <i class="fas fa-sign-out-alt"></i> خروج
-                    </button>
-                </div>
-            </div>
+    <!-- حالة الاتصال -->
+    <div class="status-bar">
+        <div>
+            <span class="status-dot disconnected" id="statusDot"></span>
+            <span id="statusText">🔌 وضع تجريبي - جاري الاتصال...</span>
         </div>
-    </header>
-
-    <!-- ========== نافذة تسجيل الدخول ========== -->
-    <div id="login-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h2>
-                <button class="close-modal" onclick="hideLoginModal()">&times;</button>
-            </div>
-            
-            <div id="login-error" class="error-message"></div>
-            
-            <form id="login-form" onsubmit="return loginUser(event)">
-                <div class="form-group">
-                    <label class="form-label">البريد الإلكتروني</label>
-                    <input type="email" id="login-email" class="form-input" placeholder="example@email.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">كلمة المرور</label>
-                    <input type="password" id="login-password" class="form-input" placeholder="أدخل كلمة المرور" required>
-                </div>
-                
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-sign-in-alt"></i> دخول إلى الحساب
-                </button>
-            </form>
-            
-            <div class="form-footer">
-                ليس لديك حساب؟ 
-                <span class="switch-form" onclick="switchToSignup()">أنشئ حساب جديد</span>
-            </div>
-        </div>
+        <button class="btn" onclick="checkFirebase()">🔗 اختبار الاتصال</button>
     </div>
-
-    <!-- ========== نافذة إنشاء حساب ========== -->
-    <div id="signup-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h2>
-                <button class="close-modal" onclick="hideSignupModal()">&times;</button>
-            </div>
-            
-            <div id="signup-error" class="error-message"></div>
-            
-            <form id="signup-form" onsubmit="return signupUser(event)">
-                <div class="form-group">
-                    <label class="form-label">البريد الإلكتروني</label>
-                    <input type="email" id="signup-email" class="form-input" placeholder="example@email.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">كلمة المرور</label>
-                    <input type="password" id="signup-password" class="form-input" placeholder="6 أحرف على الأقل" minlength="6" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">تأكيد كلمة المرور</label>
-                    <input type="password" id="signup-confirm" class="form-input" placeholder="أعد إدخال كلمة المرور" required>
-                </div>
-                
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-user-check"></i> إنشاء الحساب
-                </button>
-            </form>
-            
-            <div class="form-footer">
-                لديك حساب بالفعل؟ 
-                <span class="switch-form" onclick="switchToLogin()">سجل دخول</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== المحتوى الرئيسي ========== -->
-    <main class="main-container">
-        <!-- قسم الفئات -->
-        <h2 class="section-title"><i class="fas fa-search"></i> تصفح الفئات</h2>
-        <div class="categories-grid">
-            <!-- فئة السيارات -->
-            <div class="category-card" onclick="filterCategory('سيارات ومركبات')">
-                <span class="category-icon">🚗</span>
-                <div class="category-name">سيارات ومركبات</div>
-                <span class="category-count">3 إعلان</span>
-            </div>
-            
-            <!-- فئة العقارات -->
-            <div class="category-card" onclick="filterCategory('عقارات وشقق')">
-                <span class="category-icon">🏠</span>
-                <div class="category-name">عقارات وشقق</div>
-                <span class="category-count">2 إعلان</span>
-            </div>
-            
-            <!-- فئة الإلكترونيات -->
-            <div class="category-card" onclick="filterCategory('إلكترونيات')">
-                <span class="category-icon">💻</span>
-                <div class="category-name">إلكترونيات</div>
-                <span class="category-count">4 إعلان</span>
-            </div>
-            
-            <!-- فئة الهواتف -->
-            <div class="category-card" onclick="filterCategory('هواتف وأرقام')">
-                <span class="category-icon">📱</span>
-                <div class="category-name">هواتف وأرقام</div>
-                <span class="category-count">5 إعلان</span>
-            </div>
-            
-            <!-- فئة الوظائف -->
-            <div class="category-card" onclick="filterCategory('وظائف وخدمات')">
-                <span class="category-icon">💼</span>
-                <div class="category-name">وظائف وخدمات</div>
-                <span class="category-count">6 إعلان</span>
-            </div>
-            
-            <!-- فئة الحيوانات -->
-            <div class="category-card" onclick="filterCategory('حيوانات وطيور')">
-                <span class="category-icon">🐕</span>
-                <div class="category-name">حيوانات وطيور</div>
-                <span class="category-count">2 إعلان</span>
-            </div>
-            
-            <!-- فئة الأثاث -->
-            <div class="category-card" onclick="filterCategory('أثاث ومنزل')">
-                <span class="category-icon">🛋️</span>
-                <div class="category-name">أثاث ومنزل</div>
-                <span class="category-count">0 إعلان</span>
-            </div>
-        </div>
-        
-        <!-- قسم الإعلانات -->
-        <h2 class="section-title"><i class="fas fa-bullhorn"></i> أحدث الإعلانات</h2>
-        <div class="ads-grid">
-            <!-- إعلان 1 -->
-            <div class="ad-card">
-                <img src="https://picsum.photos/seed/car1/600/400" alt="سيارة" class="ad-image">
-                <div class="ad-content">
-                    <div class="ad-category"><i class="fas fa-car"></i> سيارات ومركبات</div>
-                    <h3 class="ad-title">سيارة تويوتا كامري 2020 للبيع</h3>
-                    <p class="ad-description">سيارة بحالة ممتازة، موديل 2020، لون أبيض، كامل المواصفات، بدون حوادث، صيانة دورية في الوكالة. أميال: 45000 كم، جير أوتوماتيك، تكييف، فتحة سقف.</p>
-                    <div class="ad-price">$18,500</div>
-                    <div class="ad-meta">
-                        <span class="ad-location"><i class="fas fa-map-marker-alt"></i> دير الزور</span>
-                        <span>منذ 3 ساعات</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- إعلان 2 -->
-            <div class="ad-card">
-                <img src="https://picsum.photos/seed/apartment1/600/400" alt="شقة" class="ad-image">
-                <div class="ad-content">
-                    <div class="ad-category"><i class="fas fa-home"></i> عقارات وشقق</div>
-                    <h3 class="ad-title">شقة للايجار في حي الزهور</h3>
-                    <p class="ad-description">شقة طابق ثالث، 3 غرف نوم، صالة كبيرة، مطبخ مجهز، 2 حمام، تكييف مركزي، موقف سيارات. المساحة: 150م²، تشطيب سوبر لوكس، شارع هاديء.</p>
-                    <div class="ad-price">$350 <small>/شهر</small></div>
-                    <div class="ad-meta">
-                        <span class="ad-location"><i class="fas fa-map-marker-alt"></i> حي الزهور</span>
-                        <span>منذ يوم</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- إعلان 3 -->
-            <div class="ad-card">
-                <img src="https://picsum.photos/seed/laptop1/600/400" alt="لابتوب" class="ad-image">
-                <div class="ad-content">
-                    <div class="ad-category"><i class="fas fa-laptop"></i> إلكترونيات</div>
-                    <h3 class="ad-title">لابتوب ديل جديد للبيع</h3>
-                    <p class="ad-description">لابتوب ديل اكس بي اس 13، معالج i7 الجيل العاشر، ذاكرة 16 جيجا، شاشة لمس 4K، بطارية جديدة، ضمان سنة. SSD 512 جيجا، كرت شاشة مدمج، وزن خفيف.</p>
-                    <div class="ad-price">$1,200</div>
-                    <div class="ad-meta">
-                        <span class="ad-location"><i class="fas fa-map-marker-alt"></i> دير الزور</span>
-                        <span>منذ يومين</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- إعلان 4 -->
-            <div class="ad-card">
-                <img src="https://picsum.photos/seed/iphone1/600/400" alt="هاتف" class="ad-image">
-                <div class="ad-content">
-                    <div class="ad-category"><i class="fas fa-mobile-alt"></i> هواتف وأرقام</div>
-                    <h3 class="ad-title">آيفون 13 بلس - 128 جيجا</h3>
-                    <p class="ad-description">آيفون 13 بلس، سعة 128 جيجا، لون أزرق، شاشة سليمة، البطارية 89%. مع الملحقات الأصلية وضمان.</p>
-                    <div class="ad-price">$700</div>
-                    <div class="ad-meta">
-                        <span class="ad-location"><i class="fas fa-map-marker-alt"></i> الحسكة</span>
-                        <span>منذ 5 ساعات</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- إعلان 5 -->
-            <div class="ad-card">
-                <img src="https://picsum.photos/seed/service1/600/400" alt="خدمة" class="ad-image">
-                <div class="ad-content">
-                    <div class="ad-category"><i class="fas fa-briefcase"></i> وظائف وخدمات</div>
-                    <h3 class="ad-title">خدمة نقل عفش محترفة</h3>
-                    <p class="ad-description">نقدم خدمة نقل عفش محترفة مع التغليف والتركيب. أسعار مناسبة، فريق مدرب، خدمة سريعة في جميع أنحاء المحافظة.</p>
-                    <div class="ad-price">$80 <small>/عملية</small></div>
-                    <div class="ad-meta">
-                        <span class="ad-location"><i class="fas fa-map-marker-alt"></i> دير الزور</span>
-                        <span>منذ 3 أيام</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- إعلان 6 -->
-            <div class="ad-card">
-                <img src="https://picsum.photos/seed/cat1/600/400" alt="حيوان" class="ad-image">
-                <div class="ad-content">
-                    <div class="ad-category"><i class="fas fa-paw"></i> حيوانات وطيور</div>
-                    <h3 class="ad-title">قطط شيرازي صغيرة للبيع</h3>
-                    <p class="ad-description">قطط شيرازي صغيرة، عمر 3 أشهر، مكتملة التطعيمات، هادئة ومنزلية. متوفر ذكور وإناث.</p>
-                    <div class="ad-price">$100 <small>/للقطة</small></div>
-                    <div class="ad-meta">
-                        <span class="ad-location"><i class="fas fa-map-marker-alt"></i> دير الزور</span>
-                        <span>منذ أسبوع</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
     
-    <!-- ========== الفوتر ========== -->
-    <footer>
-        <div class="footer-content">
-            <p style="font-size: 1.1rem; margin-bottom: 10px;"><strong>سوق دير الزور</strong></p>
-            <p>منصة الإعلانات المبوبة الأولى في منطقة دير الزور</p>
-            <p style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">© 2023 جميع الحقوق محفوظة</p>
+    <!-- الهيدر -->
+    <div class="header">
+        <div class="logo">🏪 سوق دير الزور</div>
+        <p>منصة الإعلانات المبوبة الأولى في المنطقة</p>
+        <div style="margin-top: 20px;">
+            <button class="btn" onclick="openAdModal()">➕ نشر إعلان</button>
+            <button class="btn" onclick="refreshData()">🔄 تحديث</button>
         </div>
+    </div>
+    
+    <!-- الفئات -->
+    <div class="categories">
+        <h2 style="color: #1a237e; margin-bottom: 20px; text-align: center;">🔍 الفئات الرئيسية</h2>
+        <div class="categories-grid" id="categoriesContainer">
+            جاري تحميل الفئات...
+        </div>
+    </div>
+    
+    <!-- الإعلانات -->
+    <div class="ads">
+        <h2 style="color: #1a237e; margin-bottom: 20px; text-align: center;">📢 أحدث الإعلانات</h2>
+        <div class="ads-grid" id="adsContainer">
+            جاري تحميل الإعلانات...
+        </div>
+    </div>
+    
+    <!-- مودال نشر إعلان -->
+    <div class="modal" id="adModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>نشر إعلان جديد</h2>
+                <button onclick="closeModal()" style="background:none; border:none; color:white; font-size:1.5rem;">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="adForm">
+                    <input type="text" placeholder="عنوان الإعلان" id="title" required style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:8px;">
+                    <textarea placeholder="وصف مفصل..." id="description" required style="width:100%; padding:12px; margin:10px 0; height:120px; border:1px solid #ddd; border-radius:8px;"></textarea>
+                    <input type="number" placeholder="السعر ($)" id="price" required style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:8px;">
+                    <select id="category" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:8px;">
+                        <option value="">اختر الفئة</option>
+                    </select>
+                    <input type="tel" placeholder="رقم التواصل" id="phone" required style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:8px;">
+                    <button type="submit" class="btn" style="width:100%; padding:15px; font-size:1.1rem;">✅ نشر الإعلان</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الفوتر -->
+    <footer>
+        <p>© 2024 سوق دير الزور. جميع الحقوق محفوظة.</p>
+        <p style="margin-top: 10px; opacity: 0.9;">نسخة: منصة إعلانات مبوبة شاملة</p>
+        <p style="margin-top: 5px;">souq-aldeir.vercel.app</p>
     </footer>
 
-    <!-- ========== JavaScript الكود البرمجي ========== -->
     <script>
-        // 🔥 تكوين Firebase - استبدل هذه القيم بقيم مشروعك الحقيقي
-        const firebaseConfig = {
-            apiKey: "AIzaSyAEXAMPLEEXAMPLEEXAMPLE123456789",
-            authDomain: "souq-aldeir.firebaseapp.com",
-            projectId: "souq-aldeir",
-            storageBucket: "souq-aldeir.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef1234567890"
+        // ==================== البيانات الأساسية ====================
+        const defaultData = {
+            categories: [
+                { id: "vehicles", name: "🚗 سيارات ومركبات", icon: "🚗", color: "#FF6B6B", count: 3 },
+                { id: "realestate", name: "🏠 عقارات وشقق", icon: "🏠", color: "#4ECDC4", count: 2 },
+                { id: "electronics", name: "💻 إلكترونيات", icon: "💻", color: "#45B7D1", count: 4 },
+                { id: "phones", name: "📱 هواتف وأرقام", icon: "📱", color: "#96CEB4", count: 5 },
+                { id: "jobs", name: "💼 وظائف وخدمات", icon: "💼", color: "#FFEAA7", count: 6 }
+            ],
+            ads: [
+                {
+                    id: 1,
+                    title: "سيارة تويوتا كامري 2020 للبيع",
+                    description: "سيارة بحالة ممتازة، موديل 2020، لون أبيض، كامل المواصفات، بدون حوادث، صيانة دورية في الوكالة.",
+                    price: 18500,
+                    category: "vehicles",
+                    location: "دير الزور",
+                    seller: "أحمد محمد",
+                    phone: "0991234567",
+                    date: "منذ 3 ساعات",
+                    views: 124,
+                    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                },
+                {
+                    id: 2,
+                    title: "شقة للايجار في حي الزهور",
+                    description: "شقة طابق ثالث، 3 غرف نوم، صالة كبيرة، مطبخ مجهز، 2 حمام، تكييف مركزي، موقف سيارات.",
+                    price: 350,
+                    category: "realestate",
+                    location: "الحسكة",
+                    seller: "محمد علي",
+                    phone: "0947654321",
+                    date: "منذ يوم",
+                    views: 89,
+                    image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+                }
+            ],
+            firebaseConnected: false
         };
-        
-        // 💡 ملاحظة: سأعطيك كيفية الحصول على هذه القيم في الخطوات التالية
-        
-        // تهيئة Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        
-        // ========== دوال التحكم بالنوافذ المنبثقة ==========
-        function showLoginModal() {
-            document.getElementById('login-modal').style.display = 'flex';
-            document.getElementById('login-error').style.display = 'none';
-        }
-        
-        function hideLoginModal() {
-            document.getElementById('login-modal').style.display = 'none';
-            document.getElementById('login-form').reset();
-        }
-        
-        function showSignupModal() {
-            document.getElementById('signup-modal').style.display = 'flex';
-            document.getElementById('signup-error').style.display = 'none';
-        }
-        
-        function hideSignupModal() {
-            document.getElementById('signup-modal').style.display = 'none';
-            document.getElementById('signup-form').reset();
-        }
-        
-        function switchToSignup() {
-            hideLoginModal();
-            setTimeout(showSignupModal, 300);
-        }
-        
-        function switchToLogin() {
-            hideSignupModal();
-            setTimeout(showLoginModal, 300);
-        }
-        
-        // إغلاق النافذة عند النقر خارجها
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                hideLoginModal();
-                hideSignupModal();
-            }
-        }
-        
-        // ========== دوال المصادقة مع Firebase ==========
-        async function loginUser(event) {
-            event.preventDefault();
+
+        // ==================== تهيئة التطبيق ====================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log("🚀 بدء تشغيل سوق دير الزور");
             
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const errorElement = document.getElementById('login-error');
+            // محاولة تهيئة Firebase
+            await initializeFirebase();
             
-            try {
-                errorElement.style.display = 'none';
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                console.log('✅ تم تسجيل الدخول:', userCredential.user.email);
-                hideLoginModal();
-            } catch (error) {
-                console.error('❌ خطأ في تسجيل الدخول:', error);
-                errorElement.textContent = getAuthErrorMessage(error.code);
-                errorElement.style.display = 'block';
-            }
-        }
-        
-        async function signupUser(event) {
-            event.preventDefault();
+            // تحميل البيانات
+            await loadData();
             
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const confirmPassword = document.getElementById('signup-confirm').value;
-            const errorElement = document.getElementById('signup-error');
-            
-            // التحقق من تطابق كلمات المرور
-            if (password !== confirmPassword) {
-                errorElement.textContent = '⚠️ كلمتا المرور غير متطابقتين';
-                errorElement.style.display = 'block';
-                return false;
-            }
-            
-            try {
-                errorElement.style.display = 'none';
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                console.log('✅ تم إنشاء الحساب:', userCredential.user.email);
-                
-                // يمكنك هنا إضافة المستخدم إلى قاعدة البيانات
-                await db.collection('users').doc(userCredential.user.uid).set({
-                    email: email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    adsCount: 0
-                });
-                
-                hideSignupModal();
-            } catch (error) {
-                console.error('❌ خطأ في إنشاء الحساب:', error);
-                errorElement.textContent = getAuthErrorMessage(error.code);
-                errorElement.style.display = 'block';
-            }
-        }
-        
-        async function logoutUser() {
-            try {
-                await auth.signOut();
-                console.log('✅ تم تسجيل الخروج');
-            } catch (error) {
-                console.error('❌ خطأ في تسجيل الخروج:', error);
-            }
-        }
-        
-        // ========== مراقبة حالة المستخدم ==========
-        auth.onAuthStateChanged((user) => {
-            const guestButtons = document.getElementById('guest-buttons');
-            const userInfo = document.getElementById('user-info');
-            const userEmailDisplay = document.getElementById('user-email-display');
-            
-            if (user) {
-                // المستخدم مسجل دخوله
-                guestButtons.style.display = 'none';
-                userInfo.style.display = 'flex';
-                userEmailDisplay.textContent = user.email;
-                console.log('👤 المستخدم الحالي:', user.email);
-            } else {
-                // لا يوجد مستخدم مسجل
-                guestButtons.style.display = 'flex';
-                userInfo.style.display = 'none';
-                console.log('🚫 لا يوجد مستخدم مسجل');
-            }
+            // إعداد الأحداث
+            setupEvents();
         });
-        
-        // ========== دوال مساعدة ==========
-        function getAuthErrorMessage(errorCode) {
-            const messages = {
-                'auth/invalid-email': 'البريد الإلكتروني غير صالح',
-                'auth/user-disabled': 'هذا الحساب معطل',
-                'auth/user-not-found': 'لا يوجد حساب بهذا البريد',
-                'auth/wrong-password': 'كلمة المرور غير صحيحة',
-                'auth/email-already-in-use': 'البريد الإلكتروني مستخدم بالفعل',
-                'auth/weak-password': 'كلمة المرور ضعيفة (6 أحرف على الأقل)',
-                'auth/network-request-failed': 'خطأ في الاتصال بالإنترنت'
-            };
-            return messages[errorCode] || 'حدث خطأ غير معروف. حاول مرة أخرى.';
-        }
-        
-        function filterCategory(categoryName) {
-            alert(`سيتم عرض إعلانات فئة: ${categoryName}\n\nهذه الوظيفة قيد التطوير!`);
-        }
-        
-        // ========== تهيئة الصفحة ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 موقع سوق دير الزور جاهز!');
-            
-            // إضافة تأثيرات للبطاقات عند التحميل
-            setTimeout(() => {
-                document.querySelectorAll('.category-card, .ad-card').forEach((card, index) => {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(20px)';
+
+        // ==================== إدارة Firebase ====================
+        async function initializeFirebase() {
+            try {
+                if (window.FirebaseApp && FirebaseApp.init()) {
+                    console.log("✅ Firebase متاح");
+                    updateStatus(true, "✅ متصل بقاعدة البيانات");
                     
-                    setTimeout(() => {
-                        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, 100 * index);
-                });
-            }, 300);
-        });
+                    // اختبار الاتصال
+                    const test = await testFirebaseConnection();
+                    if (test.connected) {
+                        defaultData.firebaseConnected = true;
+                    }
+                } else {
+                    console.log("⚠️ الوضع التجريبي - بدون قاعدة بيانات");
+                    updateStatus(false, "🔌 وضع تجريبي - البيانات محلية");
+                }
+            } catch (error) {
+                console.warn("❌ فشل تهيئة Firebase:", error);
+                updateStatus(false, "🔌 وضع تجريبي - بدون اتصال");
+            }
+        }
+
+        async function testFirebaseConnection() {
+            try {
+                if (!window.FirebaseApp) return { connected: false };
+                
+                const start = Date.now();
+                const cats = await FirebaseApp.getCategories();
+                const time = Date.now() - start;
+                
+                return {
+                    connected: cats.success,
+                    responseTime: time,
+                    categories: cats.categories?.length || 0
+                };
+            } catch (error) {
+                return { connected: false, error: error.message };
+            }
+        }
+
+        // ==================== تحميل البيانات ====================
+        async function loadData() {
+            try {
+                // محاولة جلب البيانات من Firebase أولاً
+                if (defaultData.firebaseConnected && window.FirebaseApp) {
+                    const [catsResult, adsResult] = await Promise.all([
+                        FirebaseApp.getCategories(),
+                        FirebaseApp.getAds()
+                    ]);
+                    
+                    if (catsResult.success && catsResult.categories.length > 0) {
+                        displayCategories(catsResult.categories);
+                    } else {
+                        displayCategories(defaultData.categories);
+                    }
+                    
+                    if (adsResult.success && adsResult.ads.length > 0) {
+                        displayAds(adsResult.ads);
+                    } else {
+                        displayAds(defaultData.ads);
+                    }
+                } else {
+                    // استخدام البيانات المحلية
+                    displayCategories(defaultData.categories);
+                    displayAds(defaultData.ads);
+                }
+            } catch (error) {
+                console.error("❌ خطأ في تحميل البيانات:", error);
+                // استخدام البيانات الافتراضية في حالة الخطأ
+                displayCategories(defaultData.categories);
+                displayAds(defaultData.ads);
+            }
+        }
+
+        // ==================== عرض الفئات ====================
+        function displayCategories(categories) {
+            const container = document.getElementById('categoriesContainer');
+            const categorySelect = document.getElementById('category');
+            
+            container.innerHTML = '';
+            categorySelect.innerHTML = '<option value="">اختر الفئة</option>';
+            
+            categories.forEach(cat => {
+                // بطاقة الفئة
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `
+                    <div class="category-icon">${cat.icon}</div>
+                    <div style="font-weight: bold; margin: 10px 0;">${cat.name}</div>
+                    <div style="color: #666; font-size: 0.9rem;">${cat.count || 0} إعلان</div>
+                `;
+                card.onclick = () => filterByCategory(cat.id);
+                container.appendChild(card);
+                
+                // خيار الفئة في النموذج
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // ==================== عرض الإعلانات ====================
+        function displayAds(ads) {
+            const container = document.getElementById('adsContainer');
+            
+            if (!ads || ads.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #666;">
+                        <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
+                        <h3>لا توجد إعلانات للعرض</h3>
+                        <p>كن أول من ينشر إعلاناً!</p>
+                        <button class="btn" onclick="openAdModal()" style="margin-top: 20px;">
+                            ➕ نشر أول إعلان
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            ads.forEach(ad => {
+                const category = defaultData.categories.find(c => c.id === ad.category) || 
+                               { name: 'عام', color: '#999' };
+                
+                const card = document.createElement('div');
+                card.className = 'ad-card';
+                card.innerHTML = `
+                    <img src="${ad.image || 'https://via.placeholder.com/500x300/3498db/ffffff?text=إعلان'}" 
+                         class="ad-image" alt="${ad.title}">
+                    <div class="ad-content">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="background: ${category.color}20; color: ${category.color}; 
+                                  padding: 5px 12px; border-radius: 15px; font-size: 0.85rem;">
+                                ${category.name}
+                            </span>
+                            <span style="color: #888; font-size: 0.85rem;">${ad.date || ''}</span>
+                        </div>
+                        <h3 class="ad-title">${ad.title}</h3>
+                        <p style="color: #555; margin-bottom: 15px; line-height: 1.5; height: 60px; overflow: hidden;">
+                            ${ad.description}
+                        </p>
+                        <div class="ad-price">$${ad.price.toLocaleString()}</div>
+                        <div style="display: flex; justify-content: space-between; color: #666; margin-top: 15px; font-size: 0.9rem;">
+                            <span>📍 ${ad.location || 'دير الزور'}</span>
+                            <span>👁️ ${ad.views || 0}</span>
+                        </div>
+                        <button class="btn" onclick="viewAd(${ad.id})" style="width: 100%; margin-top: 15px;">
+                            📞 عرض التفاصيل
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ==================== دوال التحكم ====================
+        function openAdModal() {
+            document.getElementById('adModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('adModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('adForm').reset();
+        }
+
+        async function submitAd(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const price = document.getElementById('price').value;
+            const category = document.getElementById('category').value;
+            const phone = document.getElementById('phone').value;
+            
+            if (!title || !description || !price || !category || !phone) {
+                alert('❌ الرجاء ملء جميع الحقول');
+                return;
+            }
+            
+            // إنشاء إعلان جديد
+            const newAd = {
+                id: defaultData.ads.length + 1,
+                title,
+                description,
+                price: Number(price),
+                category,
+                location: 'دير الزور',
+                seller: 'مستخدم جديد',
+                phone,
+                date: 'الآن',
+                views: 0,
+                image: `https://via.placeholder.com/500x300/3498db/ffffff?text=${encodeURIComponent(title.substring(0, 15))}`
+            };
+            
+            // إضافة إلى القائمة
+            defaultData.ads.unshift(newAd);
+            
+            // تحديث عداد الفئة
+            const cat = defaultData.categories.find(c => c.id === category);
+            if (cat) cat.count++;
+            
+            // إغلاق النافذة وتحديث العرض
+            closeModal();
+            displayAds(defaultData.ads);
+            displayCategories(defaultData.categories);
+            
+            alert(`✅ تم نشر إعلانك "${title}" بنجاح!`);
+        }
+
+        function filterByCategory(categoryId) {
+            const filtered = categoryId ? 
+                defaultData.ads.filter(ad => ad.category === categoryId) : 
+                defaultData.ads;
+            displayAds(filtered);
+        }
+
+        function viewAd(id) {
+            const ad = defaultData.ads.find(a => a.id === id);
+            if (!ad) return;
+            
+            const details = `
+                🏷️ **${ad.title}**
+                
+                📝 ${ad.description}
+                
+                💰 **السعر:** $${ad.price}
+                
+                📍 **الموقع:** ${ad.location}
+                
+                👤 **البائع:** ${ad.seller}
+                
+                📞 **الاتصال:** ${ad.phone}
+                
+                📅 ${ad.date}
+                
+                👁️ ${ad.views} مشاهدة
+            `;
+            
+            alert(details);
+        }
+
+        function refreshData() {
+            loadData();
+            alert('✅ تم تحديث البيانات');
+        }
+
+        async function checkFirebase() {
+            const result = await testFirebaseConnection();
+            if (result.connected) {
+                alert(`✅ متصل بقاعدة البيانات\n\n- ${result.categories} فئة\n- الوقت: ${result.responseTime}ms`);
+                updateStatus(true, "✅ متصل بقاعدة البيانات");
+                defaultData.firebaseConnected = true;
+                loadData(); // إعادة تحميل البيانات من Firebase
+            } else {
+                alert('❌ غير متصل بقاعدة البيانات\n\nالموقع يعمل في الوضع التجريبي');
+                updateStatus(false, "🔌 وضع تجريبي");
+            }
+        }
+
+        function updateStatus(connected, message) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            dot.className = connected ? 'status-dot connected' : 'status-dot disconnected';
+            text.textContent = message;
+        }
+
+        function setupEvents() {
+            // إغلاق المودال بالنقر خارجها
+            window.onclick = function(event) {
+                const modal = document.getElementById('adModal');
+                if (event.target === modal) closeModal();
+            };
+            
+            // إرسال النموذج
+            document.getElementById('adForm').onsubmit = submitAd;
+        }
     </script>
 </body>
 </html>
