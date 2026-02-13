@@ -12,64 +12,79 @@
 </head>
 <body>
     <h1>🔍 اختبار الاتصال بـ Firebase</h1>
-    <div id="result">⏳ جاري الاتصال...</div>
+    <div id="result">⏳ جاري تحميل مكتبات Firebase...</div>
 
-    <!-- Firebase SDK -->
+    <!-- تحميل Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
     <script>
-        // إعدادات Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
-            authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
-            projectId: "souq-aldeir-4ed7b",
-            storageBucket: "souq-aldeir-4ed7b.firebasestorage.app",
-            messagingSenderId: "925621854708",
-            appId: "1:925621854708:web:97c1b7718cc6ea25be99a1"
-        };
+        // ننتظر قليلاً ثم نبدأ
+        setTimeout(function() {
+            const resultDiv = document.getElementById('result');
+            
+            // التحقق من تحميل Firebase
+            if (typeof firebase === 'undefined') {
+                resultDiv.innerHTML = `<div class="error">❌ لم يتم تحميل مكتبات Firebase. تأكد من:</div>
+                    <ul style="text-align:right">
+                        <li>اتصال جهازك بالإنترنت</li>
+                        <li>أن الروابط صحيحة (قد تكون محجوبة في بعض الشبكات)</li>
+                        <li>جرب استخدام متصفح آخر أو شبكة مختلفة</li>
+                    </ul>`;
+                return;
+            }
 
-        // تهيئة Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ تمت تهيئة Firebase');
-        } catch (e) {
-            document.getElementById('result').innerHTML = `<div class="error">❌ فشل تهيئة Firebase: ${e.message}</div>`;
-        }
+            // إعدادات Firebase
+            const firebaseConfig = {
+                apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
+                authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
+                projectId: "souq-aldeir-4ed7b",
+                storageBucket: "souq-aldeir-4ed7b.firebasestorage.app",
+                messagingSenderId: "925621854708",
+                appId: "1:925621854708:web:97c1b7718cc6ea25be99a1"
+            };
 
-        const db = firebase.firestore();
+            try {
+                // تهيئة Firebase
+                firebase.initializeApp(firebaseConfig);
+                const db = firebase.firestore();
 
-        // محاولة قراءة مجموعة categories
-        db.collection('categories').get()
-            .then(snapshot => {
-                if (snapshot.empty) {
-                    document.getElementById('result').innerHTML = `
-                        <div class="error">⚠️ تم الاتصال بنجاح، لكن مجموعة "categories" فارغة.<br> 
-                        أضف مستندات إلى المجموعة من Firebase Console.</div>
-                    `;
-                } else {
-                    let html = '<div class="success">✅ تم الاتصال بنجاح! الفئات الموجودة:</div><ul>';
-                    snapshot.forEach(doc => {
-                        html += `<li><strong>${doc.data().name}</strong> (${doc.id})</li>`;
+                // محاولة قراءة مجموعة categories
+                db.collection('categories').get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            resultDiv.innerHTML = `
+                                <div class="error">⚠️ تم الاتصال بنجاح، لكن مجموعة "categories" فارغة.<br> 
+                                أضف مستندات إلى المجموعة من Firebase Console.</div>
+                            `;
+                        } else {
+                            let html = '<div class="success">✅ تم الاتصال بنجاح! الفئات الموجودة:</div><ul>';
+                            snapshot.forEach(doc => {
+                                html += `<li><strong>${doc.data().name}</strong> (${doc.id})</li>`;
+                            });
+                            html += '</ul>';
+                            resultDiv.innerHTML = html;
+                        }
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = `
+                            <div class="error">
+                                ❌ خطأ في قراءة البيانات:<br>
+                                <pre>${error.message}</pre>
+                                <p>تحقق من:</p>
+                                <ul>
+                                    <li>أن مجموعة "categories" موجودة</li>
+                                    <li>أن قواعد الأمان تسمح بالقراءة (كما فعلنا)</li>
+                                    <li>أن App Check معطل (كما فعلنا)</li>
+                                </ul>
+                            </div>
+                        `;
                     });
-                    html += '</ul>';
-                    document.getElementById('result').innerHTML = html;
-                }
-            })
-            .catch(error => {
-                document.getElementById('result').innerHTML = `
-                    <div class="error">
-                        ❌ خطأ في قراءة البيانات:<br>
-                        <pre>${error.message}</pre>
-                        <p>تحقق من:</p>
-                        <ul>
-                            <li>أن مجموعة "categories" موجودة</li>
-                            <li>أن قواعد الأمان تسمح بالقراءة (كما فعلنا)</li>
-                            <li>أن App Check معطل (كما فعلنا)</li>
-                        </ul>
-                    </div>
-                `;
-            });
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ فشل تهيئة Firebase: ${error.message}</div>`;
+            }
+        }, 1000); // ننتظر ثانية واحدة لتحميل المكتبات
     </script>
 </body>
 </html>
