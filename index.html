@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>اختبار Firebase</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>اختبار Firebase</title>
+    <style>
+        body { font-family: Arial; padding: 20px; text-align: center; direction: rtl; }
+        .success { color: green; background: #e8f5e8; padding: 15px; border-radius: 10px; }
+        .error { color: red; background: #ffebee; padding: 15px; border-radius: 10px; }
+        pre { background: #f5f5f5; padding: 10px; text-align: left; direction: ltr; }
+    </style>
+</head>
 <body>
-    <div id="result">جاري الاتصال بـ Firebase...</div>
+    <h1>🔍 اختبار الاتصال بـ Firebase</h1>
+    <div id="result">⏳ جاري الاتصال...</div>
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
     <script>
+        // إعدادات Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
             authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
@@ -14,21 +28,47 @@
             messagingSenderId: "925621854708",
             appId: "1:925621854708:web:97c1b7718cc6ea25be99a1"
         };
-        const app = firebase.initializeApp(firebaseConfig);
+
+        // تهيئة Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ تمت تهيئة Firebase');
+        } catch (e) {
+            document.getElementById('result').innerHTML = `<div class="error">❌ فشل تهيئة Firebase: ${e.message}</div>`;
+        }
+
         const db = firebase.firestore();
 
+        // محاولة قراءة مجموعة categories
         db.collection('categories').get()
             .then(snapshot => {
                 if (snapshot.empty) {
-                    document.getElementById('result').innerText = '✅ اتصل بنجاح، لكن لا توجد فئات في المجموعة. أضف فئات.';
+                    document.getElementById('result').innerHTML = `
+                        <div class="error">⚠️ تم الاتصال بنجاح، لكن مجموعة "categories" فارغة.<br> 
+                        أضف مستندات إلى المجموعة من Firebase Console.</div>
+                    `;
                 } else {
-                    let names = [];
-                    snapshot.forEach(doc => names.push(doc.data().name));
-                    document.getElementById('result').innerText = '✅ تم التحميل: ' + names.join(', ');
+                    let html = '<div class="success">✅ تم الاتصال بنجاح! الفئات الموجودة:</div><ul>';
+                    snapshot.forEach(doc => {
+                        html += `<li><strong>${doc.data().name}</strong> (${doc.id})</li>`;
+                    });
+                    html += '</ul>';
+                    document.getElementById('result').innerHTML = html;
                 }
             })
             .catch(error => {
-                document.getElementById('result').innerText = '❌ خطأ: ' + error.message;
+                document.getElementById('result').innerHTML = `
+                    <div class="error">
+                        ❌ خطأ في قراءة البيانات:<br>
+                        <pre>${error.message}</pre>
+                        <p>تحقق من:</p>
+                        <ul>
+                            <li>أن مجموعة "categories" موجودة</li>
+                            <li>أن قواعد الأمان تسمح بالقراءة (كما فعلنا)</li>
+                            <li>أن App Check معطل (كما فعلنا)</li>
+                        </ul>
+                    </div>
+                `;
             });
     </script>
 </body>
