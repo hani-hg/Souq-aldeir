@@ -1,41 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>اختبار Firebase</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سوق دير الزور المفتوح</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
-        body { font-family: Arial; padding: 20px; text-align: center; direction: rtl; }
-        .success { color: green; background: #e8f5e8; padding: 15px; border-radius: 10px; }
-        .error { color: red; background: #ffebee; padding: 15px; border-radius: 10px; }
-        pre { background: #f5f5f5; padding: 10px; text-align: left; direction: ltr; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Tajawal',sans-serif; }
+        body { background:#f8f9fa; color:#333; }
+        .container { max-width:1200px; margin:0 auto; padding:0 15px; }
+        header { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; padding:30px 0; text-align:center; border-radius:0 0 30px 30px; margin-bottom:20px; }
+        header h1 { font-size:2em; }
+        .auth-bar { background:#fff; padding:10px 0; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-bottom:20px; }
+        .auth-bar .container { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+        .btn { padding:8px 15px; border:none; border-radius:50px; font-weight:600; cursor:pointer; }
+        .btn-primary { background:#2a5298; color:#fff; }
+        .btn-success { background:#28a745; color:#fff; }
+        .btn-danger { background:#dc3545; color:#fff; }
+        .btn-outline { background:transparent; border:1px solid #2a5298; color:#2a5298; }
+        .section-title { font-size:1.8em; margin:30px 0 20px; text-align:center; color:#1e3c72; }
+        .categories-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:15px; margin-bottom:30px; }
+        .category-card { background:#fff; padding:15px; border-radius:15px; text-align:center; border-top:3px solid #2a5298; box-shadow:0 5px 15px rgba(0,0,0,0.05); }
+        .category-card i { font-size:2em; color:#2a5298; }
+        .ads-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; margin-bottom:40px; }
+        .ad-card { background:#fff; border-radius:15px; overflow:hidden; box-shadow:0 5px 15px rgba(0,0,0,0.05); }
+        .ad-image { width:100%; height:180px; object-fit:cover; background:#f0f0f0; }
+        .ad-content { padding:15px; }
+        .ad-category { color:#2a5298; background:#e8f0fe; padding:2px 10px; border-radius:20px; display:inline-block; margin-bottom:8px; font-size:0.9em; }
+        .ad-title { font-size:1.2em; font-weight:700; }
+        .ad-price { font-size:1.4em; color:#28a745; font-weight:700; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
+        .modal.active { display:flex; }
+        .modal-content { background:#fff; padding:25px; border-radius:20px; width:90%; max-width:400px; max-height:90vh; overflow-y:auto; }
+        .close-modal { float:left; font-size:2em; cursor:pointer; }
+        .form-group { margin-bottom:15px; }
+        .form-group input, .form-group textarea, .form-group select { width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; }
+        .loading { text-align:center; padding:20px; }
+        footer { text-align:center; padding:20px; color:#777; }
     </style>
 </head>
 <body>
-    <h1>🔍 اختبار الاتصال بـ Firebase</h1>
-    <div id="result">⏳ جاري تحميل مكتبات Firebase...</div>
+    <header><div class="container"><h1>سوق دير الزور المفتوح</h1><p>أول سوق إلكتروني في دير الزور</p></div></header>
 
-    <!-- تحميل Firebase SDK -->
+    <div class="auth-bar"><div class="container" id="authSection">
+        <button class="btn btn-primary" id="showLoginBtn">دخول</button>
+        <button class="btn btn-outline" id="showSignupBtn">حساب جديد</button>
+        <button class="btn btn-success" id="showAddAdBtn"><i class="fas fa-plus"></i> نشر إعلان</button>
+    </div></div>
+
+    <main class="container">
+        <h2 class="section-title">الفئات</h2>
+        <div class="categories-grid" id="categoriesContainer"></div>
+        <h2 class="section-title">أحدث الإعلانات</h2>
+        <div class="ads-grid" id="adsContainer"><div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></div>
+    </main>
+
+    <!-- نماذج -->
+    <div class="modal" id="authModal"><div class="modal-content">
+        <span class="close-modal" id="closeAuthModal">&times;</span>
+        <h2 id="authModalTitle">تسجيل الدخول</h2>
+        <div id="authError" style="color:red;"></div>
+        <form id="authForm">
+            <div class="form-group" id="signupNameGroup" style="display:none;"><label>الاسم</label><input type="text" id="signupName"></div>
+            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="authEmail" required></div>
+            <div class="form-group"><label>كلمة المرور</label><input type="password" id="authPassword" required></div>
+            <button type="submit" class="btn btn-primary" id="authSubmit" style="width:100%;">دخول</button>
+        </form>
+    </div></div>
+
+    <div class="modal" id="addAdModal"><div class="modal-content">
+        <span class="close-modal" id="closeAddAdModal">&times;</span>
+        <h2>نشر إعلان جديد</h2>
+        <div id="addAdError" style="color:red;"></div>
+        <form id="addAdForm">
+            <div class="form-group"><label>العنوان</label><input type="text" id="adTitle" required></div>
+            <div class="form-group"><label>الوصف</label><textarea id="adDescription" rows="2" required></textarea></div>
+            <div class="form-group"><label>السعر ($)</label><input type="number" id="adPrice" step="0.01" required></div>
+            <div class="form-group"><label>رقم الهاتف</label><input type="text" id="adPhone" required></div>
+            <div class="form-group"><label>الفئة</label><select id="adCategory" required><option value="">اختر فئة</option></select></div>
+            <!-- تم إزالة حقل رفع الصورة مؤقتاً حتى نحل مشكلة Storage -->
+            <button type="submit" class="btn btn-success" id="submitAd" style="width:100%;">نشر الإعلان</button>
+        </form>
+    </div></div>
+
+    <footer><div class="container"><p>© 2025 سوق دير الزور المفتوح</p></div></footer>
+
+    <!-- Firebase SDK (v10.7.1) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js"></script>
 
     <script>
-        // ننتظر قليلاً ثم نبدأ
-        setTimeout(function() {
-            const resultDiv = document.getElementById('result');
-            
-            // التحقق من تحميل Firebase
-            if (typeof firebase === 'undefined') {
-                resultDiv.innerHTML = `<div class="error">❌ لم يتم تحميل مكتبات Firebase. تأكد من:</div>
-                    <ul style="text-align:right">
-                        <li>اتصال جهازك بالإنترنت</li>
-                        <li>أن الروابط صحيحة (قد تكون محجوبة في بعض الشبكات)</li>
-                        <li>جرب استخدام متصفح آخر أو شبكة مختلفة</li>
-                    </ul>`;
-                return;
-            }
-
-            // إعدادات Firebase
+        (function() {
+            // إعدادات Firebase الخاصة بمشروعك
             const firebaseConfig = {
                 apiKey: "AIzaSyA2FhsRlX4SMpGhzfI0oq_lArSsPTGHUsY",
                 authDomain: "souq-aldeir-4ed7b.firebaseapp.com",
@@ -45,46 +104,198 @@
                 appId: "1:925621854708:web:97c1b7718cc6ea25be99a1"
             };
 
-            try {
-                // تهيئة Firebase
-                firebase.initializeApp(firebaseConfig);
-                const db = firebase.firestore();
+            // تهيئة Firebase
+            firebase.initializeApp(firebaseConfig);
 
-                // محاولة قراءة مجموعة categories
-                db.collection('categories').get()
-                    .then(snapshot => {
-                        if (snapshot.empty) {
-                            resultDiv.innerHTML = `
-                                <div class="error">⚠️ تم الاتصال بنجاح، لكن مجموعة "categories" فارغة.<br> 
-                                أضف مستندات إلى المجموعة من Firebase Console.</div>
-                            `;
-                        } else {
-                            let html = '<div class="success">✅ تم الاتصال بنجاح! الفئات الموجودة:</div><ul>';
-                            snapshot.forEach(doc => {
-                                html += `<li><strong>${doc.data().name}</strong> (${doc.id})</li>`;
-                            });
-                            html += '</ul>';
-                            resultDiv.innerHTML = html;
-                        }
-                    })
-                    .catch(error => {
-                        resultDiv.innerHTML = `
-                            <div class="error">
-                                ❌ خطأ في قراءة البيانات:<br>
-                                <pre>${error.message}</pre>
-                                <p>تحقق من:</p>
-                                <ul>
-                                    <li>أن مجموعة "categories" موجودة</li>
-                                    <li>أن قواعد الأمان تسمح بالقراءة (كما فعلنا)</li>
-                                    <li>أن App Check معطل (كما فعلنا)</li>
-                                </ul>
-                            </div>
-                        `;
-                    });
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">❌ فشل تهيئة Firebase: ${error.message}</div>`;
+            // =====================================================
+            // [مهم] قم باستبدال القيمة التالية بمفتاح reCAPTCHA الذي أنشأته
+            // =====================================================
+            const recaptchaSiteKey = 'YOUR_RECAPTCHA_SITE_KEY'; // ⬅️ ضع مفتاحك هنا
+
+            // تهيئة App Check
+            if (recaptchaSiteKey !== 'YOUR_RECAPTCHA_SITE_KEY') {
+                firebase.appCheck().activate(
+                    new firebase.appCheck.ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+                    true // تفعيل التحديث التلقائي للتوكن
+                );
+                console.log('✅ App Check مفعل باستخدام reCAPTCHA');
+            } else {
+                console.warn('⚠️ لم يتم تعيين مفتاح reCAPTCHA. لن تعمل حماية App Check.');
             }
-        }, 1000); // ننتظر ثانية واحدة لتحميل المكتبات
+
+            // تعريف المتغيرات العامة
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            let currentUser = null;
+            let categoriesList = [];
+
+            // مراقبة حالة تسجيل الدخول
+            auth.onAuthStateChanged(user => {
+                currentUser = user;
+                updateAuthUI();
+                loadAds();
+                loadCategories();
+            });
+
+            // تحديث واجهة المستخدم حسب حالة الدخول
+            function updateAuthUI() {
+                const authSection = document.getElementById('authSection');
+                if (currentUser) {
+                    authSection.innerHTML = `
+                        <span>${currentUser.email}</span>
+                        <button class="btn btn-danger" id="logoutBtn">خروج</button>
+                        <button class="btn btn-success" id="showAddAdBtn"><i class="fas fa-plus"></i> نشر إعلان</button>
+                    `;
+                    document.getElementById('logoutBtn').onclick = () => auth.signOut();
+                    document.getElementById('showAddAdBtn').onclick = showAddAd;
+                } else {
+                    authSection.innerHTML = `
+                        <button class="btn btn-primary" id="showLoginBtn">دخول</button>
+                        <button class="btn btn-outline" id="showSignupBtn">حساب جديد</button>
+                        <button class="btn btn-success" id="showAddAdBtn" onclick="alert('يجب تسجيل الدخول أولاً')"><i class="fas fa-plus"></i> نشر إعلان</button>
+                    `;
+                    document.getElementById('showLoginBtn').onclick = () => showAuthModal('login');
+                    document.getElementById('showSignupBtn').onclick = () => showAuthModal('signup');
+                }
+            }
+
+            // عرض نافذة تسجيل الدخول أو إنشاء حساب
+            function showAuthModal(mode) {
+                document.getElementById('authModal').classList.add('active');
+                document.getElementById('authModalTitle').innerText = mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب';
+                document.getElementById('authSubmit').innerText = mode === 'login' ? 'دخول' : 'إنشاء';
+                document.getElementById('signupNameGroup').style.display = mode === 'signup' ? 'block' : 'none';
+            }
+
+            // إغلاق النوافذ
+            document.getElementById('closeAuthModal').onclick = () => document.getElementById('authModal').classList.remove('active');
+            document.getElementById('closeAddAdModal').onclick = () => {
+                document.getElementById('addAdModal').classList.remove('active');
+                document.getElementById('addAdForm').reset();
+            };
+
+            // عرض نافذة إضافة إعلان
+            function showAddAd() {
+                if (!currentUser) { alert('يجب تسجيل الدخول أولاً'); return; }
+                // ملء قائمة الفئات
+                const categorySelect = document.getElementById('adCategory');
+                categorySelect.innerHTML = '<option value="">اختر فئة</option>';
+                categoriesList.forEach(cat => {
+                    categorySelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+                });
+                document.getElementById('addAdModal').classList.add('active');
+            }
+
+            // معالجة نموذج تسجيل الدخول
+            document.getElementById('authForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('authEmail').value;
+                const password = document.getElementById('authPassword').value;
+                const name = document.getElementById('signupName').value;
+                try {
+                    if (document.getElementById('authSubmit').innerText === 'دخول') {
+                        await auth.signInWithEmailAndPassword(email, password);
+                    } else {
+                        const cred = await auth.createUserWithEmailAndPassword(email, password);
+                        if (name) await cred.user.updateProfile({ displayName: name });
+                    }
+                    document.getElementById('authModal').classList.remove('active');
+                    document.getElementById('authForm').reset();
+                } catch (error) {
+                    document.getElementById('authError').innerText = error.message;
+                }
+            };
+
+            // تحميل الفئات من Firestore
+            async function loadCategories() {
+                try {
+                    const snapshot = await db.collection('categories').orderBy('order', 'asc').get();
+                    categoriesList = snapshot.docs.map(doc => doc.data());
+                    if (categoriesList.length === 0) {
+                        // فئات افتراضية
+                        categoriesList = [
+                            { name: 'عقارات', icon: 'fa-home', color: '#FF6B6B' },
+                            { name: 'سيارات', icon: 'fa-car', color: '#4ECDC4' }
+                        ];
+                    }
+                    const container = document.getElementById('categoriesContainer');
+                    container.innerHTML = categoriesList.map(cat => 
+                        `<div class="category-card" style="border-top-color:${cat.color||'#2a5298'}">
+                            <i class="fas ${cat.icon||'fa-tag'}"></i>
+                            <h3>${cat.name}</h3>
+                            <p>${cat.count || 0}</p>
+                        </div>`
+                    ).join('');
+                } catch (error) {
+                    console.error('خطأ في تحميل الفئات:', error);
+                    document.getElementById('categoriesContainer').innerHTML = '<div style="color:red;">فشل تحميل الفئات</div>';
+                }
+            }
+
+            // تحميل الإعلانات من Firestore
+            async function loadAds() {
+                const adsContainer = document.getElementById('adsContainer');
+                adsContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+                try {
+                    const snapshot = await db.collection('ads').orderBy('createdAt', 'desc').limit(20).get();
+                    if (snapshot.empty) {
+                        adsContainer.innerHTML = '<div style="text-align:center;">لا توجد إعلانات بعد</div>';
+                        return;
+                    }
+                    let html = '';
+                    snapshot.forEach(doc => {
+                        const ad = doc.data();
+                        html += `<div class="ad-card">
+                            <img src="https://via.placeholder.com/300x200?text=صورة+إعلان" class="ad-image">
+                            <div class="ad-content">
+                                <span class="ad-category">${ad.category}</span>
+                                <div class="ad-title">${ad.title}</div>
+                                <div class="ad-description">${ad.description}</div>
+                                <div class="ad-price">$${ad.price}</div>
+                                <div><i class="fas fa-phone-alt"></i> ${ad.phone}</div>
+                            </div>
+                        </div>`;
+                    });
+                    adsContainer.innerHTML = html;
+                } catch (error) {
+                    adsContainer.innerHTML = `<div style="color:red;">خطأ في تحميل الإعلانات: ${error.message}</div>`;
+                }
+            }
+
+            // معالجة نموذج إضافة إعلان
+            document.getElementById('addAdForm').onsubmit = async (e) => {
+                e.preventDefault();
+                if (!currentUser) return;
+
+                const title = document.getElementById('adTitle').value;
+                const desc = document.getElementById('adDescription').value;
+                const price = parseFloat(document.getElementById('adPrice').value);
+                const phone = document.getElementById('adPhone').value;
+                const cat = document.getElementById('adCategory').value;
+
+                try {
+                    await db.collection('ads').add({
+                        title,
+                        description: desc,
+                        price,
+                        phone,
+                        category: cat,
+                        userId: currentUser.uid,
+                        userEmail: currentUser.email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    document.getElementById('addAdModal').classList.remove('active');
+                    document.getElementById('addAdForm').reset();
+                    loadAds(); // إعادة تحميل الإعلانات
+                } catch (error) {
+                    document.getElementById('addAdError').innerText = error.message;
+                }
+            };
+
+            // تحميل أولي
+            loadCategories();
+            loadAds();
+        })();
     </script>
 </body>
 </html>
