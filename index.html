@@ -1,26 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>اختبار Firebase</title>
-</head>
-<body>
-    <h2>🔍 اختبار تحميل Firebase</h2>
-    <div id="result">⏳ جاري التحميل...</div>
-
-    <!-- استخدام jsDelivr بدلاً من gstatic -->
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-firestore.js"></script>
-
-    <script>
-        setTimeout(() => {
-            if (typeof firebase !== 'undefined') {
-                document.getElementById('result').innerText = '✅ تم التحميل بنجاح!';
-            } else {
-                document.getElementById('result').innerText = '❌ فشل التحميل. جرب روابط أخرى.';
-            }
-        }, 3000);
-    </script>
-</body>
-</html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore.min.js"></script>
