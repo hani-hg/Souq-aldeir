@@ -2,23 +2,25 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>اختبار Firebase الأساسي</title>
+    <title>اختبار Firebase</title>
 </head>
 <body>
     <h2>🔍 اختبار تحميل Firebase</h2>
-    <div id="result">⏳ جاري تحميل المكتبات...</div>
+    <div id="result">⏳ جاري التحميل...</div>
 
-    <!-- تحميل Firebase App فقط -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <!-- استخدام jsDelivr بدلاً من gstatic -->
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-firestore.js"></script>
 
     <script>
         setTimeout(() => {
             if (typeof firebase !== 'undefined') {
-                document.getElementById('result').innerText = '✅ تم تحميل مكتبات Firebase بنجاح!';
+                document.getElementById('result').innerText = '✅ تم التحميل بنجاح!';
             } else {
-                document.getElementById('result').innerText = '❌ فشل تحميل مكتبات Firebase. قد يكون الرابط محجوباً.';
+                document.getElementById('result').innerText = '❌ فشل التحميل. جرب روابط أخرى.';
             }
-        }, 2000);
+        }, 3000);
     </script>
 </body>
 </html>
