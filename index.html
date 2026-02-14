@@ -1,3 +1,112 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore.min.js"></script>
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Souq Aldeir</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 15px;
+      direction: rtl;
+    }
+    h1 {
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    button {
+      background: #ff9800;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+    .product {
+      background: #fff;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🛒 سوق الدير</h1>
+
+<input id="name" placeholder="اسم المنتج">
+<input id="price" type="number" placeholder="السعر">
+<button onclick="addProduct()">➕ إضافة منتج</button>
+
+<hr>
+
+<div id="products"></div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // 🔥 Firebase Config (جاهز)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDr_xDoAd37jaB7xDCCEw_PP5eLprrz1ZQ",
+    authDomain: "souq-aldeir-b4019.firebaseapp.com",
+    projectId: "souq-aldeir-b4019",
+    storageBucket: "souq-aldeir-b4019.firebasestorage.app",
+    messagingSenderId: "793145854332",
+    appId: "1:793145854332:web:040ad0966e2930f4e9fcf9"
+  };
+
+  // Initialize
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // إضافة منتج
+  window.addProduct = async function () {
+    const name = document.getElementById("name").value;
+    const price = document.getElementById("price").value;
+
+    if (!name || !price) {
+      alert("أدخل اسم وسعر المنتج");
+      return;
+    }
+
+    await addDoc(collection(db, "products"), {
+      name: name,
+      price: price
+    });
+
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+  };
+
+  // عرض المنتجات مباشر
+  const productsDiv = document.getElementById("products");
+
+  onSnapshot(collection(db, "products"), (snapshot) => {
+    productsDiv.innerHTML = "";
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      productsDiv.innerHTML += `
+        <div class="product">
+          <strong>${data.name}</strong><br>
+          💰 ${data.price}
+        </div>
+      `;
+    });
+  });
+</script>
+
+</body>
+</html>
