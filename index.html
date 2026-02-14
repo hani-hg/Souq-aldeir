@@ -1,40 +1,47 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>اختبار Firebase</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>اختبار Firebase البسيط</title>
+</head>
 <body>
-    <h2>اختبار تسجيل الدخول</h2>
-    <input id="email" placeholder="البريد"><br>
-    <input id="pass" type="password" placeholder="كلمة المرور"><br>
-    <button id="signup">إنشاء حساب</button>
-    <button id="login">دخول</button>
-    <div id="result"></div>
+    <h2>🔍 اختبار اتصال Firebase</h2>
+    <div id="result">⏳ جاري التحميل...</div>
 
+    <!-- استيراد Firebase باستخدام CDN (الطريقة القديمة) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 
     <script>
+        // إعدادات Firebase الجديدة (من مشروع souq-aldeir-e0534)
         const firebaseConfig = {
             apiKey: "AIzaSyBHd91xmAN33q-P5eSk9hRDsvxuzuV7sUE",
             authDomain: "souq-aldeir-e0534.firebaseapp.com",
-            projectId: "souq-aldeir-e0534"
+            projectId: "souq-aldeir-e0534",
+            storageBucket: "souq-aldeir-e0534.firebasestorage.app",
+            messagingSenderId: "473162539522",
+            appId: "1:473162539522:web:69ec144fd251a86e49fd1b"
         };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
 
-        document.getElementById('signup').onclick = () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            auth.createUserWithEmailAndPassword(email, pass)
-                .then(() => document.getElementById('result').innerText = '✅ تم إنشاء الحساب')
-                .catch(e => document.getElementById('result').innerText = '❌ خطأ: ' + e.message);
-        };
-        document.getElementById('login').onclick = () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(() => document.getElementById('result').innerText = '✅ تم الدخول')
-                .catch(e => document.getElementById('result').innerText = '❌ خطأ: ' + e.message);
-        };
+        // تهيئة Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // محاولة قراءة مجموعة categories
+        db.collection('categories').get()
+            .then(snapshot => {
+                if (snapshot.empty) {
+                    document.getElementById('result').innerText = '✅ اتصل بنجاح، لكن مجموعة "categories" فارغة. أضف فئات من Firebase Console.';
+                } else {
+                    let names = [];
+                    snapshot.forEach(doc => names.push(doc.data().name));
+                    document.getElementById('result').innerText = '✅ تم التحميل! الفئات: ' + names.join(', ');
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = '❌ خطأ: ' + error.message;
+                console.error(error);
+            });
     </script>
 </body>
 </html>
