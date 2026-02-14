@@ -86,13 +86,14 @@
 
     <footer><div class="container"><p>© 2025 سوق دير الزور المفتوح</p></div></footer>
 
-    <!-- روابط Firebase من jsDelivr -->
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-database.js"></script> <!-- تغيير: database بدلاً من firestore -->
+    <!-- استيراد Firebase باستخدام type="module" -->
+    <script type="module">
+        // استيراد المكتبات المطلوبة
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, get, child, push, set, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    <script>
-        // إعدادات Firebase (نفس الإعدادات)
+        // إعدادات Firebase (مع إضافة databaseURL)
         const firebaseConfig = {
             apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
             authDomain: "souq-aldeir-8b708.firebaseapp.com",
@@ -100,24 +101,27 @@
             storageBucket: "souq-aldeir-8b708.firebasestorage.app",
             messagingSenderId: "718751448398",
             appId: "1:718751448398:web:b588ab6753d1fc7aa1321f",
-            databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com" // 🟢 هذا السطر جديد
+            databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com" // 🟢 هذا السطر ضروري
         };
 
         // تهيئة Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database(); // 🟢 استخدام database بدلاً من firestore
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
+        // متغيرات عامة
         let currentUser = null;
         let categoriesList = [];
 
-        auth.onAuthStateChanged(user => {
+        // مراقبة حالة تسجيل الدخول
+        onAuthStateChanged(auth, (user) => {
             currentUser = user;
             updateAuthUI();
             loadAds();
             loadCategories();
         });
 
+        // تحديث واجهة المستخدم حسب حالة الدخول
         function updateAuthUI() {
             const authSection = document.getElementById('authSection');
             if (currentUser) {
@@ -126,19 +130,20 @@
                     <button class="btn btn-danger" id="logoutBtn">خروج</button>
                     <button class="btn btn-success" id="showAddAdBtn"><i class="fas fa-plus"></i> نشر إعلان</button>
                 `;
-                document.getElementById('logoutBtn').onclick = () => auth.signOut();
-                document.getElementById('showAddAdBtn').onclick = showAddAd;
+                document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+                document.getElementById('showAddAdBtn').addEventListener('click', showAddAd);
             } else {
                 authSection.innerHTML = `
                     <button class="btn btn-primary" id="showLoginBtn">دخول</button>
                     <button class="btn btn-outline" id="showSignupBtn">حساب جديد</button>
                     <button class="btn btn-success" id="showAddAdBtn" onclick="alert('يجب تسجيل الدخول أولاً')"><i class="fas fa-plus"></i> نشر إعلان</button>
                 `;
-                document.getElementById('showLoginBtn').onclick = () => showAuthModal('login');
-                document.getElementById('showSignupBtn').onclick = () => showAuthModal('signup');
+                document.getElementById('showLoginBtn').addEventListener('click', () => showAuthModal('login'));
+                document.getElementById('showSignupBtn').addEventListener('click', () => showAuthModal('signup'));
             }
         }
 
+        // إظهار نافذة المصادقة
         function showAuthModal(mode) {
             document.getElementById('authModal').classList.add('active');
             document.getElementById('authModalTitle').innerText = mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب';
@@ -146,14 +151,17 @@
             document.getElementById('signupNameGroup').style.display = mode === 'signup' ? 'block' : 'none';
         }
 
-        document.getElementById('closeAuthModal').onclick = () => document.getElementById('authModal').classList.remove('active');
-        document.getElementById('closeAddAdModal').onclick = () => {
+        // إغلاق النوافذ
+        document.getElementById('closeAuthModal').addEventListener('click', () => document.getElementById('authModal').classList.remove('active'));
+        document.getElementById('closeAddAdModal').addEventListener('click', () => {
             document.getElementById('addAdModal').classList.remove('active');
             document.getElementById('addAdForm').reset();
-        };
+        });
 
+        // إظهار نافذة إضافة إعلان
         function showAddAd() {
             if (!currentUser) { alert('يجب تسجيل الدخول أولاً'); return; }
+            // تعبئة قائمة الفئات
             const categorySelect = document.getElementById('adCategory');
             categorySelect.innerHTML = '<option value="">اختر فئة</option>';
             categoriesList.forEach(cat => {
@@ -162,41 +170,50 @@
             document.getElementById('addAdModal').classList.add('active');
         }
 
-        document.getElementById('authForm').onsubmit = async (e) => {
+        // معالجة نموذج المصادقة
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
             const name = document.getElementById('signupName').value;
             try {
                 if (document.getElementById('authSubmit').innerText === 'دخول') {
-                    await auth.signInWithEmailAndPassword(email, password);
+                    await signInWithEmailAndPassword(auth, email, password);
                 } else {
-                    const cred = await auth.createUserWithEmailAndPassword(email, password);
-                    if (name) await cred.user.updateProfile({ displayName: name });
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    if (name) {
+                        await updateProfile(userCred.user, { displayName: name });
+                    }
                 }
                 document.getElementById('authModal').classList.remove('active');
                 document.getElementById('authForm').reset();
             } catch (error) {
                 document.getElementById('authError').innerText = error.message;
             }
-        };
+        });
 
         // تحميل الفئات من Realtime Database
         async function loadCategories() {
             try {
-                const snapshot = await db.ref('categories').orderByChild('order').once('value');
-                const categoriesData = snapshot.val();
-                categoriesList = [];
-                if (categoriesData) {
-                    // تحويل الكائن إلى مصفوفة
-                    categoriesList = Object.keys(categoriesData).map(key => categoriesData[key]);
+                const dbRef = ref(db);
+                const snapshot = await get(child(dbRef, 'categories'));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    categoriesList = Object.keys(data).map(key => data[key]);
+                    // ترتيب حسب order
+                    categoriesList.sort((a, b) => (a.order || 0) - (b.order || 0));
+                } else {
+                    categoriesList = [];
                 }
+
                 if (categoriesList.length === 0) {
+                    // فئات افتراضية
                     categoriesList = [
                         { name: 'عقارات', icon: 'fa-home', color: '#FF6B6B' },
                         { name: 'سيارات', icon: 'fa-car', color: '#4ECDC4' }
                     ];
                 }
+
                 const container = document.getElementById('categoriesContainer');
                 container.innerHTML = categoriesList.map(cat => 
                     `<div class="category-card" style="border-top-color:${cat.color||'#2a5298'}">
@@ -216,16 +233,20 @@
             const adsContainer = document.getElementById('adsContainer');
             adsContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
             try {
-                const snapshot = await db.ref('ads').orderByChild('createdAt').limitToLast(20).once('value');
-                const adsData = snapshot.val();
-                if (!adsData) {
+                const dbRef = ref(db);
+                // نجلب الإعلانات مرتبة حسب createdAt (تنازلياً) باستخدام limitToLast
+                const adsQuery = query(child(dbRef, 'ads'), orderByChild('createdAt'), limitToLast(20));
+                const snapshot = await get(adsQuery);
+                if (!snapshot.exists()) {
                     adsContainer.innerHTML = '<div style="text-align:center;">لا توجد إعلانات بعد</div>';
                     return;
                 }
                 // تحويل الكائن إلى مصفوفة
-                const adsList = Object.keys(adsData).map(key => adsData[key]);
-                // ترتيب تنازلي (الأحدث أولاً)
+                const adsData = snapshot.val();
+                let adsList = Object.keys(adsData).map(key => adsData[key]);
+                // ترتيب تنازلي حسب createdAt
                 adsList.sort((a, b) => b.createdAt - a.createdAt);
+
                 let html = '';
                 adsList.forEach(ad => {
                     html += `<div class="ad-card">
@@ -246,7 +267,7 @@
         }
 
         // معالجة نموذج إضافة إعلان
-        document.getElementById('addAdForm').onsubmit = async (e) => {
+        document.getElementById('addAdForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return;
 
@@ -257,8 +278,9 @@
             const cat = document.getElementById('adCategory').value;
 
             try {
-                const newAdRef = db.ref('ads').push(); // إنشاء معرف فريد
-                await newAdRef.set({
+                const adsRef = ref(db, 'ads');
+                const newAdRef = push(adsRef);
+                await set(newAdRef, {
                     title,
                     description: desc,
                     price,
@@ -266,7 +288,7 @@
                     category: cat,
                     userId: currentUser.uid,
                     userEmail: currentUser.email,
-                    createdAt: Date.now() // Realtime Database يستخدم timestamp رقمي
+                    createdAt: Date.now() // timestamp رقمي
                 });
                 document.getElementById('addAdModal').classList.remove('active');
                 document.getElementById('addAdForm').reset();
@@ -274,13 +296,15 @@
             } catch (error) {
                 document.getElementById('addAdError').innerText = error.message;
             }
-        };
+        });
 
-        window.onclick = (e) => {
+        // إغلاق النوافذ عند النقر خارجها
+        window.addEventListener('click', (e) => {
             if (e.target === document.getElementById('authModal')) document.getElementById('authModal').classList.remove('active');
             if (e.target === document.getElementById('addAdModal')) document.getElementById('addAdModal').classList.remove('active');
-        };
+        });
 
+        // بدء التحميل
         loadCategories();
         loadAds();
     </script>
