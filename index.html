@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سوق دير الزور المفتوح</title>
-<style>
-body{font-family:Arial;direction:rtl;background:#f4f4f4;padding:10px}
-input,textarea,button{width:100%;margin:5px 0;padding:8px}
-.ad{background:#fff;padding:10px;margin:10px 0;border-radius:5px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سوق دير الزور المفتوح</title>
+  <style>
+    body { font-family: Arial; direction: rtl; background: #f4f4f4; padding: 10px; }
+    input, textarea, button { width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
+    .ad { background: #fff; padding: 10px; margin: 10px 0; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+  </style>
 </head>
 <body>
 
 <h2>🛒 سوق دير الزور المفتوح</h2>
 
-<!-- AUTH -->
+<!-- قسم المصادقة -->
 <div id="auth">
   <input id="email" placeholder="البريد الإلكتروني">
   <input id="password" type="password" placeholder="كلمة المرور">
@@ -26,103 +26,146 @@ input,textarea,button{width:100%;margin:5px 0;padding:8px}
 
 <hr>
 
-<!-- ADD AD -->
+<!-- إضافة إعلان -->
 <h3>➕ إضافة إعلان</h3>
 <input id="title" placeholder="عنوان الإعلان">
 <textarea id="desc" placeholder="الوصف"></textarea>
 <input id="price" placeholder="السعر">
-<input id="category" placeholder="الفئة">
+<input id="category" placeholder="الفئة (مثال: عقارات)">
 <button onclick="addAd()">نشر الإعلان</button>
 
 <hr>
 
-<!-- ADS -->
+<!-- عرض الإعلانات -->
 <h3>📢 الإعلانات</h3>
 <div id="ads"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
-  authDomain: "souq-aldeir-8b708.firebaseapp.com",
-  projectId: "souq-aldeir-8b708",
-  storageBucket: "souq-aldeir-8b708.firebasestorage.app",
-  messagingSenderId: "718751448398",
-  appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
-};
+  // إعدادات Firebase الخاصة بمشروعك الجديد (souq-aldeir-8b708)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
+    authDomain: "souq-aldeir-8b708.firebaseapp.com",
+    projectId: "souq-aldeir-8b708",
+    storageBucket: "souq-aldeir-8b708.firebasestorage.app",
+    messagingSenderId: "718751448398",
+    appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  // تهيئة Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// AUTH
-window.signup = () => {
-  createUserWithEmailAndPassword(auth, email.value, password.value)
-    .then(()=>alert("تم التسجيل"))
-    .catch(e=>alert(e.message));
-};
+  // دالة التسجيل (إنشاء حساب)
+  window.signup = () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(() => alert("✅ تم التسجيل بنجاح"))
+      .catch(error => alert("❌ خطأ: " + error.message));
+  };
 
-window.login = () => {
-  signInWithEmailAndPassword(auth, email.value, password.value)
-    .then(()=>alert("تم الدخول"))
-    .catch(e=>alert(e.message));
-};
+  // دالة تسجيل الدخول
+  window.login = () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => alert("✅ تم الدخول بنجاح"))
+      .catch(error => alert("❌ خطأ: " + error.message));
+  };
 
-window.logout = () => {
-  signOut(auth).then(()=>alert("تم تسجيل الخروج"));
-};
+  // دالة تسجيل الخروج
+  window.logout = () => {
+    signOut(auth)
+      .then(() => alert("✅ تم تسجيل الخروج"))
+      .catch(error => alert("❌ خطأ: " + error.message));
+  };
 
-// ADD AD
-window.addAd = async () => {
-  if(!auth.currentUser){ alert("سجل الدخول أولاً"); return; }
+  // دالة إضافة إعلان
+  window.addAd = async () => {
+    if (!auth.currentUser) {
+      alert("⚠️ يجب تسجيل الدخول أولاً");
+      return;
+    }
 
-  await addDoc(collection(db,"ads"),{
-    title:title.value,
-    description:desc.value,
-    price:price.value,
-    category:category.value,
-    user:auth.currentUser.email,
-    createdAt:serverTimestamp()
+    const title = document.getElementById("title").value;
+    const desc = document.getElementById("desc").value;
+    const price = document.getElementById("price").value;
+    const category = document.getElementById("category").value;
+
+    if (!title || !desc || !price || !category) {
+      alert("⚠️ يرجى ملء جميع الحقول");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "ads"), {
+        title,
+        description: desc,
+        price,
+        category,
+        user: auth.currentUser.email,
+        createdAt: serverTimestamp()
+      });
+      alert("✅ تم نشر الإعلان بنجاح");
+      // تفريغ الحقول
+      document.getElementById("title").value = "";
+      document.getElementById("desc").value = "";
+      document.getElementById("price").value = "";
+      document.getElementById("category").value = "";
+    } catch (error) {
+      alert("❌ خطأ في النشر: " + error.message);
+    }
+  };
+
+  // الاستماع للتغييرات في مجموعة الإعلانات وعرضها مباشرة
+  onSnapshot(collection(db, "ads"), (snapshot) => {
+    const adsDiv = document.getElementById("ads");
+    adsDiv.innerHTML = ""; // تفريغ المحتوى السابق
+
+    if (snapshot.empty) {
+      adsDiv.innerHTML = "<p>لا توجد إعلانات بعد. كن أول من يضيف إعلاناً!</p>";
+    } else {
+      snapshot.forEach((doc) => {
+        const ad = doc.data();
+        adsDiv.innerHTML += `
+          <div class="ad">
+            <b>${ad.title}</b><br>
+            ${ad.description}<br>
+            💰 السعر: ${ad.price}<br>
+            📂 الفئة: ${ad.category}<br>
+            👤 الناشر: ${ad.user}
+          </div>
+        `;
+      });
+    }
   });
 
-  title.value=desc.value=price.value=category.value="";
-};
-
-// LOAD ADS
-onSnapshot(collection(db,"ads"),snap=>{
-  ads.innerHTML="";
-  snap.forEach(doc=>{
-    const a=doc.data();
-    ads.innerHTML+=`
-      <div class="ad">
-        <b>${a.title}</b><br>
-        ${a.description}<br>
-        💰 ${a.price}<br>
-        📂 ${a.category}<br>
-        👤 ${a.user}
-      </div>`;
+  // إخفاء/إظهار قسم المصادقة حسب حالة المستخدم
+  onAuthStateChanged(auth, (user) => {
+    const authDiv = document.getElementById("auth");
+    if (user) {
+      authDiv.style.display = "none"; // إخفاء أزرار الدخول بعد تسجيل الدخول
+    } else {
+      authDiv.style.display = "block"; // إظهارها إذا كان خارجاً
+    }
   });
-});
-
-// AUTH STATE
-onAuthStateChanged(auth,user=>{
-  document.getElementById("auth").style.display=user?"none":"block";
-});
 </script>
 
 </body>
