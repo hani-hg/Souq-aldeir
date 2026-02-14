@@ -1,132 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <title>اختبار سوق دير الزور</title>
+  <meta charset="UTF-8">
+  <title>سوق دير الزور</title>
 </head>
 <body>
-    <h1>اختبار سوق دير الزور</h1>
-    
-    <div>
-        <h3>تسجيل الدخول</h3>
-        <input id="email" placeholder="البريد الإلكتروني"><br>
-        <input id="password" type="password" placeholder="كلمة المرور"><br>
-        <button id="login">دخول</button>
-        <button id="signup">إنشاء حساب</button>
-        <p id="authResult"></p>
-    </div>
 
-    <hr>
+<h2>تسجيل الدخول</h2>
+<input id="email" placeholder="البريد">
+<input id="password" type="password" placeholder="كلمة المرور">
+<button onclick="login()">دخول</button>
+<button onclick="signup()">تسجيل</button>
 
-    <div>
-        <h3>نشر إعلان</h3>
-        <input id="title" placeholder="العنوان"><br>
-        <textarea id="desc" placeholder="الوصف"></textarea><br>
-        <input id="price" placeholder="السعر"><br>
-        <input id="phone" placeholder="رقم الهاتف"><br>
-        <input id="category" placeholder="الفئة (مثل: عقارات)"><br>
-        <button id="publish">نشر الإعلان</button>
-        <p id="publishResult"></p>
-    </div>
+<hr>
 
-    <hr>
+<h2>نشر إعلان</h2>
+<input id="title" placeholder="العنوان">
+<input id="price" placeholder="السعر">
+<input id="category" placeholder="الفئة">
+<button onclick="publishAd()">نشر</button>
 
-    <div>
-        <h3>عرض الإعلانات</h3>
-        <button id="load">تحميل الإعلانات</button>
-        <div id="adsList"></div>
-    </div>
+<hr>
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+<h2>الإعلانات</h2>
+<button onclick="loadAds()">تحميل</button>
+<div id="ads"></div>
 
-    <script>
-        // إعدادات Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
-            authDomain: "souq-aldeir-8b708.firebaseapp.com",
-            projectId: "souq-aldeir-8b708",
-            storageBucket: "souq-aldeir-8b708.firebasestorage.app",
-            messagingSenderId: "718751448398",
-            appId: "1:718751448398:web:b588ab6753d1fc7aa1321f",
-            databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com"
-        };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, push, get, child }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // تهيئة Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
+  const firebaseConfig = {
+    apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
+    authDomain: "souq-aldeir-8b708.firebaseapp.com",
+    databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com",
+    projectId: "souq-aldeir-8b708",
+    storageBucket: "souq-aldeir-8b708.appspot.com",
+    messagingSenderId: "718751448398",
+    appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
+  };
 
-        // تسجيل الدخول
-        document.getElementById('login').onclick = () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(() => document.getElementById('authResult').innerText = 'تم الدخول')
-                .catch(e => document.getElementById('authResult').innerText = e.message);
-        };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-        // إنشاء حساب
-        document.getElementById('signup').onclick = () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            auth.createUserWithEmailAndPassword(email, pass)
-                .then(() => document.getElementById('authResult').innerText = 'تم إنشاء الحساب')
-                .catch(e => document.getElementById('authResult').innerText = e.message);
-        };
+  window.signup = () => {
+    signInWithEmailAndPassword(auth,
+      email.value, password.value
+    ).catch(() =>
+      createUserWithEmailAndPassword(auth, email.value, password.value)
+    );
+  };
 
-        // نشر إعلان
-        document.getElementById('publish').onclick = () => {
-            const user = auth.currentUser;
-            if (!user) {
-                document.getElementById('publishResult').innerText = 'يجب تسجيل الدخول أولاً';
-                return;
-            }
-            const title = document.getElementById('title').value;
-            const desc = document.getElementById('desc').value;
-            const price = document.getElementById('price').value;
-            const phone = document.getElementById('phone').value;
-            const category = document.getElementById('category').value;
-            if (!title || !desc || !price || !phone || !category) {
-                document.getElementById('publishResult').innerText = 'املأ جميع الحقول';
-                return;
-            }
-            const newAdRef = db.ref('ads').push();
-            newAdRef.set({
-                title, description: desc, price, phone, category,
-                userId: user.uid,
-                userEmail: user.email,
-                createdAt: Date.now()
-            })
-            .then(() => document.getElementById('publishResult').innerText = 'تم النشر')
-            .catch(e => document.getElementById('publishResult').innerText = e.message);
-        };
+  window.login = () => {
+    signInWithEmailAndPassword(auth, email.value, password.value)
+      .alert("تم الدخول");
+  };
 
-        // تحميل الإعلانات
-        document.getElementById('load').onclick = () => {
-            db.ref('ads').get()
-                .then(snapshot => {
-                    if (!snapshot.exists()) {
-                        document.getElementById('adsList').innerHTML = 'لا توجد إعلانات';
-                        return;
-                    }
-                    const ads = snapshot.val();
-                    let html = '';
-                    for (let key in ads) {
-                        const ad = ads[key];
-                        html += `<div style="border:1px solid #ccc; margin:5px; padding:5px;">
-                            <strong>${ad.title}</strong> - $${ad.price}<br>
-                            ${ad.description}<br>
-                            📞 ${ad.phone} | 🏷️ ${ad.category}<br>
-                            <small>${new Date(ad.createdAt).toLocaleString()}</small>
-                        </div>`;
-                    }
-                    document.getElementById('adsList').innerHTML = html;
-                })
-                .catch(e => document.getElementById('adsList').innerHTML = 'خطأ: ' + e.message);
-        };
-    </script>
+  window.publishAd = async () => {
+    await push(ref(db, "ads"), {
+      title: title.value,
+      price: price.value,
+      category: category.value
+    });
+    alert("تم النشر");
+  };
+
+  window.loadAds = async () => {
+    const snapshot = await get(child(ref(db), "ads"));
+    ads.innerHTML = "";
+    if (snapshot.exists()) {
+      Object.values(snapshot.val()).forEach(ad => {
+        ads.innerHTML += `<div>
+          <b>${ad.title}</b> - ${ad.price} - ${ad.category}
+        </div>`;
+      });
+    }
+  };
+</script>
+
 </body>
 </html>
