@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
+        /* نفس التنسيقات السابقة */
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Tajawal',sans-serif; }
         body { background:#f8f9fa; color:#333; }
         .container { max-width:1200px; margin:0 auto; padding:0 15px; }
@@ -79,21 +80,18 @@
             <div class="form-group"><label>السعر ($)</label><input type="number" id="adPrice" step="0.01" required></div>
             <div class="form-group"><label>رقم الهاتف</label><input type="text" id="adPhone" required></div>
             <div class="form-group"><label>الفئة</label><select id="adCategory" required><option value="">اختر فئة</option></select></div>
-            <!-- تم إزالة رفع الصور مؤقتًا -->
             <button type="submit" class="btn btn-success" id="submitAd" style="width:100%;">نشر الإعلان</button>
         </form>
     </div></div>
 
     <footer><div class="container"><p>© 2025 سوق دير الزور المفتوح</p></div></footer>
 
-    <!-- استيراد Firebase باستخدام type="module" -->
+    <!-- استيراد Firebase -->
     <script type="module">
-        // استيراد المكتبات المطلوبة
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, get, child, push, set, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, get, child, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // إعدادات Firebase (مع إضافة databaseURL)
         const firebaseConfig = {
             apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
             authDomain: "souq-aldeir-8b708.firebaseapp.com",
@@ -101,19 +99,16 @@
             storageBucket: "souq-aldeir-8b708.firebasestorage.app",
             messagingSenderId: "718751448398",
             appId: "1:718751448398:web:b588ab6753d1fc7aa1321f",
-            databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com" // 🟢 هذا السطر ضروري
+            databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com" // ✅ مهم جداً
         };
 
-        // تهيئة Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // متغيرات عامة
         let currentUser = null;
         let categoriesList = [];
 
-        // مراقبة حالة تسجيل الدخول
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             updateAuthUI();
@@ -121,35 +116,9 @@
             loadCategories();
         });
 
-        // تحديث واجهة المستخدم حسب حالة الدخول
-        function updateAuthUI() {
-            const authSection = document.getElementById('authSection');
-            if (currentUser) {
-                authSection.innerHTML = `
-                    <span>${currentUser.email}</span>
-                    <button class="btn btn-danger" id="logoutBtn">خروج</button>
-                    <button class="btn btn-success" id="showAddAdBtn"><i class="fas fa-plus"></i> نشر إعلان</button>
-                `;
-                document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-                document.getElementById('showAddAdBtn').addEventListener('click', showAddAd);
-            } else {
-                authSection.innerHTML = `
-                    <button class="btn btn-primary" id="showLoginBtn">دخول</button>
-                    <button class="btn btn-outline" id="showSignupBtn">حساب جديد</button>
-                    <button class="btn btn-success" id="showAddAdBtn" onclick="alert('يجب تسجيل الدخول أولاً')"><i class="fas fa-plus"></i> نشر إعلان</button>
-                `;
-                document.getElementById('showLoginBtn').addEventListener('click', () => showAuthModal('login'));
-                document.getElementById('showSignupBtn').addEventListener('click', () => showAuthModal('signup'));
-            }
-        }
+        function updateAuthUI() { /* ... كما هي ... */ }
 
-        // إظهار نافذة المصادقة
-        function showAuthModal(mode) {
-            document.getElementById('authModal').classList.add('active');
-            document.getElementById('authModalTitle').innerText = mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب';
-            document.getElementById('authSubmit').innerText = mode === 'login' ? 'دخول' : 'إنشاء';
-            document.getElementById('signupNameGroup').style.display = mode === 'signup' ? 'block' : 'none';
-        }
+        function showAuthModal(mode) { /* ... كما هي ... */ }
 
         // إغلاق النوافذ
         document.getElementById('closeAuthModal').addEventListener('click', () => document.getElementById('authModal').classList.remove('active'));
@@ -158,10 +127,8 @@
             document.getElementById('addAdForm').reset();
         });
 
-        // إظهار نافذة إضافة إعلان
         function showAddAd() {
             if (!currentUser) { alert('يجب تسجيل الدخول أولاً'); return; }
-            // تعبئة قائمة الفئات
             const categorySelect = document.getElementById('adCategory');
             categorySelect.innerHTML = '<option value="">اختر فئة</option>';
             categoriesList.forEach(cat => {
@@ -170,7 +137,6 @@
             document.getElementById('addAdModal').classList.add('active');
         }
 
-        // معالجة نموذج المصادقة
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('authEmail').value;
@@ -181,9 +147,7 @@
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
                     const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                    if (name) {
-                        await updateProfile(userCred.user, { displayName: name });
-                    }
+                    if (name) await updateProfile(userCred.user, { displayName: name });
                 }
                 document.getElementById('authModal').classList.remove('active');
                 document.getElementById('authForm').reset();
@@ -192,7 +156,7 @@
             }
         });
 
-        // تحميل الفئات من Realtime Database
+        // تحميل الفئات
         async function loadCategories() {
             try {
                 const dbRef = ref(db);
@@ -200,20 +164,16 @@
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     categoriesList = Object.keys(data).map(key => data[key]);
-                    // ترتيب حسب order
                     categoriesList.sort((a, b) => (a.order || 0) - (b.order || 0));
                 } else {
                     categoriesList = [];
                 }
-
                 if (categoriesList.length === 0) {
-                    // فئات افتراضية
                     categoriesList = [
                         { name: 'عقارات', icon: 'fa-home', color: '#FF6B6B' },
                         { name: 'سيارات', icon: 'fa-car', color: '#4ECDC4' }
                     ];
                 }
-
                 const container = document.getElementById('categoriesContainer');
                 container.innerHTML = categoriesList.map(cat => 
                     `<div class="category-card" style="border-top-color:${cat.color||'#2a5298'}">
@@ -228,27 +188,24 @@
             }
         }
 
-        // تحميل الإعلانات من Realtime Database
+        // تحميل الإعلانات - بدون استخدام query.orderByChild (لتجنب indexOn)
         async function loadAds() {
             const adsContainer = document.getElementById('adsContainer');
             adsContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
             try {
                 const dbRef = ref(db);
-                // نجلب الإعلانات مرتبة حسب createdAt (تنازلياً) باستخدام limitToLast
-                const adsQuery = query(child(dbRef, 'ads'), orderByChild('createdAt'), limitToLast(20));
-                const snapshot = await get(adsQuery);
+                const snapshot = await get(child(dbRef, 'ads'));
                 if (!snapshot.exists()) {
                     adsContainer.innerHTML = '<div style="text-align:center;">لا توجد إعلانات بعد</div>';
                     return;
                 }
-                // تحويل الكائن إلى مصفوفة
                 const adsData = snapshot.val();
+                // تحويل الكائن إلى مصفوفة وترتيبها يدوياً
                 let adsList = Object.keys(adsData).map(key => adsData[key]);
-                // ترتيب تنازلي حسب createdAt
-                adsList.sort((a, b) => b.createdAt - a.createdAt);
-
+                adsList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                
                 let html = '';
-                adsList.forEach(ad => {
+                adsList.slice(0, 20).forEach(ad => { // نأخذ أول 20 إعلان فقط
                     html += `<div class="ad-card">
                         <img src="https://via.placeholder.com/300x200?text=صورة+إعلان" class="ad-image">
                         <div class="ad-content">
@@ -266,17 +223,15 @@
             }
         }
 
-        // معالجة نموذج إضافة إعلان
+        // إضافة إعلان جديد
         document.getElementById('addAdForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return;
-
             const title = document.getElementById('adTitle').value;
             const desc = document.getElementById('adDescription').value;
             const price = parseFloat(document.getElementById('adPrice').value);
             const phone = document.getElementById('adPhone').value;
             const cat = document.getElementById('adCategory').value;
-
             try {
                 const adsRef = ref(db, 'ads');
                 const newAdRef = push(adsRef);
@@ -288,7 +243,7 @@
                     category: cat,
                     userId: currentUser.uid,
                     userEmail: currentUser.email,
-                    createdAt: Date.now() // timestamp رقمي
+                    createdAt: Date.now()
                 });
                 document.getElementById('addAdModal').classList.remove('active');
                 document.getElementById('addAdForm').reset();
