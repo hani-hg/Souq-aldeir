@@ -1,85 +1,128 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>سوق دير الزور</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سوق دير الزور المفتوح</title>
+<style>
+body{font-family:Arial;direction:rtl;background:#f4f4f4;padding:10px}
+input,textarea,button{width:100%;margin:5px 0;padding:8px}
+.ad{background:#fff;padding:10px;margin:10px 0;border-radius:5px}
+</style>
 </head>
 <body>
 
-<h2>تسجيل الدخول</h2>
-<input id="email" placeholder="البريد">
-<input id="password" type="password" placeholder="كلمة المرور">
-<button onclick="login()">دخول</button>
-<button onclick="signup()">تسجيل</button>
+<h2>🛒 سوق دير الزور المفتوح</h2>
+
+<!-- AUTH -->
+<div id="auth">
+  <input id="email" placeholder="البريد الإلكتروني">
+  <input id="password" type="password" placeholder="كلمة المرور">
+  <button onclick="login()">دخول</button>
+  <button onclick="signup()">تسجيل</button>
+</div>
+
+<button onclick="logout()">تسجيل خروج</button>
 
 <hr>
 
-<h2>نشر إعلان</h2>
-<input id="title" placeholder="العنوان">
+<!-- ADD AD -->
+<h3>➕ إضافة إعلان</h3>
+<input id="title" placeholder="عنوان الإعلان">
+<textarea id="desc" placeholder="الوصف"></textarea>
 <input id="price" placeholder="السعر">
 <input id="category" placeholder="الفئة">
-<button onclick="publishAd()">نشر</button>
+<button onclick="addAd()">نشر الإعلان</button>
 
 <hr>
 
-<h2>الإعلانات</h2>
-<button onclick="loadAds()">تحميل</button>
+<!-- ADS -->
+<h3>📢 الإعلانات</h3>
 <div id="ads"></div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword }
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getDatabase, ref, push, get, child }
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
-    authDomain: "souq-aldeir-8b708.firebaseapp.com",
-    databaseURL: "https://souq-aldeir-8b708-default-rtdb.firebaseio.com",
-    projectId: "souq-aldeir-8b708",
-    storageBucket: "souq-aldeir-8b708.appspot.com",
-    messagingSenderId: "718751448398",
-    appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
+  authDomain: "souq-aldeir-8b708.firebaseapp.com",
+  projectId: "souq-aldeir-8b708",
+  storageBucket: "souq-aldeir-8b708.firebasestorage.app",
+  messagingSenderId: "718751448398",
+  appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  window.signup = () => {
-    signInWithEmailAndPassword(auth,
-      email.value, password.value
-    ).catch(() =>
-      createUserWithEmailAndPassword(auth, email.value, password.value)
-    );
-  };
+// AUTH
+window.signup = () => {
+  createUserWithEmailAndPassword(auth, email.value, password.value)
+    .then(()=>alert("تم التسجيل"))
+    .catch(e=>alert(e.message));
+};
 
-  window.login = () => {
-    signInWithEmailAndPassword(auth, email.value, password.value)
-      .alert("تم الدخول");
-  };
+window.login = () => {
+  signInWithEmailAndPassword(auth, email.value, password.value)
+    .then(()=>alert("تم الدخول"))
+    .catch(e=>alert(e.message));
+};
 
-  window.publishAd = async () => {
-    await push(ref(db, "ads"), {
-      title: title.value,
-      price: price.value,
-      category: category.value
-    });
-    alert("تم النشر");
-  };
+window.logout = () => {
+  signOut(auth).then(()=>alert("تم تسجيل الخروج"));
+};
 
-  window.loadAds = async () => {
-    const snapshot = await get(child(ref(db), "ads"));
-    ads.innerHTML = "";
-    if (snapshot.exists()) {
-      Object.values(snapshot.val()).forEach(ad => {
-        ads.innerHTML += `<div>
-          <b>${ad.title}</b> - ${ad.price} - ${ad.category}
-        </div>`;
-      });
-    }
-  };
+// ADD AD
+window.addAd = async () => {
+  if(!auth.currentUser){ alert("سجل الدخول أولاً"); return; }
+
+  await addDoc(collection(db,"ads"),{
+    title:title.value,
+    description:desc.value,
+    price:price.value,
+    category:category.value,
+    user:auth.currentUser.email,
+    createdAt:serverTimestamp()
+  });
+
+  title.value=desc.value=price.value=category.value="";
+};
+
+// LOAD ADS
+onSnapshot(collection(db,"ads"),snap=>{
+  ads.innerHTML="";
+  snap.forEach(doc=>{
+    const a=doc.data();
+    ads.innerHTML+=`
+      <div class="ad">
+        <b>${a.title}</b><br>
+        ${a.description}<br>
+        💰 ${a.price}<br>
+        📂 ${a.category}<br>
+        👤 ${a.user}
+      </div>`;
+  });
+});
+
+// AUTH STATE
+onAuthStateChanged(auth,user=>{
+  document.getElementById("auth").style.display=user?"none":"block";
+});
 </script>
 
 </body>
