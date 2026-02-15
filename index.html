@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سوق دير الزور المفتوح</title>
+  <title>سوق دير الزور المفتوح - مع الصور</title>
   <style>
     body { font-family: Arial; direction: rtl; background: #f4f4f4; padding: 10px; }
-    input, textarea, button { width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
+    input, textarea, button, select { width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
     .ad { background: #fff; padding: 10px; margin: 10px 0; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .ad img { max-width: 100%; max-height: 200px; object-fit: cover; margin-top: 5px; border-radius: 5px; }
+    .preview img { max-width: 100%; max-height: 150px; margin-top: 5px; border-radius: 5px; }
   </style>
 </head>
 <body>
@@ -32,6 +34,11 @@
 <textarea id="desc" placeholder="الوصف"></textarea>
 <input id="price" placeholder="السعر">
 <input id="category" placeholder="الفئة (مثال: عقارات)">
+
+<!-- حقل رفع الصورة -->
+<input type="file" id="imageFile" accept="image/*">
+<div class="preview" id="preview"></div>
+
 <button onclick="addAd()">نشر الإعلان</button>
 
 <hr>
@@ -42,22 +49,11 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    onSnapshot,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-  // إعدادات Firebase الخاصة بمشروعك الجديد (souq-aldeir-8b708)
+  // إعدادات Firebase (تأكد من صحتها)
   const firebaseConfig = {
     apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
     authDomain: "souq-aldeir-8b708.firebaseapp.com",
@@ -71,8 +67,23 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const storage = getStorage(app);
 
-  // دالة التسجيل (إنشاء حساب)
+  // عرض معاينة الصورة قبل الرفع
+  document.getElementById('imageFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        document.getElementById('preview').innerHTML = `<img src="${ev.target.result}" alt="معاينة">`;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      document.getElementById('preview').innerHTML = '';
+    }
+  });
+
+  // دوال المصادقة
   window.signup = () => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -81,7 +92,6 @@
       .catch(error => alert("❌ خطأ: " + error.message));
   };
 
-  // دالة تسجيل الدخول
   window.login = () => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -90,14 +100,11 @@
       .catch(error => alert("❌ خطأ: " + error.message));
   };
 
-  // دالة تسجيل الخروج
   window.logout = () => {
-    signOut(auth)
-      .then(() => alert("✅ تم تسجيل الخروج"))
-      .catch(error => alert("❌ خطأ: " + error.message));
+    signOut(auth).then(() => alert("✅ تم تسجيل الخروج"));
   };
 
-  // دالة إضافة إعلان
+  // دالة إضافة إعلان مع صورة
   window.addAd = async () => {
     if (!auth.currentUser) {
       alert("⚠️ يجب تسجيل الدخول أولاً");
@@ -108,49 +115,69 @@
     const desc = document.getElementById("desc").value;
     const price = document.getElementById("price").value;
     const category = document.getElementById("category").value;
+    const imageFile = document.getElementById("imageFile").files[0];
 
     if (!title || !desc || !price || !category) {
       alert("⚠️ يرجى ملء جميع الحقول");
       return;
     }
 
+    let imageUrl = "";
+
     try {
+      // إذا اختار المستخدم صورة، نرفعها إلى Storage
+      if (imageFile) {
+        const storageRef = ref(storage, `ads/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+
+      // إضافة الإعلان إلى Firestore مع رابط الصورة
       await addDoc(collection(db, "ads"), {
         title,
         description: desc,
         price,
         category,
         user: auth.currentUser.email,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        imageUrl: imageUrl // قد يكون فارغاً إذا لم ترفع صورة
       });
+
       alert("✅ تم نشر الإعلان بنجاح");
       // تفريغ الحقول
       document.getElementById("title").value = "";
       document.getElementById("desc").value = "";
       document.getElementById("price").value = "";
       document.getElementById("category").value = "";
+      document.getElementById("imageFile").value = "";
+      document.getElementById("preview").innerHTML = "";
     } catch (error) {
       alert("❌ خطأ في النشر: " + error.message);
     }
   };
 
-  // الاستماع للتغييرات في مجموعة الإعلانات وعرضها مباشرة
+  // الاستماع للتغييرات في مجموعة الإعلانات وعرضها
   onSnapshot(collection(db, "ads"), (snapshot) => {
     const adsDiv = document.getElementById("ads");
-    adsDiv.innerHTML = ""; // تفريغ المحتوى السابق
+    adsDiv.innerHTML = "";
 
     if (snapshot.empty) {
       adsDiv.innerHTML = "<p>لا توجد إعلانات بعد. كن أول من يضيف إعلاناً!</p>";
     } else {
       snapshot.forEach((doc) => {
         const ad = doc.data();
+        // بناء كود عرض الإعلان مع صورة إن وجدت
+        let imageHtml = ad.imageUrl 
+          ? `<img src="${ad.imageUrl}" alt="صورة الإعلان" style="max-width:100%; max-height:200px; margin-top:5px;">`
+          : '';
         adsDiv.innerHTML += `
           <div class="ad">
             <b>${ad.title}</b><br>
             ${ad.description}<br>
             💰 السعر: ${ad.price}<br>
             📂 الفئة: ${ad.category}<br>
-            👤 الناشر: ${ad.user}
+            👤 الناشر: ${ad.user}<br>
+            ${imageHtml}
           </div>
         `;
       });
@@ -161,9 +188,9 @@
   onAuthStateChanged(auth, (user) => {
     const authDiv = document.getElementById("auth");
     if (user) {
-      authDiv.style.display = "none"; // إخفاء أزرار الدخول بعد تسجيل الدخول
+      authDiv.style.display = "none";
     } else {
-      authDiv.style.display = "block"; // إظهارها إذا كان خارجاً
+      authDiv.style.display = "block";
     }
   });
 </script>
