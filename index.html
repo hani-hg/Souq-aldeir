@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سوق دير الزور المفتوح - مع الصور</title>
+  <title>سوق دير الزور المفتوح - مع Cloudinary</title>
   <style>
     body { font-family: Arial; direction: rtl; background: #f4f4f4; padding: 10px; }
     input, textarea, button, select { width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
     .ad { background: #fff; padding: 10px; margin: 10px 0; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     .ad img { max-width: 100%; max-height: 200px; object-fit: cover; margin-top: 5px; border-radius: 5px; }
     .preview img { max-width: 100%; max-height: 150px; margin-top: 5px; border-radius: 5px; }
+    #uploadCloudinaryBtn { background: #1abc9c; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: auto; margin-left: 10px; }
+    .flex-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -20,11 +22,15 @@
 <div id="auth">
   <input id="email" placeholder="البريد الإلكتروني">
   <input id="password" type="password" placeholder="كلمة المرور">
-  <button onclick="login()">دخول</button>
-  <button onclick="signup()">تسجيل</button>
+  <div class="flex-row">
+    <button onclick="login()">دخول</button>
+    <button onclick="signup()">تسجيل</button>
+  </div>
 </div>
 
-<button onclick="logout()">تسجيل خروج</button>
+<div class="flex-row">
+  <button onclick="logout()">تسجيل خروج</button>
+</div>
 
 <hr>
 
@@ -35,9 +41,17 @@
 <input id="price" placeholder="السعر">
 <input id="category" placeholder="الفئة (مثال: عقارات)">
 
-<!-- حقل رفع الصورة -->
-<input type="file" id="imageFile" accept="image/*">
+<!-- قسم رفع الصورة باستخدام Cloudinary -->
+<div class="flex-row">
+  <button type="button" id="uploadCloudinaryBtn">☁️ اختر صورة عبر Cloudinary</button>
+  <span id="uploadStatus"></span>
+</div>
+
+<!-- معاينة الصورة بعد الرفع -->
 <div class="preview" id="preview"></div>
+
+<!-- حقل مخفي لحفظ رابط الصورة -->
+<input type="hidden" id="imageUrl" value="">
 
 <button onclick="addAd()">نشر الإعلان</button>
 
@@ -47,47 +61,91 @@
 <h3>📢 الإعلانات</h3>
 <div id="ads"></div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+<!-- استيراد مكتبات Firebase و Cloudinary -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 
-  // إعدادات Firebase (تأكد من صحتها)
+<script>
+  // ========== إعدادات Firebase (استبدلها بمشروعك) ==========
   const firebaseConfig = {
     apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
     authDomain: "souq-aldeir-8b708.firebaseapp.com",
     projectId: "souq-aldeir-8b708",
-    storageBucket: "souq-aldeir-8b708.firebasestorage.app",
+    storageBucket: "souq-aldeir-8b708.firebasestorage.app", // لا نحتاجه لكن يمكن تركه
     messagingSenderId: "718751448398",
     appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
   };
 
   // تهيئة Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  // عرض معاينة الصورة قبل الرفع
-  document.getElementById('imageFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        document.getElementById('preview').innerHTML = `<img src="${ev.target.result}" alt="معاينة">`;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      document.getElementById('preview').innerHTML = '';
+  // ========== إعدادات Cloudinary ==========
+  const CLOUD_NAME = 'c-3c72bffdb9faf709374589f66346c8'; // ضع Cloud Name الخاص بك
+  const UPLOAD_PRESET = 'souq_ads'; // اسم upload preset الذي أنشأته
+
+  // عناصر الصفحة
+  const uploadBtn = document.getElementById('uploadCloudinaryBtn');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const imageUrlInput = document.getElementById('imageUrl');
+  const previewDiv = document.getElementById('preview');
+
+  // متغير لحفظ رابط الصورة مؤقتاً
+  let uploadedImageUrl = '';
+
+  // إنشاء أداة رفع Cloudinary
+  const cloudinaryWidget = cloudinary.createUploadWidget(
+    {
+      cloudName: CLOUD_NAME,
+      uploadPreset: UPLOAD_PRESET,
+      multiple: false,
+      maxFileSize: 5000000, // 5 ميجابايت
+      sources: ['local', 'camera'],
+      language: 'ar',
+      text: {
+        ar: {
+          or: 'أو',
+          back: 'رجوع',
+          advanced: 'خيارات متقدمة',
+          close: 'إغلاق',
+          upload: 'رفع',
+          done: 'تم',
+          addMore: 'إضافة المزيد',
+          cancel: 'إلغاء'
+        }
+      }
+    },
+    (error, result) => {
+      if (!error && result && result.event === 'success') {
+        // تم الرفع بنجاح
+        console.log('تم رفع الصورة:', result.info);
+        uploadedImageUrl = result.info.secure_url;
+        imageUrlInput.value = uploadedImageUrl;
+        uploadStatus.textContent = '✅ تم رفع الصورة';
+        // عرض المعاينة
+        previewDiv.innerHTML = `<img src="${uploadedImageUrl}" alt="صورة الإعلان">`;
+      } else if (result && result.event === 'close') {
+        console.log('أغلقت النافذة بدون رفع');
+      } else if (error) {
+        console.error('خطأ في الرفع:', error);
+        uploadStatus.textContent = '❌ فشل الرفع';
+      }
     }
+  );
+
+  // فتح الأداة عند الضغط على الزر
+  uploadBtn.addEventListener('click', () => {
+    cloudinaryWidget.open();
   });
 
-  // دوال المصادقة
+  // ========== دوال المصادقة ==========
   window.signup = () => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-    createUserWithEmailAndPassword(auth, email, password)
+    firebase.auth().createUserWithEmailAndPassword(email, password)
       .then(() => alert("✅ تم التسجيل بنجاح"))
       .catch(error => alert("❌ خطأ: " + error.message));
   };
@@ -95,103 +153,107 @@
   window.login = () => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-    signInWithEmailAndPassword(auth, email, password)
+    firebase.auth().signInWithEmailAndPassword(email, password)
       .then(() => alert("✅ تم الدخول بنجاح"))
       .catch(error => alert("❌ خطأ: " + error.message));
   };
 
   window.logout = () => {
-    signOut(auth).then(() => alert("✅ تم تسجيل الخروج"));
+    firebase.auth().signOut()
+      .then(() => alert("✅ تم تسجيل الخروج"));
   };
 
-  // دالة إضافة إعلان مع صورة
+  // ========== دالة إضافة إعلان (باستخدام رابط Cloudinary) ==========
   window.addAd = async () => {
-    if (!auth.currentUser) {
+    const user = auth.currentUser;
+    if (!user) {
       alert("⚠️ يجب تسجيل الدخول أولاً");
       return;
     }
 
-    const title = document.getElementById("title").value;
-    const desc = document.getElementById("desc").value;
-    const price = document.getElementById("price").value;
-    const category = document.getElementById("category").value;
-    const imageFile = document.getElementById("imageFile").files[0];
+    const title = document.getElementById("title").value.trim();
+    const desc = document.getElementById("desc").value.trim();
+    const price = document.getElementById("price").value.trim();
+    const category = document.getElementById("category").value.trim();
+    const imageUrl = imageUrlInput.value.trim(); // الرابط من الحقل المخفي
 
     if (!title || !desc || !price || !category) {
       alert("⚠️ يرجى ملء جميع الحقول");
       return;
     }
 
-    let imageUrl = "";
+    if (!imageUrl) {
+      alert("⚠️ يرجى رفع صورة للإعلان عبر Cloudinary");
+      return;
+    }
+
+    // تعطيل زر النشر مؤقتاً
+    const addBtn = document.querySelector('button[onclick="addAd()"]');
+    addBtn.disabled = true;
+    addBtn.textContent = "جاري النشر...";
 
     try {
-      // إذا اختار المستخدم صورة، نرفعها إلى Storage
-      if (imageFile) {
-        const storageRef = ref(storage, `ads/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(storageRef);
-      }
-
-      // إضافة الإعلان إلى Firestore مع رابط الصورة
-      await addDoc(collection(db, "ads"), {
+      await db.collection("ads").add({
         title,
         description: desc,
         price,
         category,
-        user: auth.currentUser.email,
-        createdAt: serverTimestamp(),
-        imageUrl: imageUrl // قد يكون فارغاً إذا لم ترفع صورة
+        user: user.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        imageUrl: imageUrl
       });
 
       alert("✅ تم نشر الإعلان بنجاح");
+      
       // تفريغ الحقول
       document.getElementById("title").value = "";
       document.getElementById("desc").value = "";
       document.getElementById("price").value = "";
       document.getElementById("category").value = "";
-      document.getElementById("imageFile").value = "";
+      document.getElementById("imageUrl").value = "";
+      document.getElementById("uploadStatus").textContent = "";
       document.getElementById("preview").innerHTML = "";
+      uploadedImageUrl = "";
     } catch (error) {
       alert("❌ خطأ في النشر: " + error.message);
+    } finally {
+      addBtn.disabled = false;
+      addBtn.textContent = "نشر الإعلان";
     }
   };
 
-  // الاستماع للتغييرات في مجموعة الإعلانات وعرضها
-  onSnapshot(collection(db, "ads"), (snapshot) => {
+  // ========== الاستماع للتغييرات في الإعلانات وعرضها ==========
+  db.collection("ads").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
     const adsDiv = document.getElementById("ads");
-    adsDiv.innerHTML = "";
-
     if (snapshot.empty) {
       adsDiv.innerHTML = "<p>لا توجد إعلانات بعد. كن أول من يضيف إعلاناً!</p>";
-    } else {
-      snapshot.forEach((doc) => {
-        const ad = doc.data();
-        // بناء كود عرض الإعلان مع صورة إن وجدت
-        let imageHtml = ad.imageUrl 
-          ? `<img src="${ad.imageUrl}" alt="صورة الإعلان" style="max-width:100%; max-height:200px; margin-top:5px;">`
-          : '';
-        adsDiv.innerHTML += `
-          <div class="ad">
-            <b>${ad.title}</b><br>
-            ${ad.description}<br>
-            💰 السعر: ${ad.price}<br>
-            📂 الفئة: ${ad.category}<br>
-            👤 الناشر: ${ad.user}<br>
-            ${imageHtml}
-          </div>
-        `;
-      });
+      return;
     }
+
+    let html = "";
+    snapshot.forEach((doc) => {
+      const ad = doc.data();
+      const imageHtml = ad.imageUrl 
+        ? `<img src="${ad.imageUrl}" alt="صورة الإعلان">`
+        : '';
+      html += `
+        <div class="ad">
+          <b>${ad.title}</b><br>
+          ${ad.description}<br>
+          💰 السعر: ${ad.price}<br>
+          📂 الفئة: ${ad.category}<br>
+          👤 الناشر: ${ad.user}<br>
+          ${imageHtml}
+        </div>
+      `;
+    });
+    adsDiv.innerHTML = html;
   });
 
-  // إخفاء/إظهار قسم المصادقة حسب حالة المستخدم
-  onAuthStateChanged(auth, (user) => {
+  // ========== إخفاء/إظهار قسم المصادقة حسب حالة المستخدم ==========
+  auth.onAuthStateChanged((user) => {
     const authDiv = document.getElementById("auth");
-    if (user) {
-      authDiv.style.display = "none";
-    } else {
-      authDiv.style.display = "block";
-    }
+    authDiv.style.display = user ? "none" : "block";
   });
 </script>
 
