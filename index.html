@@ -3,260 +3,634 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سوق دير الزور المفتوح - مع Cloudinary</title>
+  <title>سوق دير الزور المفتوح</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    body { font-family: Arial; direction: rtl; background: #f4f4f4; padding: 10px; }
-    input, textarea, button, select { width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
-    .ad { background: #fff; padding: 10px; margin: 10px 0; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-    .ad img { max-width: 100%; max-height: 200px; object-fit: cover; margin-top: 5px; border-radius: 5px; }
-    .preview img { max-width: 100%; max-height: 150px; margin-top: 5px; border-radius: 5px; }
-    #uploadCloudinaryBtn { background: #1abc9c; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: auto; margin-left: 10px; }
-    .flex-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Tajawal', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* الحاوية الرئيسية */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.95);
+      border-radius: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+    }
+
+    /* الهيدر */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #f0f0f0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #4a5568;
+    }
+
+    .logo i {
+      color: #667eea;
+      font-size: 40px;
+    }
+
+    /* أزرار المصادقة */
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: #48bb78;
+      color: white;
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+    }
+
+    .btn-success:hover {
+      background: #38a169;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #f56565;
+      color: white;
+      box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+    }
+
+    .btn-danger:hover {
+      background: #e53e3e;
+      transform: translateY(-2px);
+    }
+
+    .btn-cloud {
+      background: #1abc9c;
+      color: white;
+      box-shadow: 0 4px 15px rgba(26, 188, 156, 0.4);
+    }
+
+    .btn-cloud:hover {
+      background: #16a085;
+    }
+
+    /* قسم المصادقة */
+    .auth-section {
+      background: #f7fafc;
+      padding: 25px;
+      border-radius: 20px;
+      margin-bottom: 30px;
+      display: none; /* سيظهر حسب حالة المستخدم */
+    }
+
+    .auth-section.active {
+      display: block;
+    }
+
+    .auth-inputs {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .auth-inputs input {
+      flex: 1;
+      padding: 12px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 50px;
+      font-size: 16px;
+      transition: border 0.3s;
+    }
+
+    .auth-inputs input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* نموذج إضافة إعلان */
+    .add-ad-section {
+      background: #f7fafc;
+      padding: 25px;
+      border-radius: 20px;
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title i {
+      color: #667eea;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .form-grid input,
+    .form-grid textarea,
+    .form-grid select {
+      width: 100%;
+      padding: 12px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 15px;
+      font-size: 16px;
+      transition: border 0.3s;
+    }
+
+    .form-grid textarea {
+      grid-column: span 2;
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-grid input:focus,
+    .form-grid textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* زر رفع الصورة */
+    .upload-area {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    .preview {
+      max-width: 200px;
+      max-height: 150px;
+      border-radius: 15px;
+      overflow: hidden;
+      border: 3px solid #e2e8f0;
+    }
+
+    .preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* الإعلانات */
+    .ads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+
+    .ad-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+    }
+
+    .ad-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .ad-image {
+      height: 200px;
+      background: #f0f0f0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ad-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ad-content {
+      padding: 20px;
+    }
+
+    .ad-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 10px;
+    }
+
+    .ad-description {
+      color: #718096;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .ad-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #4a5568;
+      font-weight: 500;
+    }
+
+    .ad-price {
+      background: #667eea;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 50px;
+      font-weight: 700;
+    }
+
+    .ad-category {
+      background: #e2e8f0;
+      padding: 5px 15px;
+      border-radius: 50px;
+    }
+
+    .ad-user {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 50px;
+      color: #a0aec0;
+      font-size: 18px;
+      grid-column: 1 / -1;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 30px;
+      color: #718096;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <!-- الهيدر -->
+    <header>
+      <div class="logo">
+        <i class="fas fa-store-alt"></i>
+        <span>سوق دير الزور المفتوح</span>
+      </div>
+      <div class="auth-buttons">
+        <button class="btn btn-primary" id="showLoginBtn"><i class="fas fa-sign-in-alt"></i> دخول</button>
+        <button class="btn btn-success" id="showSignupBtn"><i class="fas fa-user-plus"></i> تسجيل</button>
+        <button class="btn btn-danger" id="logoutBtn" style="display: none;"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
+      </div>
+    </header>
 
-<h2>🛒 سوق دير الزور المفتوح</h2>
+    <!-- قسم المصادقة (يظهر عند الضغط على دخول/تسجيل) -->
+    <div class="auth-section" id="authSection">
+      <div class="section-title">
+        <i class="fas fa-lock"></i>
+        <span id="authTitle">تسجيل الدخول</span>
+      </div>
+      <div class="auth-inputs">
+        <input type="email" id="email" placeholder="البريد الإلكتروني">
+        <input type="password" id="password" placeholder="كلمة المرور">
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn btn-primary" id="authActionBtn">دخول</button>
+        <button class="btn btn-secondary" id="cancelAuthBtn">إلغاء</button>
+      </div>
+    </div>
 
-<!-- قسم المصادقة -->
-<div id="auth">
-  <input id="email" placeholder="البريد الإلكتروني">
-  <input id="password" type="password" placeholder="كلمة المرور">
-  <div class="flex-row">
-    <button onclick="login()">دخول</button>
-    <button onclick="signup()">تسجيل</button>
+    <!-- قسم إضافة إعلان (يظهر فقط بعد تسجيل الدخول) -->
+    <div class="add-ad-section" id="addAdSection" style="display: none;">
+      <div class="section-title">
+        <i class="fas fa-plus-circle"></i>
+        <span>إضافة إعلان جديد</span>
+      </div>
+      <div class="form-grid">
+        <input type="text" id="title" placeholder="عنوان الإعلان">
+        <input type="text" id="price" placeholder="السعر">
+        <input type="text" id="category" placeholder="الفئة (مثال: عقارات)">
+        <textarea id="desc" placeholder="وصف الإعلان" style="grid-column: span 2;"></textarea>
+      </div>
+      
+      <!-- رفع الصورة -->
+      <div class="upload-area">
+        <button class="btn btn-cloud" id="uploadCloudinaryBtn"><i class="fas fa-cloud-upload-alt"></i> اختر صورة عبر Cloudinary</button>
+        <span id="uploadStatus"></span>
+      </div>
+      <div class="preview" id="preview"></div>
+      <input type="hidden" id="imageUrl">
+
+      <button class="btn btn-success" id="addAdBtn" style="margin-top: 20px; width: 100%;"><i class="fas fa-paper-plane"></i> نشر الإعلان</button>
+    </div>
+
+    <!-- الإعلانات -->
+    <div class="section-title">
+      <i class="fas fa-list"></i>
+      <span>أحدث الإعلانات</span>
+    </div>
+    <div id="ads" class="ads-grid"></div>
+
+    <div class="footer-note">
+      جميع الحقوق محفوظة © 2026 سوق دير الزور المفتوح
+    </div>
   </div>
-</div>
 
-<div class="flex-row">
-  <button onclick="logout()">تسجيل خروج</button>
-</div>
+  <!-- استيراد Firebase و Cloudinary -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 
-<hr>
+  <script>
+    // ================== إعدادات Firebase ==================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
+      authDomain: "souq-aldeir-8b708.firebaseapp.com",
+      projectId: "souq-aldeir-8b708",
+      storageBucket: "souq-aldeir-8b708.firebasestorage.app",
+      messagingSenderId: "718751448398",
+      appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
+    };
 
-<!-- إضافة إعلان -->
-<h3>➕ إضافة إعلان</h3>
-<input id="title" placeholder="عنوان الإعلان">
-<textarea id="desc" placeholder="الوصف"></textarea>
-<input id="price" placeholder="السعر">
-<input id="category" placeholder="الفئة (مثال: عقارات)">
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-<!-- قسم رفع الصورة باستخدام Cloudinary -->
-<div class="flex-row">
-  <button type="button" id="uploadCloudinaryBtn">☁️ اختر صورة عبر Cloudinary</button>
-  <span id="uploadStatus"></span>
-</div>
+    // ================== إعدادات Cloudinary ==================
+    const CLOUD_NAME = 'dzjy5tubx';          // ✅ تم التحديث
+    const UPLOAD_PRESET = 'souq-aldeir-prseset';  // ✅ اسم preset
 
-<!-- معاينة الصورة بعد الرفع -->
-<div class="preview" id="preview"></div>
+    // عناصر الصفحة
+    const authSection = document.getElementById('authSection');
+    const authTitle = document.getElementById('authTitle');
+    const authActionBtn = document.getElementById('authActionBtn');
+    const cancelAuthBtn = document.getElementById('cancelAuthBtn');
+    const showLoginBtn = document.getElementById('showLoginBtn');
+    const showSignupBtn = document.getElementById('showSignupBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const addAdSection = document.getElementById('addAdSection');
+    const addAdBtn = document.getElementById('addAdBtn');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const titleInput = document.getElementById('title');
+    const descInput = document.getElementById('desc');
+    const priceInput = document.getElementById('price');
+    const categoryInput = document.getElementById('category');
+    const uploadBtn = document.getElementById('uploadCloudinaryBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const previewDiv = document.getElementById('preview');
+    const imageUrlInput = document.getElementById('imageUrl');
 
-<!-- حقل مخفي لحفظ رابط الصورة -->
-<input type="hidden" id="imageUrl" value="">
+    let currentAuthMode = 'login'; // 'login' or 'signup'
+    let uploadedImageUrl = '';
 
-<button onclick="addAd()">نشر الإعلان</button>
+    // ================== دوال المصادقة ==================
+    const showAuth = (mode) => {
+      currentAuthMode = mode;
+      authTitle.innerText = mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+      authActionBtn.innerText = mode === 'login' ? 'دخول' : 'تسجيل';
+      authSection.classList.add('active');
+    };
 
-<hr>
+    const hideAuth = () => {
+      authSection.classList.remove('active');
+      emailInput.value = '';
+      passwordInput.value = '';
+    };
 
-<!-- عرض الإعلانات -->
-<h3>📢 الإعلانات</h3>
-<div id="ads"></div>
+    showLoginBtn.addEventListener('click', () => showAuth('login'));
+    showSignupBtn.addEventListener('click', () => showAuth('signup'));
+    cancelAuthBtn.addEventListener('click', hideAuth);
 
-<!-- استيراد مكتبات Firebase و Cloudinary -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    authActionBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      if (!email || !password) {
+        alert('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
+        return;
+      }
 
-<script>
-  // ========== إعدادات Firebase (خاصة بك - لا تغيير) ==========
-  const firebaseConfig = {
-    apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
-    authDomain: "souq-aldeir-8b708.firebaseapp.com",
-    projectId: "souq-aldeir-8b708",
-    storageBucket: "souq-aldeir-8b708.firebasestorage.app",
-    messagingSenderId: "718751448398",
-    appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
-  };
+      try {
+        if (currentAuthMode === 'login') {
+          await auth.signInWithEmailAndPassword(email, password);
+          alert('✅ تم الدخول بنجاح');
+        } else {
+          await auth.createUserWithEmailAndPassword(email, password);
+          alert('✅ تم إنشاء الحساب بنجاح');
+        }
+        hideAuth();
+      } catch (error) {
+        alert('❌ خطأ: ' + error.message);
+      }
+    });
 
-  // تهيئة Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+    logoutBtn.addEventListener('click', async () => {
+      await auth.signOut();
+      alert('✅ تم تسجيل الخروج');
+    });
 
-  // ========== إعدادات Cloudinary ==========
-  // 🟢 هذان السطران هما الوحيدان اللذان قد تحتاج لتغييرهما:
-  const CLOUD_NAME = 'c-3c72bffdb9faf709374589f66346c8'; // ⚠️ غيّره إلى Cloud Name الصحيح من حسابك
-  const UPLOAD_PRESET = 'souq-aldeir-prseset';          // ✅ هذا هو اسم preset من صورتك
+    // ================== حالة المستخدم ==================
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        // مستخدم مسجل الدخول
+        showLoginBtn.style.display = 'none';
+        showSignupBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-flex';
+        addAdSection.style.display = 'block';
+      } else {
+        // لا يوجد مستخدم
+        showLoginBtn.style.display = 'inline-flex';
+        showSignupBtn.style.display = 'inline-flex';
+        logoutBtn.style.display = 'none';
+        addAdSection.style.display = 'none';
+        hideAuth();
+      }
+    });
 
-  // عناصر الصفحة
-  const uploadBtn = document.getElementById('uploadCloudinaryBtn');
-  const uploadStatus = document.getElementById('uploadStatus');
-  const imageUrlInput = document.getElementById('imageUrl');
-  const previewDiv = document.getElementById('preview');
-
-  // متغير لحفظ رابط الصورة مؤقتاً
-  let uploadedImageUrl = '';
-
-  // إنشاء أداة رفع Cloudinary
-  const cloudinaryWidget = cloudinary.createUploadWidget(
-    {
-      cloudName: CLOUD_NAME,
-      uploadPreset: UPLOAD_PRESET,
-      multiple: false,
-      maxFileSize: 5000000, // 5 ميجابايت
-      sources: ['local', 'camera'],
-      language: 'ar',
-      text: {
-        ar: {
-          or: 'أو',
-          back: 'رجوع',
-          advanced: 'خيارات متقدمة',
-          close: 'إغلاق',
-          upload: 'رفع',
-          done: 'تم',
-          addMore: 'إضافة المزيد',
-          cancel: 'إلغاء'
+    // ================== Cloudinary Upload Widget ==================
+    const cloudinaryWidget = cloudinary.createUploadWidget(
+      {
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        multiple: false,
+        maxFileSize: 5000000,
+        sources: ['local', 'camera'],
+        language: 'ar',
+        text: {
+          ar: {
+            or: 'أو',
+            back: 'رجوع',
+            advanced: 'خيارات متقدمة',
+            close: 'إغلاق',
+            upload: 'رفع',
+            done: 'تم',
+            addMore: 'إضافة المزيد',
+            cancel: 'إلغاء'
+          }
+        }
+      },
+      (error, result) => {
+        if (!error && result && result.event === 'success') {
+          uploadedImageUrl = result.info.secure_url;
+          imageUrlInput.value = uploadedImageUrl;
+          uploadStatus.innerHTML = '<i class="fas fa-check-circle" style="color: green;"></i> تم رفع الصورة';
+          previewDiv.innerHTML = `<img src="${uploadedImageUrl}" alt="صورة الإعلان">`;
+        } else if (result && result.event === 'close') {
+          console.log('أغلقت نافذة الرفع');
+        } else if (error) {
+          console.error('خطأ في الرفع:', error);
+          uploadStatus.innerHTML = '<i class="fas fa-times-circle" style="color: red;"></i> فشل الرفع';
         }
       }
-    },
-    (error, result) => {
-      if (!error && result && result.event === 'success') {
-        // تم الرفع بنجاح
-        console.log('تم رفع الصورة:', result.info);
-        uploadedImageUrl = result.info.secure_url;
-        imageUrlInput.value = uploadedImageUrl;
-        uploadStatus.textContent = '✅ تم رفع الصورة';
-        // عرض المعاينة
-        previewDiv.innerHTML = `<img src="${uploadedImageUrl}" alt="صورة الإعلان">`;
-      } else if (result && result.event === 'close') {
-        console.log('أغلقت النافذة بدون رفع');
-      } else if (error) {
-        console.error('خطأ في الرفع:', error);
-        uploadStatus.textContent = '❌ فشل الرفع';
+    );
+
+    uploadBtn.addEventListener('click', () => cloudinaryWidget.open());
+
+    // ================== إضافة إعلان ==================
+    addAdBtn.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('⚠️ يجب تسجيل الدخول أولاً');
+        return;
       }
-    }
-  );
 
-  // فتح الأداة عند الضغط على الزر
-  uploadBtn.addEventListener('click', () => {
-    cloudinaryWidget.open();
-  });
+      const title = titleInput.value.trim();
+      const desc = descInput.value.trim();
+      const price = priceInput.value.trim();
+      const category = categoryInput.value.trim();
+      const imageUrl = imageUrlInput.value.trim();
 
-  // ========== دوال المصادقة ==========
-  window.signup = () => {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then(() => alert("✅ تم التسجيل بنجاح"))
-      .catch(error => alert("❌ خطأ: " + error.message));
-  };
+      if (!title || !desc || !price || !category) {
+        alert('⚠️ يرجى ملء جميع الحقول');
+        return;
+      }
 
-  window.login = () => {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    firebase.auth().signInWithEmailAndPassword(email, password)
-      .then(() => alert("✅ تم الدخول بنجاح"))
-      .catch(error => alert("❌ خطأ: " + error.message));
-  };
+      if (!imageUrl) {
+        alert('⚠️ يرجى رفع صورة للإعلان');
+        return;
+      }
 
-  window.logout = () => {
-    firebase.auth().signOut()
-      .then(() => alert("✅ تم تسجيل الخروج"));
-  };
+      addAdBtn.disabled = true;
+      addAdBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
 
-  // ========== دالة إضافة إعلان (باستخدام رابط Cloudinary) ==========
-  window.addAd = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("⚠️ يجب تسجيل الدخول أولاً");
-      return;
-    }
+      try {
+        await db.collection("ads").add({
+          title,
+          description: desc,
+          price,
+          category,
+          user: user.email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          imageUrl
+        });
 
-    const title = document.getElementById("title").value.trim();
-    const desc = document.getElementById("desc").value.trim();
-    const price = document.getElementById("price").value.trim();
-    const category = document.getElementById("category").value.trim();
-    const imageUrl = imageUrlInput.value.trim();
-
-    if (!title || !desc || !price || !category) {
-      alert("⚠️ يرجى ملء جميع الحقول");
-      return;
-    }
-
-    if (!imageUrl) {
-      alert("⚠️ يرجى رفع صورة للإعلان عبر Cloudinary");
-      return;
-    }
-
-    // تعطيل زر النشر مؤقتاً
-    const addBtn = document.querySelector('button[onclick="addAd()"]');
-    addBtn.disabled = true;
-    addBtn.textContent = "جاري النشر...";
-
-    try {
-      await db.collection("ads").add({
-        title,
-        description: desc,
-        price,
-        category,
-        user: user.email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        imageUrl: imageUrl
-      });
-
-      alert("✅ تم نشر الإعلان بنجاح");
-      
-      // تفريغ الحقول
-      document.getElementById("title").value = "";
-      document.getElementById("desc").value = "";
-      document.getElementById("price").value = "";
-      document.getElementById("category").value = "";
-      document.getElementById("imageUrl").value = "";
-      document.getElementById("uploadStatus").textContent = "";
-      document.getElementById("preview").innerHTML = "";
-      uploadedImageUrl = "";
-    } catch (error) {
-      alert("❌ خطأ في النشر: " + error.message);
-    } finally {
-      addBtn.disabled = false;
-      addBtn.textContent = "نشر الإعلان";
-    }
-  };
-
-  // ========== الاستماع للتغييرات في الإعلانات وعرضها ==========
-  db.collection("ads").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-    const adsDiv = document.getElementById("ads");
-    if (snapshot.empty) {
-      adsDiv.innerHTML = "<p>لا توجد إعلانات بعد. كن أول من يضيف إعلاناً!</p>";
-      return;
-    }
-
-    let html = "";
-    snapshot.forEach((doc) => {
-      const ad = doc.data();
-      const imageHtml = ad.imageUrl 
-        ? `<img src="${ad.imageUrl}" alt="صورة الإعلان">`
-        : '';
-      html += `
-        <div class="ad">
-          <b>${ad.title}</b><br>
-          ${ad.description}<br>
-          💰 السعر: ${ad.price}<br>
-          📂 الفئة: ${ad.category}<br>
-          👤 الناشر: ${ad.user}<br>
-          ${imageHtml}
-        </div>
-      `;
+        alert('✅ تم نشر الإعلان بنجاح');
+        // تفريغ الحقول
+        titleInput.value = '';
+        descInput.value = '';
+        priceInput.value = '';
+        categoryInput.value = '';
+        imageUrlInput.value = '';
+        uploadStatus.innerHTML = '';
+        previewDiv.innerHTML = '';
+        uploadedImageUrl = '';
+      } catch (error) {
+        alert('❌ خطأ في النشر: ' + error.message);
+      } finally {
+        addAdBtn.disabled = false;
+        addAdBtn.innerHTML = '<i class="fas fa-paper-plane"></i> نشر الإعلان';
+      }
     });
-    adsDiv.innerHTML = html;
-  });
 
-  // ========== إخفاء/إظهار قسم المصادقة حسب حالة المستخدم ==========
-  auth.onAuthStateChanged((user) => {
-    const authDiv = document.getElementById("auth");
-    authDiv.style.display = user ? "none" : "block";
-  });
-</script>
+    // ================== عرض الإعلانات ==================
+    db.collection("ads").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+      const adsDiv = document.getElementById("ads");
+      if (snapshot.empty) {
+        adsDiv.innerHTML = '<div class="empty-state"><i class="fas fa-box-open fa-3x"></i><p>لا توجد إعلانات بعد. كن أول من يضيف إعلاناً!</p></div>';
+        return;
+      }
 
+      let html = '';
+      snapshot.forEach((doc) => {
+        const ad = doc.data();
+        const date = ad.createdAt ? new Date(ad.createdAt.toDate()).toLocaleDateString('ar-EG') : '';
+        html += `
+          <div class="ad-card">
+            <div class="ad-image">
+              <img src="${ad.imageUrl || 'https://via.placeholder.com/300x200?text=لا+توجد+صورة'}" alt="${ad.title}">
+            </div>
+            <div class="ad-content">
+              <div class="ad-title">${ad.title}</div>
+              <div class="ad-description">${ad.description}</div>
+              <div class="ad-meta">
+                <span class="ad-price">💰 ${ad.price}</span>
+                <span class="ad-category">📂 ${ad.category}</span>
+              </div>
+              <div class="ad-user">👤 ${ad.user} • 📅 ${date}</div>
+            </div>
+          </div>
+        `;
+      });
+      adsDiv.innerHTML = html;
+    });
+  </script>
 </body>
 </html>
