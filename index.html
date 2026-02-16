@@ -68,12 +68,12 @@
 <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 
 <script>
-  // ========== إعدادات Firebase (استبدلها بمشروعك) ==========
+  // ========== إعدادات Firebase (خاصة بك - لا تغيير) ==========
   const firebaseConfig = {
     apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
     authDomain: "souq-aldeir-8b708.firebaseapp.com",
     projectId: "souq-aldeir-8b708",
-    storageBucket: "souq-aldeir-8b708.firebasestorage.app", // لا نحتاجه لكن يمكن تركه
+    storageBucket: "souq-aldeir-8b708.firebasestorage.app",
     messagingSenderId: "718751448398",
     appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
   };
@@ -84,8 +84,9 @@
   const db = firebase.firestore();
 
   // ========== إعدادات Cloudinary ==========
-  const CLOUD_NAME = 'c-3c72bffdb9faf709374589f66346c8'; // ضع Cloud Name الخاص بك
-  const UPLOAD_PRESET = 'souq_ads'; // اسم upload preset الذي أنشأته
+  // 🟢 هذان السطران هما الوحيدان اللذان قد تحتاج لتغييرهما:
+  const CLOUD_NAME = 'c-3c72bffdb9faf709374589f66346c8'; // ⚠️ غيّره إلى Cloud Name الصحيح من حسابك
+  const UPLOAD_PRESET = 'souq-aldeir-prseset';          // ✅ هذا هو اسم preset من صورتك
 
   // عناصر الصفحة
   const uploadBtn = document.getElementById('uploadCloudinaryBtn');
@@ -175,7 +176,7 @@
     const desc = document.getElementById("desc").value.trim();
     const price = document.getElementById("price").value.trim();
     const category = document.getElementById("category").value.trim();
-    const imageUrl = imageUrlInput.value.trim(); // الرابط من الحقل المخفي
+    const imageUrl = imageUrlInput.value.trim();
 
     if (!title || !desc || !price || !category) {
       alert("⚠️ يرجى ملء جميع الحقول");
