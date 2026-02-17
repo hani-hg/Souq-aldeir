@@ -101,4 +101,4 @@ window.auth.onAuthStateChanged(function(user) {
 });
 
 renderUI();
-window.loadAds('adsContainer');
+window.loadAds('adsContainer'); 
