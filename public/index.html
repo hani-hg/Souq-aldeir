@@ -1,199 +1,69 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سوق دير الزور المفتوح - مع الصور</title>
-  <style>
-    body { font-family: Arial; direction: rtl; background: #f4f4f4; padding: 10px; }
-    input, textarea, button, select { width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
-    .ad { background: #fff; padding: 10px; margin: 10px 0; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-    .ad img { max-width: 100%; max-height: 200px; object-fit: cover; margin-top: 5px; border-radius: 5px; }
-    .preview img { max-width: 100%; max-height: 150px; margin-top: 5px; border-radius: 5px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سوق دير الزور المفتوح</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
 </head>
 <body>
+    <header><div class="container"><h1>🛒 سوق دير الزور المفتوح</h1><p>أول سوق إلكتروني في دير الزور</p></div></header>
 
-<h2>🛒 سوق دير الزور المفتوح</h2>
+    <div class="auth-bar"><div class="container" id="authSection">
+        <button class="btn btn-primary" id="showLoginBtn">دخول</button>
+        <button class="btn btn-outline" id="showSignupBtn">حساب جديد</button>
+        <button class="btn btn-success" id="showAddAdBtn"><i class="fas fa-plus"></i> نشر إعلان</button>
+    </div></div>
 
-<!-- قسم المصادقة -->
-<div id="auth">
-  <input id="email" placeholder="البريد الإلكتروني">
-  <input id="password" type="password" placeholder="كلمة المرور">
-  <button onclick="login()">دخول</button>
-  <button onclick="signup()">تسجيل</button>
-</div>
+    <main class="container">
+        <h2 class="section-title">الفئات</h2>
+        <div class="categories-grid" id="categoriesContainer"></div>
+        <h2 class="section-title">أحدث الإعلانات</h2>
+        <div class="ads-grid" id="adsContainer"><div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></div>
+    </main>
 
-<button onclick="logout()">تسجيل خروج</button>
+    <!-- نماذج -->
+    <div class="modal" id="authModal"><div class="modal-content">
+        <span class="close-modal" id="closeAuthModal">&times;</span>
+        <h2 id="authModalTitle">تسجيل الدخول</h2>
+        <div id="authError" style="color:red;"></div>
+        <form id="authForm">
+            <div class="form-group" id="signupNameGroup" style="display:none;"><label>الاسم</label><input type="text" id="signupName"></div>
+            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="authEmail" required></div>
+            <div class="form-group"><label>كلمة المرور</label><input type="password" id="authPassword" required></div>
+            <button type="submit" class="btn btn-primary" id="authSubmit" style="width:100%;">دخول</button>
+        </form>
+    </div></div>
 
-<hr>
+    <div class="modal" id="addAdModal"><div class="modal-content">
+        <span class="close-modal" id="closeAddAdModal">&times;</span>
+        <h2>نشر إعلان جديد</h2>
+        <div id="addAdError" style="color:red;"></div>
+        <form id="addAdForm">
+            <div class="form-group"><label>العنوان</label><input type="text" id="adTitle" required></div>
+            <div class="form-group"><label>الوصف</label><textarea id="adDescription" rows="2" required></textarea></div>
+            <div class="form-group"><label>السعر ($)</label><input type="number" id="adPrice" step="0.01" required></div>
+            <div class="form-group"><label>رقم الهاتف</label><input type="text" id="adPhone" required></div>
+            <div class="form-group"><label>الفئة</label><select id="adCategory" required><option value="">اختر فئة</option></select></div>
+            <input type="file" id="imageFile" accept="image/*">
+            <div class="preview" id="preview"></div>
+            <button type="submit" class="btn btn-success" id="submitAd" style="width:100%;">نشر الإعلان</button>
+        </form>
+    </div></div>
 
-<!-- إضافة إعلان -->
-<h3>➕ إضافة إعلان</h3>
-<input id="title" placeholder="عنوان الإعلان">
-<textarea id="desc" placeholder="الوصف"></textarea>
-<input id="price" placeholder="السعر">
-<input id="category" placeholder="الفئة (مثال: عقارات)">
+    <footer><div class="container"><p>© 2025 سوق دير الزور المفتوح</p></div></footer>
 
-<!-- حقل رفع الصورة -->
-<input type="file" id="imageFile" accept="image/*">
-<div class="preview" id="preview"></div>
+    <!-- تحميل Firebase من CDN بديل -->
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-storage.js"></script>
 
-<button onclick="addAd()">نشر الإعلان</button>
-
-<hr>
-
-<!-- عرض الإعلانات -->
-<h3>📢 الإعلانات</h3>
-<div id="ads"></div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-  // إعدادات Firebase (تأكد من صحتها)
-  const firebaseConfig = {
-    apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
-    authDomain: "souq-aldeir-8b708.firebaseapp.com",
-    projectId: "souq-aldeir-8b708",
-    storageBucket: "souq-aldeir-8b708.firebasestorage.app",
-    messagingSenderId: "718751448398",
-    appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
-  };
-
-  // تهيئة Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
-
-  // عرض معاينة الصورة قبل الرفع
-  document.getElementById('imageFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        document.getElementById('preview').innerHTML = `<img src="${ev.target.result}" alt="معاينة">`;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      document.getElementById('preview').innerHTML = '';
-    }
-  });
-
-  // دوال المصادقة
-  window.signup = () => {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(() => alert("✅ تم التسجيل بنجاح"))
-      .catch(error => alert("❌ خطأ: " + error.message));
-  };
-
-  window.login = () => {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    signInWithEmailAndPassword(auth, email, password)
-      .then(() => alert("✅ تم الدخول بنجاح"))
-      .catch(error => alert("❌ خطأ: " + error.message));
-  };
-
-  window.logout = () => {
-    signOut(auth).then(() => alert("✅ تم تسجيل الخروج"));
-  };
-
-  // دالة إضافة إعلان مع صورة
-  window.addAd = async () => {
-    if (!auth.currentUser) {
-      alert("⚠️ يجب تسجيل الدخول أولاً");
-      return;
-    }
-
-    const title = document.getElementById("title").value;
-    const desc = document.getElementById("desc").value;
-    const price = document.getElementById("price").value;
-    const category = document.getElementById("category").value;
-    const imageFile = document.getElementById("imageFile").files[0];
-
-    if (!title || !desc || !price || !category) {
-      alert("⚠️ يرجى ملء جميع الحقول");
-      return;
-    }
-
-    let imageUrl = "";
-
-    try {
-      // إذا اختار المستخدم صورة، نرفعها إلى Storage
-      if (imageFile) {
-        const storageRef = ref(storage, `ads/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(storageRef);
-      }
-
-      // إضافة الإعلان إلى Firestore مع رابط الصورة
-      await addDoc(collection(db, "ads"), {
-        title,
-        description: desc,
-        price,
-        category,
-        user: auth.currentUser.email,
-        createdAt: serverTimestamp(),
-        imageUrl: imageUrl // قد يكون فارغاً إذا لم ترفع صورة
-      });
-
-      alert("✅ تم نشر الإعلان بنجاح");
-      // تفريغ الحقول
-      document.getElementById("title").value = "";
-      document.getElementById("desc").value = "";
-      document.getElementById("price").value = "";
-      document.getElementById("category").value = "";
-      document.getElementById("imageFile").value = "";
-      document.getElementById("preview").innerHTML = "";
-    } catch (error) {
-      alert("❌ خطأ في النشر: " + error.message);
-    }
-  };
-
-  // الاستماع للتغييرات في مجموعة الإعلانات وعرضها
-  onSnapshot(collection(db, "ads"), (snapshot) => {
-    const adsDiv = document.getElementById("ads");
-    adsDiv.innerHTML = "";
-
-    if (snapshot.empty) {
-      adsDiv.innerHTML = "<p>لا توجد إعلانات بعد. كن أول من يضيف إعلاناً!</p>";
-    } else {
-      snapshot.forEach((doc) => {
-        const ad = doc.data();
-        // بناء كود عرض الإعلان مع صورة إن وجدت
-        let imageHtml = ad.imageUrl 
-          ? `<img src="${ad.imageUrl}" alt="صورة الإعلان" style="max-width:100%; max-height:200px; margin-top:5px;">`
-          : '';
-        adsDiv.innerHTML += `
-          <div class="ad">
-            <b>${ad.title}</b><br>
-            ${ad.description}<br>
-            💰 السعر: ${ad.price}<br>
-            📂 الفئة: ${ad.category}<br>
-            👤 الناشر: ${ad.user}<br>
-            ${imageHtml}
-          </div>
-        `;
-      });
-    }
-  });
-
-  // إخفاء/إظهار قسم المصادقة حسب حالة المستخدم
-  onAuthStateChanged(auth, (user) => {
-    const authDiv = document.getElementById("auth");
-    if (user) {
-      authDiv.style.display = "none";
-    } else {
-      authDiv.style.display = "block";
-    }
-  });
-</script>
-
+    <!-- ملفات المشروع بمسارات مطلقة -->
+    <script src="/js/firebase.js"></script>
+    <script src="/js/ads.js"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
