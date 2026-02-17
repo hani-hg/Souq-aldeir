@@ -49,4 +49,4 @@ window.loadAds = function(containerId) {
         });
         container.innerHTML = html;
     });
-};
+}; 
