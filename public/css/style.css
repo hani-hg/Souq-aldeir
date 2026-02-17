@@ -1,63 +1,65 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-  margin: 0;
-  font-family: Tahoma, sans-serif;
-  background: #f4f6f8;
+    font-family: 'Tajawal', Arial, sans-serif;
+    direction: rtl;
+    background: #f4f4f4;
+    padding: 10px;
 }
 
-.top {
-  background: #2c3e50;
-  color: #fff;
-  padding: 15px;
-  text-align: center;
+input, textarea, button, select {
+    width: 100%;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
 }
 
-.container {
-  max-width: 1100px;
-  margin: 20px auto;
-  padding: 10px;
+button {
+    background: #2a5298;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
 }
 
-.ads-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
-  gap: 15px;
+button:hover {
+    background: #1e3c72;
 }
 
-.ad-card {
-  background: #fff;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 6px 15px rgba(0,0,0,.1);
+.ad {
+    background: white;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.ad-card img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
+.ad img {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    margin-top: 10px;
+    border-radius: 5px;
 }
 
-.ad-card .content {
-  padding: 10px;
+.preview img {
+    max-width: 100%;
+    max-height: 150px;
+    margin-top: 5px;
+    border-radius: 5px;
 }
 
-.ad-card h3 {
-  font-size: 15px;
-  margin: 0 0 5px;
-}
-
-.price {
-  color: #27ae60;
-  font-weight: bold;
-}
-
-#loadMoreBtn {
-  margin: 25px auto;
-  display: block;
-  padding: 12px 25px;
-  font-size: 16px;
-  border-radius: 30px;
-  border: none;
-  background: #3498db;
-  color: white;
-  cursor: pointer;
+header {
+    background: #2a5298;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 20px;
 }
