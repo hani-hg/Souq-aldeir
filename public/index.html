@@ -4,64 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سوق دير الزور المفتوح</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <!-- المسار الصحيح للـ CSS - نسبي من موقع index.html -->
+    <link rel="stylesheet" href="/CSS/style.css">
 </head>
 <body>
-    <header><div class="container"><h1>🛒 سوق دير الزور المفتوح</h1><p>أول سوق إلكتروني في دير الزور</p></div></header>
-
-    <div class="auth-bar"><div class="container" id="authSection">
-        <button class="btn btn-primary" id="showLoginBtn">دخول</button>
-        <button class="btn btn-outline" id="showSignupBtn">حساب جديد</button>
-        <button class="btn btn-success" id="showAddAdBtn"><i class="fas fa-plus"></i> نشر إعلان</button>
-    </div></div>
-
-    <main class="container">
-        <h2 class="section-title">الفئات</h2>
-        <div class="categories-grid" id="categoriesContainer"></div>
-        <h2 class="section-title">أحدث الإعلانات</h2>
-        <div class="ads-grid" id="adsContainer"><div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></div>
-    </main>
-
-    <!-- نماذج -->
-    <div class="modal" id="authModal"><div class="modal-content">
-        <span class="close-modal" id="closeAuthModal">&times;</span>
-        <h2 id="authModalTitle">تسجيل الدخول</h2>
-        <div id="authError" style="color:red;"></div>
-        <form id="authForm">
-            <div class="form-group" id="signupNameGroup" style="display:none;"><label>الاسم</label><input type="text" id="signupName"></div>
-            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="authEmail" required></div>
-            <div class="form-group"><label>كلمة المرور</label><input type="password" id="authPassword" required></div>
-            <button type="submit" class="btn btn-primary" id="authSubmit" style="width:100%;">دخول</button>
-        </form>
-    </div></div>
-
-    <div class="modal" id="addAdModal"><div class="modal-content">
-        <span class="close-modal" id="closeAddAdModal">&times;</span>
-        <h2>نشر إعلان جديد</h2>
-        <div id="addAdError" style="color:red;"></div>
-        <form id="addAdForm">
-            <div class="form-group"><label>العنوان</label><input type="text" id="adTitle" required></div>
-            <div class="form-group"><label>الوصف</label><textarea id="adDescription" rows="2" required></textarea></div>
-            <div class="form-group"><label>السعر ($)</label><input type="number" id="adPrice" step="0.01" required></div>
-            <div class="form-group"><label>رقم الهاتف</label><input type="text" id="adPhone" required></div>
-            <div class="form-group"><label>الفئة</label><select id="adCategory" required><option value="">اختر فئة</option></select></div>
-            <input type="file" id="imageFile" accept="image/*">
-            <div class="preview" id="preview"></div>
-            <button type="submit" class="btn btn-success" id="submitAd" style="width:100%;">نشر الإعلان</button>
-        </form>
-    </div></div>
-
-    <footer><div class="container"><p>© 2025 سوق دير الزور المفتوح</p></div></footer>
-
-    <!-- تحميل Firebase من CDN بديل -->
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-storage.js"></script>
-
-    <!-- ملفات المشروع بمسارات مطلقة -->
+    <h1>سوق دير الزور المفتوح</h1>
+    <p>مرحباً بكم في تطبيق بيع المستعمل</p>
+    
+    <!-- المسارات الصحيحة للـ JavaScript - نسبية من موقع index.html -->
     <script src="/js/firebase.js"></script>
     <script src="/js/ads.js"></script>
     <script src="/js/app.js"></script>
