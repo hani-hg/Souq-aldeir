@@ -3,35 +3,25 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 body {
-    font-family: 'Tajawal', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     direction: rtl;
     background: #f4f4f4;
     padding: 10px;
 }
-
 input, textarea, button, select {
     width: 100%;
     margin: 5px 0;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    font-size: 16px;
 }
-
 button {
     background: #2a5298;
     color: white;
     border: none;
     cursor: pointer;
-    font-weight: bold;
 }
-
-button:hover {
-    background: #1e3c72;
-}
-
 .ad {
     background: white;
     padding: 15px;
@@ -39,7 +29,6 @@ button:hover {
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
 .ad img {
     max-width: 100%;
     max-height: 200px;
@@ -47,14 +36,12 @@ button:hover {
     margin-top: 10px;
     border-radius: 5px;
 }
-
 .preview img {
     max-width: 100%;
     max-height: 150px;
     margin-top: 5px;
     border-radius: 5px;
 }
-
 header {
     background: #2a5298;
     color: white;
