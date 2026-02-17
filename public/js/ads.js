@@ -1,43 +1,59 @@
-let lastDoc = null;
-let loading = false;
+// دالة لإضافة إعلان جديد مع صورة
+window.addAd = async function(title, description, price, category, imageFile) {
+    if (!window.auth.currentUser) {
+        throw new Error('يجب تسجيل الدخول أولاً');
+    }
 
-async function loadAds() {
-  if (loading) return;
-  loading = true;
+    let imageUrl = '';
 
-  const btn = document.getElementById("loadMoreBtn");
-  btn.textContent = "جاري التحميل...";
+    // إذا كان هناك ملف صورة، نرفعه إلى Firebase Storage
+    if (imageFile) {
+        const storageRef = window.storage.ref(`ads/${Date.now()}_${imageFile.name}`);
+        await storageRef.put(imageFile);
+        imageUrl = await storageRef.getDownloadURL();
+    }
 
-  let query = db.collection("ads")
-    .orderBy("createdAt", "desc")
-    .limit(6);
+    // إضافة الإعلان إلى Firestore
+    await window.db.collection('ads').add({
+        title,
+        description,
+        price,
+        category,
+        user: window.auth.currentUser.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        imageUrl: imageUrl
+    });
+};
 
-  if (lastDoc) {
-    query = query.startAfter(lastDoc);
-  }
+// دالة لتحميل الإعلانات وعرضها في عنصر معين
+window.loadAds = function(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-  const snap = await query.get();
+    // استماع للتغييرات في مجموعة الإعلانات
+    window.db.collection('ads').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        if (snapshot.empty) {
+            container.innerHTML = '<p>لا توجد إعلانات بعد</p>';
+            return;
+        }
 
-  if (!snap.empty) {
-    lastDoc = snap.docs[snap.docs.length - 1];
-    snap.forEach(doc => renderAd(doc.data()));
-  }
-
-  btn.textContent = "تحميل المزيد";
-  loading = false;
-}
-
-function renderAd(ad) {
-  const grid = document.getElementById("adsGrid");
-
-  grid.innerHTML += `
-    <div class="ad-card">
-      <img src="${ad.imageUrl}" loading="lazy">
-      <div class="content">
-        <h3>${ad.title}</h3>
-        <div class="price">${ad.price} ل.س</div>
-        <small>${ad.city} • ${ad.category}</small>
-      </div>
-    </div>
-  `;
-}
+        let html = '';
+        snapshot.forEach(doc => {
+            const ad = doc.data();
+            // عرض الصورة إذا وجدت
+            const imageHtml = ad.imageUrl ? `<img src="${ad.imageUrl}" alt="صورة الإعلان">` : '';
+            
+            html += `
+                <div class="ad">
+                    <h3>${ad.title}</h3>
+                    <p>${ad.description}</p>
+                    <p>💰 السعر: ${ad.price}</p>
+                    <p>📂 الفئة: ${ad.category}</p>
+                    <p>👤 الناشر: ${ad.user}</p>
+                    ${imageHtml}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    });
+};
