@@ -1,4 +1,3 @@
-// دالة لإضافة إعلان جديد مع صورة
 window.addAd = async function(title, description, price, category, imageFile) {
     if (!window.auth.currentUser) {
         throw new Error('يجب تسجيل الدخول أولاً');
@@ -6,14 +5,12 @@ window.addAd = async function(title, description, price, category, imageFile) {
 
     let imageUrl = '';
 
-    // رفع الصورة إذا وجدت
     if (imageFile) {
         const storageRef = window.storage.ref(`ads/${Date.now()}_${imageFile.name}`);
         await storageRef.put(imageFile);
         imageUrl = await storageRef.getDownloadURL();
     }
 
-    // إضافة الإعلان إلى Firestore
     await window.db.collection('ads').add({
         title,
         description,
@@ -25,7 +22,6 @@ window.addAd = async function(title, description, price, category, imageFile) {
     });
 };
 
-// دالة لتحميل الإعلانات وعرضها
 window.loadAds = function(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
