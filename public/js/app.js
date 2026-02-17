@@ -1,27 +1,29 @@
 const adsDiv = document.getElementById("ads");
+const addBtn = document.getElementById("addAdBtn");
 
-document.getElementById("addAdBtn").onclick = async () => {
+addBtn.onclick = async () => {
   const title = document.getElementById("title").value;
   const price = document.getElementById("price").value;
 
-  if (!title || !price || !imageUrl) {
-    alert("املأ كل الحقول");
+  if (!title || !price || !window.imageUrl) {
+    alert("املأ العنوان والسعر وارفع صورة");
     return;
   }
 
   await db.collection("ads").add({
     title,
     price,
-    imageUrl,
+    imageUrl: window.imageUrl,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
   alert("تم نشر الإعلان");
-  location.reload();
+  loadAds();
 };
 
 async function loadAds() {
-  const snap = await db.collection("ads")
+  const snap = await db
+    .collection("ads")
     .orderBy("createdAt", "desc")
     .get();
 
