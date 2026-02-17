@@ -1,113 +1,54 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوق دير الزور المفتوح</title>
-    <link rel="stylesheet" href="/CSS/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <title>اختبار Firebase</title>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>🛒 سوق دير الزور المفتوح</h1>
-            <p>أول سوق إلكتروني في دير الزور</p>
-        </div>
-    </header>
+    <h2>🔍 اختبار اتصال Firebase</h2>
+    <div id="result" style="white-space: pre-wrap; background: #f4f4f4; padding: 10px; direction: ltr;">جارٍ التحميل...</div>
 
-    <div class="auth-bar">
-        <div class="container" id="authSection">
-            <!-- سيتم تعبئته عبر JavaScript -->
-        </div>
-    </div>
-
-    <main class="container">
-        <h2 class="section-title">الفئات</h2>
-        <div class="categories-grid" id="categoriesContainer"></div>
-        <h2 class="section-title">أحدث الإعلانات</h2>
-        <div class="ads-grid" id="adsContainer">
-            <div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
-        </div>
-    </main>
-
-    <!-- نماذج -->
-    <div class="modal" id="authModal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeAuthModal">&times;</span>
-            <h2 id="authModalTitle">تسجيل الدخول</h2>
-            <div id="authError" style="color:red;"></div>
-            <form id="authForm">
-                <div class="form-group" id="signupNameGroup" style="display:none;">
-                    <label>الاسم</label>
-                    <input type="text" id="signupName">
-                </div>
-                <div class="form-group">
-                    <label>البريد الإلكتروني</label>
-                    <input type="email" id="authEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="authPassword" required>
-                </div>
-                <button type="submit" class="btn btn-primary" id="authSubmit" style="width:100%;">دخول</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal" id="addAdModal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeAddAdModal">&times;</span>
-            <h2>نشر إعلان جديد</h2>
-            <div id="addAdError" style="color:red;"></div>
-            <form id="addAdForm">
-                <div class="form-group">
-                    <label>العنوان</label>
-                    <input type="text" id="adTitle" required>
-                </div>
-                <div class="form-group">
-                    <label>الوصف</label>
-                    <textarea id="adDescription" rows="2" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>السعر ($)</label>
-                    <input type="number" id="adPrice" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label>رقم الهاتف</label>
-                    <input type="text" id="adPhone" required>
-                </div>
-                <div class="form-group">
-                    <label>الفئة</label>
-                    <select id="adCategory" required>
-                        <option value="">اختر فئة</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>صورة (اختياري)</label>
-                    <input type="file" id="imageFile" accept="image/*">
-                    <div class="preview" id="preview"></div>
-                </div>
-                <button type="submit" class="btn btn-success" id="submitAd" style="width:100%;">نشر الإعلان</button>
-            </form>
-        </div>
-    </div>
-
-    <footer>
-        <div class="container">
-            <p>© 2025 سوق دير الزور المفتوح</p>
-        </div>
-    </footer>
-
-    <!-- تحميل Firebase من روابط بديلة (jsDelivr) -->
+    <!-- استخدام روابط CDN مختلفة (jsDelivr) -->
     <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-storage.js"></script>
 
-    <!-- ملفات المشروع (بمسارات مطلقة) -->
-    <script src="/js/firebase.js"></script>
-    <script src="/js/ads.js"></script>
-    <script src="/js/app.js"></script>
+    <script>
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerText = 'جاري تهيئة Firebase...';
+
+        // إعدادات مشروعك الحالي
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
+            authDomain: "souq-aldeir-8b708.firebaseapp.com",
+            projectId: "souq-aldeir-8b708",
+            storageBucket: "souq-aldeir-8b708.firebasestorage.app",
+            messagingSenderId: "718751448398",
+            appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
+        };
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            resultDiv.innerText = '✅ تمت تهيئة Firebase. جاري الاتصال بقاعدة البيانات...';
+
+            const db = firebase.firestore();
+            db.collection('ads').get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        resultDiv.innerText = '✅ الاتصال ناجح، لكن لا توجد إعلانات. أضف إعلانًا في Firebase Console.';
+                    } else {
+                        let data = '';
+                        snapshot.forEach(doc => {
+                            data += JSON.stringify(doc.data(), null, 2) + '\n\n';
+                        });
+                        resultDiv.innerText = '✅ البيانات المستلمة:\n' + data;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerText = '❌ خطأ في قراءة البيانات:\n' + error.message;
+                });
+        } catch (error) {
+            resultDiv.innerText = '❌ فشل تهيئة Firebase:\n' + error.message;
+        }
+    </script>
 </body>
 </html>
