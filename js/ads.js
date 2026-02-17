@@ -1,34 +1,23 @@
 import {
   collection, query, orderBy, limit, startAfter, getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
 import { db } from "./firebase.js";
 
-let lastAd = null;
-const PAGE_SIZE = 6;
+let lastDoc = null;
+const PAGE_SIZE = 8;
 
-export async function loadAds() {
-
+export async function fetchAds() {
   let q = query(
     collection(db, "ads"),
+    orderBy("isFeatured", "desc"),
     orderBy("createdAt", "desc"),
     limit(PAGE_SIZE)
   );
 
-  if (lastAd) {
-    q = query(
-      collection(db, "ads"),
-      orderBy("createdAt", "desc"),
-      startAfter(lastAd),
-      limit(PAGE_SIZE)
-    );
-  }
+  if (lastDoc) q = query(q, startAfter(lastDoc));
 
   const snap = await getDocs(q);
-  lastAd = snap.docs[snap.docs.length - 1];
+  if (!snap.empty) lastDoc = snap.docs[snap.docs.length - 1];
 
-  return snap.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
