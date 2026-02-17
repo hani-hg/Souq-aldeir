@@ -8,14 +8,15 @@
     <h2>🔍 اختبار اتصال Firebase</h2>
     <div id="result" style="white-space: pre-wrap; background: #f4f4f4; padding: 10px; direction: ltr;">جارٍ التحميل...</div>
 
-    <!-- استخدام روابط unpkg بدلاً من jsDelivr -->
-    <script src="https://unpkg.com/firebase@10.7.1/dist/firebase-app.js"></script>
-    <script src="https://unpkg.com/firebase@10.7.1/dist/firebase-firestore.js"></script>
+    <!-- استخدام روابط CDN مختلفة (jsDelivr) -->
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-firestore.js"></script>
 
     <script>
         const resultDiv = document.getElementById('result');
         resultDiv.innerText = 'جاري تهيئة Firebase...';
 
+        // إعدادات مشروعك الحالي
         const firebaseConfig = {
             apiKey: "AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
             authDomain: "souq-aldeir-8b708.firebaseapp.com",
@@ -25,32 +26,28 @@
             appId: "1:718751448398:web:b588ab6753d1fc7aa1321f"
         };
 
-        if (typeof firebase === 'undefined') {
-            resultDiv.innerText = '❌ لم يتم تحميل مكتبات Firebase. الرابط محجوب. جرب استخدام VPN أو شبكة أخرى.';
-        } else {
-            try {
-                firebase.initializeApp(firebaseConfig);
-                resultDiv.innerText = '✅ تمت تهيئة Firebase. جاري الاتصال بقاعدة البيانات...';
+        try {
+            firebase.initializeApp(firebaseConfig);
+            resultDiv.innerText = '✅ تمت تهيئة Firebase. جاري الاتصال بقاعدة البيانات...';
 
-                const db = firebase.firestore();
-                db.collection('ads').get()
-                    .then(snapshot => {
-                        if (snapshot.empty) {
-                            resultDiv.innerText = '✅ الاتصال ناجح، لكن لا توجد إعلانات. أضف إعلانًا في Firebase Console.';
-                        } else {
-                            let data = '';
-                            snapshot.forEach(doc => {
-                                data += JSON.stringify(doc.data(), null, 2) + '\n\n';
-                            });
-                            resultDiv.innerText = '✅ البيانات المستلمة:\n' + data;
-                        }
-                    })
-                    .catch(error => {
-                        resultDiv.innerText = '❌ خطأ في قراءة البيانات:\n' + error.message;
-                    });
-            } catch (error) {
-                resultDiv.innerText = '❌ فشل تهيئة Firebase:\n' + error.message;
-            }
+            const db = firebase.firestore();
+            db.collection('ads').get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        resultDiv.innerText = '✅ الاتصال ناجح، لكن لا توجد إعلانات. أضف إعلانًا في Firebase Console.';
+                    } else {
+                        let data = '';
+                        snapshot.forEach(doc => {
+                            data += JSON.stringify(doc.data(), null, 2) + '\n\n';
+                        });
+                        resultDiv.innerText = '✅ البيانات المستلمة:\n' + data;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerText = '❌ خطأ في قراءة البيانات:\n' + error.message;
+                });
+        } catch (error) {
+            resultDiv.innerText = '❌ فشل تهيئة Firebase:\n' + error.message;
         }
     </script>
 </body>
