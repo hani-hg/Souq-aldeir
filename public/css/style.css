@@ -1,0 +1,63 @@
+body {
+  margin: 0;
+  font-family: Tahoma, sans-serif;
+  background: #f4f6f8;
+}
+
+.top {
+  background: #2c3e50;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 10px;
+}
+
+.ads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+  gap: 15px;
+}
+
+.ad-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 15px rgba(0,0,0,.1);
+}
+
+.ad-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.ad-card .content {
+  padding: 10px;
+}
+
+.ad-card h3 {
+  font-size: 15px;
+  margin: 0 0 5px;
+}
+
+.price {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+#loadMoreBtn {
+  margin: 25px auto;
+  display: block;
+  padding: 12px 25px;
+  font-size: 16px;
+  border-radius: 30px;
+  border: none;
+  background: #3498db;
+  color: white;
+  cursor: pointer;
+}
