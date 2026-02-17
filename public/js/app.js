@@ -1,41 +1,112 @@
+// عنصر التطبيق الرئيسي
+const appDiv = document.getElementById('app');
+
+// رسم واجهة المستخدم
 function renderUI() {
-    document.getElementById('app').innerHTML = `
+    appDiv.innerHTML = `
         <div id="auth">
-            <input id="email" placeholder="البريد"><input id="password" type="password" placeholder="كلمة المرور">
-            <button onclick="handleLogin()">دخول</button><button onclick="handleSignup()">تسجيل</button>
+            <input id="email" type="email" placeholder="البريد الإلكتروني">
+            <input id="password" type="password" placeholder="كلمة المرور">
+            <button onclick="handleLogin()">دخول</button>
+            <button onclick="handleSignup()">تسجيل</button>
         </div>
-        <button onclick="handleLogout()">تسجيل خروج</button><hr>
+
+        <button onclick="handleLogout()">تسجيل خروج</button>
+
+        <hr>
+
         <h3>➕ إضافة إعلان</h3>
-        <input id="title" placeholder="العنوان"><textarea id="desc" placeholder="الوصف"></textarea>
-        <input id="price" placeholder="السعر"><input id="category" placeholder="الفئة">
-        <input type="file" id="imageFile" accept="image/*"><div class="preview" id="preview"></div>
-        <button onclick="handlePublish()">نشر</button><hr>
-        <h3>📢 الإعلانات</h3><div id="adsContainer"></div>
+        <input id="title" placeholder="عنوان الإعلان">
+        <textarea id="desc" placeholder="الوصف"></textarea>
+        <input id="price" placeholder="السعر">
+        <input id="category" placeholder="الفئة (مثال: عقارات)">
+        <input type="file" id="imageFile" accept="image/*">
+        <div class="preview" id="preview"></div>
+        <button onclick="handlePublish()">نشر الإعلان</button>
+
+        <hr>
+
+        <h3>📢 الإعلانات</h3>
+        <div id="adsContainer"></div>
     `;
 }
-window.handleLogin = async () => {
-    try { await window.auth.signInWithEmailAndPassword(email.value, password.value); alert('تم الدخول'); }
-    catch(e) { alert(e.message); }
+
+// دوال المصادقة
+window.handleLogin = async function() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    try {
+        await window.auth.signInWithEmailAndPassword(email, password);
+        alert('تم الدخول بنجاح');
+    } catch (error) {
+        alert('خطأ في الدخول: ' + error.message);
+    }
 };
-window.handleSignup = async () => {
-    try { await window.auth.createUserWithEmailAndPassword(email.value, password.value); alert('تم التسجيل'); }
-    catch(e) { alert(e.message); }
+
+window.handleSignup = async function() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    try {
+        await window.auth.createUserWithEmailAndPassword(email, password);
+        alert('تم إنشاء الحساب بنجاح');
+    } catch (error) {
+        alert('خطأ في التسجيل: ' + error.message);
+    }
 };
-window.handleLogout = () => { window.auth.signOut(); alert('تم الخروج'); };
-window.handlePublish = async () => {
-    if (!title.value || !desc.value || !price.value || !category.value) { alert('املأ الحقول'); return; }
-    try { await window.addAd(title.value, desc.value, price.value, category.value, imageFile.files[0]); alert('تم النشر'); } 
-    catch(e) { alert(e.message); }
+
+window.handleLogout = function() {
+    window.auth.signOut();
+    alert('تم تسجيل الخروج');
 };
-document.addEventListener('change', e => {
+
+// دالة نشر الإعلان
+window.handlePublish = async function() {
+    const title = document.getElementById('title').value;
+    const desc = document.getElementById('desc').value;
+    const price = document.getElementById('price').value;
+    const category = document.getElementById('category').value;
+    const imageFile = document.getElementById('imageFile').files[0];
+
+    if (!title || !desc || !price || !category) {
+        alert('يرجى ملء جميع الحقول');
+        return;
+    }
+
+    try {
+        await window.addAd(title, desc, price, category, imageFile);
+        alert('تم نشر الإعلان بنجاح');
+
+        // تفريغ الحقول
+        document.getElementById('title').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('imageFile').value = '';
+        document.getElementById('preview').innerHTML = '';
+    } catch (error) {
+        alert('خطأ في النشر: ' + error.message);
+    }
+};
+
+// معاينة الصورة قبل الرفع
+document.addEventListener('change', function(e) {
     if (e.target.id === 'imageFile' && e.target.files[0]) {
         const reader = new FileReader();
-        reader.onload = ev => preview.innerHTML = `<img src="${ev.target.result}" alt="معاينة">`;
+        reader.onload = function(ev) {
+            document.getElementById('preview').innerHTML = `<img src="${ev.target.result}" alt="معاينة">`;
+        };
         reader.readAsDataURL(e.target.files[0]);
     }
 });
-window.auth.onAuthStateChanged(user => {
-    if (document.getElementById('auth')) document.getElementById('auth').style.display = user ? 'none' : 'block';
+
+// مراقبة حالة المصادقة (إخفاء/إظهار أزرار الدخول)
+window.auth.onAuthStateChanged(function(user) {
+    const authDiv = document.getElementById('auth');
+    if (authDiv) {
+        authDiv.style.display = user ? 'none' : 'block';
+    }
 });
+
+// بدء التطبيق
 renderUI();
 window.loadAds('adsContainer');
