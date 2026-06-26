@@ -1,21 +1,660 @@
-🛒
-سوق دير الزور
-أول سوق إلكتروني مفتوح
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سوق دير الزور</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+<style>
+:root{
+  --blue:#1565c0;--blue2:#1976d2;--orange:#f57c00;--green:#2e7d32;
+  --bg:#f2f4f8;--white:#fff;--border:#e0e4ef;--gray:#6b7280;
+  --dark:#1a1f36;--radius:12px;--shadow:0 2px 12px rgba(21,101,192,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Tajawal',sans-serif;}
+body{background:var(--bg);color:var(--dark);padding-bottom:70px;}
 
-ابحث، بِع، واشترِ بسهولة
-سوقك المحلي الإلكتروني في دير الزور — إعلانات مجانية بين أهل المنطقة
-—
-إعلان نشط
-—
-فئة
-مجاني
-النشر مجاني
+/* TOP NAV */
+.topnav{
+  position:sticky;top:0;z-index:200;
+  background:var(--blue);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.topnav-logo{color:#fff;font-size:1.15em;font-weight:800;flex:1;}
+.topnav-logo span{color:#ffd54f;}
+.topnav-icons{display:flex;gap:10px;}
+.topnav-icons button{
+  background:rgba(255,255,255,.15);border:none;
+  color:#fff;width:36px;height:36px;border-radius:50%;
+  font-size:1em;cursor:pointer;
+}
 
+/* SEARCH BAR */
+.searchbar{
+  background:var(--blue2);
+  padding:10px 14px 14px;
+}
+.search-wrap{
+  display:flex;gap:8px;
+  background:#fff;border-radius:50px;
+  padding:6px 12px;align-items:center;
+}
+.search-wrap input{
+  flex:1;border:none;outline:none;font-size:.95em;
+  font-family:'Tajawal',sans-serif;color:var(--dark);
+}
+.search-wrap i{color:var(--gray);}
 
-الفئات الإعلانات
+/* CATEGORIES SCROLL */
+.cats-scroll{
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  padding:10px 14px;
+  overflow-x:auto;white-space:nowrap;
+  display:flex;gap:8px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.cats-scroll::-webkit-scrollbar{display:none;}
+.cat-chip{
+  display:inline-flex;flex-direction:column;align-items:center;
+  background:var(--bg);border:1.5px solid var(--border);
+  border-radius:12px;padding:8px 14px;cursor:pointer;
+  min-width:70px;transition:all .2s;gap:4px;
+}
+.cat-chip.active,.cat-chip:hover{
+  background:var(--blue);border-color:var(--blue);color:#fff;
+}
+.cat-chip i{font-size:1.3em;color:var(--blue);}
+.cat-chip.active i,.cat-chip:hover i{color:#fff;}
+.cat-chip span{font-size:.75em;font-weight:600;}
 
+/* FILTER BAR */
+.filter-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;background:var(--white);
+  border-bottom:1px solid var(--border);
+  gap:8px;
+}
+.filter-bar .count{font-size:.88em;color:var(--gray);}
+.sort-btn{
+  border:1.5px solid var(--border);background:#fff;
+  border-radius:20px;padding:5px 12px;font-size:.82em;
+  font-family:'Tajawal',sans-serif;color:var(--dark);cursor:pointer;
+  display:flex;align-items:center;gap:5px;
+}
 
-جاري التحميل...
+/* ADS GRID */
+.ads-container{padding:12px 12px 0;}
+.ads-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.ad-card{
+  background:var(--white);border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--shadow);
+  cursor:pointer;transition:transform .18s;
+  position:relative;
+}
+.ad-card:active{transform:scale(.97);}
+.ad-img-wrap{position:relative;}
+.ad-img{
+  width:100%;height:145px;object-fit:cover;
+  background:linear-gradient(135deg,#dde4f5,#c5d0ea);
+  display:block;
+}
+.ad-no-img{
+  width:100%;height:145px;
+  background:linear-gradient(135deg,#dde4f5,#c5d0ea);
+  display:flex;align-items:center;justify-content:center;
+  color:#aab;font-size:2.2em;
+}
+.ad-fav{
+  position:absolute;top:7px;left:7px;
+  background:rgba(255,255,255,.85);border:none;
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9em;cursor:pointer;color:#ccc;
+}
+.ad-fav.active{color:#e53935;}
+.ad-badge{
+  position:absolute;bottom:7px;right:7px;
+  background:var(--orange);color:#fff;
+  font-size:.7em;font-weight:700;padding:2px 8px;border-radius:20px;
+}
+.ad-body{padding:9px 10px 11px;}
+.ad-price{font-size:1.05em;font-weight:800;color:var(--green);margin-bottom:3px;}
+.ad-title{
+  font-size:.88em;color:var(--dark);font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:2px;
+}
+.ad-loc{font-size:.75em;color:var(--gray);display:flex;align-items:center;gap:3px;}
+.ad-time{font-size:.7em;color:#aab;margin-top:4px;}
 
-سوق دير الزور المفتوح — منصة إعلانات مجانية لأهل دير الزور
-© 2025 جميع الحقوق محفوظة
+/* EMPTY */
+.empty-state{
+  grid-column:1/-1;text-align:center;
+  padding:50px 20px;color:var(--gray);
+}
+.empty-state i{font-size:3em;opacity:.3;display:block;margin-bottom:10px;}
+
+/* LOADING */
+.loading{
+  grid-column:1/-1;text-align:center;
+  padding:40px;color:var(--gray);
+}
+.loading i{font-size:1.8em;color:var(--blue);display:block;margin-bottom:8px;}
+
+/* FAB - Add Button */
+.fab{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:150;
+  background:var(--orange);color:#fff;
+  border:none;border-radius:50px;
+  padding:13px 28px;font-size:1em;font-weight:700;
+  font-family:'Tajawal',sans-serif;
+  box-shadow:0 4px 20px rgba(245,124,0,.45);
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:transform .2s;
+}
+.fab:active{transform:translateX(-50%) scale(.95);}
+
+/* BOTTOM NAV */
+.bottomnav{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--white);border-top:1px solid var(--border);
+  display:flex;justify-content:space-around;align-items:center;
+  padding:8px 0 10px;
+}
+.bnav-item{
+  display:flex;flex-direction:column;align-items:center;
+  gap:3px;font-size:.68em;color:var(--gray);
+  cursor:pointer;border:none;background:none;
+  font-family:'Tajawal',sans-serif;
+  padding:0 12px;
+}
+.bnav-item i{font-size:1.4em;}
+.bnav-item.active{color:var(--blue);}
+
+/* MODAL OVERLAY */
+.modal{
+  display:none;position:fixed;inset:0;
+  background:rgba(10,20,50,.55);
+  z-index:999;justify-content:center;align-items:flex-end;
+  backdrop-filter:blur(2px);
+}
+.modal.active{display:flex;}
+.modal-sheet{
+  background:var(--white);
+  border-radius:20px 20px 0 0;
+  width:100%;max-height:92vh;overflow-y:auto;
+  padding:20px 18px 30px;
+  animation:slideup .25s ease;
+}
+@keyframes slideup{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.sheet-handle{
+  width:40px;height:4px;background:#ddd;
+  border-radius:4px;margin:0 auto 16px;
+}
+.sheet-title{font-size:1.15em;font-weight:800;color:var(--dark);margin-bottom:16px;}
+.close-sheet{
+  float:left;background:none;border:none;
+  font-size:1.4em;color:var(--gray);cursor:pointer;
+}
+
+/* FORM */
+.form-group{margin-bottom:13px;}
+.form-group label{display:block;font-size:.85em;font-weight:700;color:var(--gray);margin-bottom:5px;}
+.form-group input,
+.form-group textarea,
+.form-group select{
+  width:100%;padding:11px 13px;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:.95em;font-family:'Tajawal',sans-serif;
+  color:var(--dark);outline:none;background:var(--bg);
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus{border-color:var(--blue);background:#fff;}
+.form-group textarea{resize:vertical;min-height:75px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-full{
+  width:100%;padding:13px;border:none;border-radius:50px;
+  font-size:1em;font-weight:700;font-family:'Tajawal',sans-serif;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:4px;
+}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-orange{background:var(--orange);color:#fff;}
+.btn-outline{background:#fff;border:1.5px solid var(--blue);color:var(--blue);}
+.err{color:#c62828;font-size:.82em;padding:7px 10px;background:#fff3f3;border-radius:8px;margin-bottom:10px;display:none;}
+.err.show{display:block;}
+#imgPreview img{width:100%;border-radius:10px;margin-top:8px;}
+
+/* AD DETAIL */
+.detail-img{width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin-bottom:12px;}
+.detail-price{font-size:1.5em;font-weight:800;color:var(--green);margin:8px 0;}
+.detail-desc{color:var(--gray);line-height:1.75;margin-bottom:14px;font-size:.95em;}
+.detail-info{background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+.detail-info-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.9em;}
+.detail-info-row i{color:var(--blue);width:18px;text-align:center;}
+.call-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:#e8f5e9;color:var(--green);border:1.5px solid #a5d6a7;
+  border-radius:12px;padding:12px;font-weight:700;font-size:1em;
+  text-decoration:none;margin-top:8px;
+}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(30px);
+  background:var(--dark);color:#fff;padding:10px 22px;
+  border-radius:50px;font-size:.88em;font-weight:600;
+  z-index:9999;opacity:0;transition:all .3s;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--green);}
+.toast.bad{background:#c62828;}
+
+/* AUTH TOGGLE */
+.auth-toggle{text-align:center;margin-top:12px;font-size:.85em;color:var(--gray);}
+.auth-toggle a{color:var(--blue);font-weight:700;}
+
+@media(min-width:480px){
+  .ads-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(min-width:768px){
+  .ads-grid{grid-template-columns:repeat(4,1fr);}
+  .topnav-logo{font-size:1.3em;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="topnav-logo">🛒 <span>سوق</span> دير الزور</div>
+  <div class="topnav-icons">
+    <button id="loginNavBtn" title="دخول"><i class="fas fa-user"></i></button>
+    <button onclick="showToast('قريباً: الإشعارات','ok')" title="إشعارات"><i class="fas fa-bell"></i></button>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="searchbar">
+  <div class="search-wrap">
+    <i class="fas fa-search"></i>
+    <input id="searchInput" type="text" placeholder="ابحث في سوق دير الزور...">
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="cats-scroll" id="catsScroll"></div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="count" id="adsCount">جاري التحميل...</span>
+  <button class="sort-btn" onclick="showToast('قريباً: الفرز','ok')"><i class="fas fa-sliders-h"></i> ترتيب</button>
+</div>
+
+<!-- ADS -->
+<div class="ads-container">
+  <div class="ads-grid" id="adsGrid">
+    <div class="loading"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل الإعلانات...</p></div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabAdd"><i class="fas fa-plus"></i> أضف إعلان</button>
+
+<!-- BOTTOM NAV -->
+<div class="bottomnav">
+  <button class="bnav-item active" onclick="setTab(this)"><i class="fas fa-home"></i><span>الرئيسية</span></button>
+  <button class="bnav-item" onclick="setTab(this);showToast('قريباً: المفضلة','ok')"><i class="fas fa-heart"></i><span>المفضلة</span></button>
+  <button class="bnav-item" onclick="setTab(this);document.getElementById('fabAdd').click()"><i class="fas fa-plus-circle"></i><span>أضف</span></button>
+  <button class="bnav-item" onclick="setTab(this);showToast('قريباً: الرسائل','ok')"><i class="fas fa-comment-dots"></i><span>رسائل</span></button>
+  <button class="bnav-item" onclick="setTab(this);document.getElementById('loginNavBtn').click()"><i class="fas fa-user-circle"></i><span>حسابي</span></button>
+</div>
+
+<!-- MODAL: AUTH -->
+<div class="modal" id="authModal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <button class="close-sheet" id="closeAuth">✕</button>
+    <div class="sheet-title" id="authTitle">تسجيل الدخول</div>
+    <div class="err" id="authErr"></div>
+    <form id="authForm">
+      <div class="form-group" id="nameRow" style="display:none">
+        <label>الاسم الكامل</label>
+        <input type="text" id="authName" placeholder="اسمك">
+      </div>
+      <div class="form-group">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="authEmail" placeholder="example@mail.com" required>
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input type="password" id="authPass" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn-full btn-blue" id="authSubmit">دخول</button>
+    </form>
+    <div class="auth-toggle">
+      <span id="toggleText">ليس لديك حساب؟</span>
+      <a href="#" id="toggleLink"> إنشاء حساب</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD AD -->
+<div class="modal" id="addModal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <button class="close-sheet" id="closeAdd">✕</button>
+    <div class="sheet-title">نشر إعلان جديد</div>
+    <div class="err" id="addErr"></div>
+    <form id="addForm">
+      <div class="form-group">
+        <label>عنوان الإعلان *</label>
+        <input type="text" id="adTitle" placeholder="مثال: آيفون 14 برو للبيع" required>
+      </div>
+      <div class="form-group">
+        <label>الوصف *</label>
+        <textarea id="adDesc" placeholder="اكتب تفاصيل الإعلان..." required></textarea>
+      </div>
+      <div class="row2">
+        <div class="form-group">
+          <label>السعر ($) *</label>
+          <input type="number" id="adPrice" placeholder="0" required>
+        </div>
+        <div class="form-group">
+          <label>رقم الهاتف *</label>
+          <input type="text" id="adPhone" placeholder="09xxxxxxxx" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>الفئة *</label>
+        <select id="adCat" required><option value="">اختر الفئة...</option></select>
+      </div>
+      <div class="form-group">
+        <label>صورة (اختياري)</label>
+        <input type="file" id="adImg" accept="image/*">
+        <div id="imgPreview"></div>
+      </div>
+      <button type="submit" class="btn-full btn-orange" id="addSubmit">
+        <i class="fas fa-paper-plane"></i> نشر الإعلان
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: AD DETAIL -->
+<div class="modal" id="detailModal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <button class="close-sheet" id="closeDetail">✕</button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-storage.min.js"></script>
+
+<script>
+(function(){
+  /* ---- Firebase Config ---- */
+  firebase.initializeApp({
+    apiKey:"AIzaSyCTRpzhyBsf-h9rh2AO6OuIAy_kE7k7fpY",
+    authDomain:"souq-aldeir-8b708.firebaseapp.com",
+    projectId:"souq-aldeir-8b708",
+    storageBucket:"souq-aldeir-8b708.firebasestorage.app",
+    messagingSenderId:"718751448398",
+    appId:"1:718751448398:web:b588ab6753d1fc7aa1321f"
+  });
+  const auth=firebase.auth(), db=firebase.firestore(), st=firebase.storage();
+
+  let user=null, allAds=[], activecat=null, isSignup=false;
+
+  /* ---- TOAST ---- */
+  window.showToast=function(msg,type=''){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.className='toast '+type+' show';
+    setTimeout(()=>t.className='toast',2800);
+  };
+
+  /* ---- TAB ---- */
+  window.setTab=function(el){
+    document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+  };
+
+  /* ---- CATEGORIES ---- */
+  const CATS=[
+    {n:'الكل',      i:'fas fa-th-large'},
+    {n:'سيارات',    i:'fas fa-car'},
+    {n:'عقارات',    i:'fas fa-home'},
+    {n:'إلكترونيات',i:'fas fa-mobile-alt'},
+    {n:'ملابس',     i:'fas fa-tshirt'},
+    {n:'أثاث',      i:'fas fa-couch'},
+    {n:'وظائف',     i:'fas fa-briefcase'},
+    {n:'خدمات',     i:'fas fa-tools'},
+    {n:'حيوانات',   i:'fas fa-paw'},
+    {n:'رياضة',     i:'fas fa-futbol'},
+    {n:'أخرى',      i:'fas fa-box'},
+  ];
+  function renderCats(){
+    const c=document.getElementById('catsScroll');
+    c.innerHTML=CATS.map(cat=>`
+      <div class="cat-chip ${activecat===cat.n||(activecat===null&&cat.n==='الكل')?'active':''}"
+           onclick="filterCat('${cat.n}')">
+        <i class="${cat.i}"></i><span>${cat.n}</span>
+      </div>`).join('');
+    const sel=document.getElementById('adCat');
+    if(sel){
+      sel.innerHTML='<option value="">اختر الفئة...</option>'+
+        CATS.filter(c=>c.n!=='الكل').map(c=>`<option value="${c.n}">${c.n}</option>`).join('');
+    }
+  }
+  window.filterCat=function(name){
+    activecat=name==='الكل'?null:name;
+    renderCats(); applyFilter();
+  };
+  renderCats();
+
+  /* ---- LOAD ADS ---- */
+  function loadAds(){
+    const g=document.getElementById('adsGrid');
+    g.innerHTML='<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
+    db.collection('ads').orderBy('createdAt','desc').get()
+      .then(s=>{
+        allAds=s.docs.map(d=>({id:d.id,...d.data()}));
+        applyFilter();
+      }).catch(()=>{
+        g.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>تعذّر تحميل الإعلانات</p></div>';
+      });
+  }
+
+  function applyFilter(){
+    const q=document.getElementById('searchInput').value.trim().toLowerCase();
+    let list=allAds;
+    if(activecat) list=list.filter(a=>a.category===activecat);
+    if(q) list=list.filter(a=>(a.title||'').toLowerCase().includes(q)||(a.description||'').toLowerCase().includes(q));
+    renderAds(list);
+  }
+  document.getElementById('searchInput').addEventListener('input',applyFilter);
+
+  function timeAgo(ts){
+    if(!ts) return '';
+    const d=ts.toDate?ts.toDate():new Date(ts);
+    const s=Math.floor((Date.now()-d)/1000);
+    if(s<60) return 'الآن';
+    if(s<3600) return Math.floor(s/60)+' دقيقة';
+    if(s<86400) return Math.floor(s/3600)+' ساعة';
+    return Math.floor(s/86400)+' يوم';
+  }
+
+  function renderAds(list){
+    const g=document.getElementById('adsGrid');
+    document.getElementById('adsCount').textContent=list.length+' إعلان';
+    if(!list.length){
+      g.innerHTML='<div class="empty-state"><i class="fas fa-search"></i><p>لا توجد نتائج</p></div>';
+      return;
+    }
+    g.innerHTML=list.map(ad=>`
+      <div class="ad-card" onclick="openDetail('${ad.id}')">
+        <div class="ad-img-wrap">
+          ${ad.imageUrl
+            ?`<img class="ad-img" src="${ad.imageUrl}" alt="${ad.title||''}" loading="lazy">`
+            :`<div class="ad-no-img"><i class="fas fa-image"></i></div>`}
+          <button class="ad-fav" onclick="event.stopPropagation();toggleFav(this)">
+            <i class="fas fa-heart"></i>
+          </button>
+          ${ad.category?`<span class="ad-badge">${ad.category}</span>`:''}
+        </div>
+        <div class="ad-body">
+          <div class="ad-price">${ad.price?Number(ad.price).toLocaleString()+' $':'مجاني'}</div>
+          <div class="ad-title">${ad.title||''}</div>
+          <div class="ad-loc"><i class="fas fa-map-marker-alt"></i> دير الزور</div>
+          <div class="ad-time">${timeAgo(ad.createdAt)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  window.toggleFav=function(btn){
+    btn.classList.toggle('active');
+    showToast(btn.classList.contains('active')?'أضيف للمفضلة ❤️':'حذف من المفضلة');
+  };
+
+  /* ---- DETAIL ---- */
+  window.openDetail=function(id){
+    const ad=allAds.find(a=>a.id===id); if(!ad) return;
+    document.getElementById('detailContent').innerHTML=`
+      ${ad.imageUrl?`<img class="detail-img" src="${ad.imageUrl}" alt="${ad.title}">`:''}
+      <span style="background:#e3f2fd;color:var(--blue);padding:3px 10px;border-radius:20px;font-size:.8em;font-weight:700">${ad.category||''}</span>
+      <h3 style="font-size:1.1em;font-weight:800;margin:10px 0 4px">${ad.title||''}</h3>
+      <div class="detail-price">${ad.price?Number(ad.price).toLocaleString()+' $':'مجاني'}</div>
+      <p class="detail-desc">${ad.description||''}</p>
+      <div class="detail-info">
+        ${ad.phone?`<div class="detail-info-row"><i class="fas fa-phone"></i><span>${ad.phone}</span></div>`:''}
+        <div class="detail-info-row"><i class="fas fa-map-marker-alt"></i><span>دير الزور، سوريا</span></div>
+        <div class="detail-info-row"><i class="fas fa-clock"></i><span>${timeAgo(ad.createdAt)}</span></div>
+      </div>
+      ${ad.phone?`<a href="tel:${ad.phone}" class="call-btn"><i class="fas fa-phone-alt"></i> اتصل بالبائع (${ad.phone})</a>`:''}
+    `;
+    document.getElementById('detailModal').classList.add('active');
+  };
+  document.getElementById('closeDetail').onclick=()=>document.getElementById('detailModal').classList.remove('active');
+
+  /* ---- AUTH ---- */
+  auth.onAuthStateChanged(u=>{
+    user=u; updateNavBtn(); loadAds();
+  });
+  function updateNavBtn(){
+    const btn=document.getElementById('loginNavBtn');
+    if(user){
+      btn.innerHTML='<i class="fas fa-sign-out-alt"></i>';
+      btn.onclick=()=>{auth.signOut();showToast('تم الخروج');};
+    } else {
+      btn.innerHTML='<i class="fas fa-user"></i>';
+      btn.onclick=openAuth;
+    }
+  }
+  function openAuth(){document.getElementById('authModal').classList.add('active');}
+  document.getElementById('closeAuth').onclick=()=>document.getElementById('authModal').classList.remove('active');
+  document.getElementById('toggleLink').onclick=function(e){
+    e.preventDefault(); isSignup=!isSignup;
+    document.getElementById('authTitle').textContent=isSignup?'إنشاء حساب':'تسجيل الدخول';
+    document.getElementById('authSubmit').textContent=isSignup?'إنشاء الحساب':'دخول';
+    document.getElementById('nameRow').style.display=isSignup?'block':'none';
+    document.getElementById('toggleText').textContent=isSignup?'لديك حساب؟':'ليس لديك حساب؟';
+    this.textContent=isSignup?' دخول':' إنشاء حساب';
+  };
+  document.getElementById('authForm').onsubmit=function(e){
+    e.preventDefault();
+    const email=document.getElementById('authEmail').value;
+    const pass=document.getElementById('authPass').value;
+    const btn=document.getElementById('authSubmit');
+    const err=document.getElementById('authErr');
+    btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+    err.className='err';
+    const p=isSignup?auth.createUserWithEmailAndPassword(email,pass):auth.signInWithEmailAndPassword(email,pass);
+    p.then(()=>{
+      document.getElementById('authModal').classList.remove('active');
+      showToast(isSignup?'مرحباً! تم إنشاء حسابك 🎉':'أهلاً بعودتك 👋','ok');
+    }).catch(ex=>{
+      const m={'auth/user-not-found':'البريد غير مسجل','auth/wrong-password':'كلمة المرور خاطئة',
+        'auth/email-already-in-use':'البريد مسجل مسبقاً','auth/weak-password':'كلمة المرور ضعيفة جداً',
+        'auth/invalid-email':'بريد إلكتروني غير صحيح'};
+      err.textContent=m[ex.code]||'حدث خطأ، حاول مجدداً';
+      err.className='err show';
+    }).finally(()=>{btn.disabled=false;btn.textContent=isSignup?'إنشاء الحساب':'دخول';});
+  };
+
+  /* ---- ADD AD ---- */
+  document.getElementById('fabAdd').onclick=function(){
+    if(!user){openAuth();showToast('سجل دخولك أولاً','bad');return;}
+    document.getElementById('addModal').classList.add('active');
+  };
+  document.getElementById('closeAdd').onclick=()=>document.getElementById('addModal').classList.remove('active');
+  document.getElementById('adImg').onchange=function(){
+    const f=this.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=e=>document.getElementById('imgPreview').innerHTML=`<img src="${e.target.result}">`;
+    r.readAsDataURL(f);
+  };
+  document.getElementById('addForm').onsubmit=async function(e){
+    e.preventDefault();
+    const btn=document.getElementById('addSubmit');
+    const err=document.getElementById('addErr');
+    btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
+    err.className='err';
+    try{
+      let imgUrl=null;
+      const f=document.getElementById('adImg').files[0];
+      if(f){
+        const ref=st.ref('ads/'+Date.now()+'_'+f.name);
+        await ref.put(f); imgUrl=await ref.getDownloadURL();
+      }
+      await db.collection('ads').add({
+        title:document.getElementById('adTitle').value,
+        description:document.getElementById('adDesc').value,
+        price:parseFloat(document.getElementById('adPrice').value)||0,
+        phone:document.getElementById('adPhone').value,
+        category:document.getElementById('adCat').value,
+        imageUrl:imgUrl,
+        userId:user.uid, userEmail:user.email,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('addModal').classList.remove('active');
+      document.getElementById('addForm').reset();
+      document.getElementById('imgPreview').innerHTML='';
+      showToast('تم نشر إعلانك بنجاح! 🎉','ok');
+      loadAds();
+    } catch(ex){
+      err.textContent='حدث خطأ أثناء النشر، حاول مجدداً';
+      err.className='err show';
+    } finally{
+      btn.disabled=false;
+      btn.innerHTML='<i class="fas fa-paper-plane"></i> نشر الإعلان';
+    }
+  };
+
+  /* ---- CLOSE MODAL ON BACKDROP ---- */
+  document.querySelectorAll('.modal').forEach(m=>{
+    m.addEventListener('click',e=>{if(e.target===m) m.classList.remove('active');});
+  });
+
+})();
+</script>
+</body>
+</html>
