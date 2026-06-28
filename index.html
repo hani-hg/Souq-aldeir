@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>سوق دير الزور المفتوح</title>
+<!-- أيقونة السوق (سلة مواد غذائية) -->
+<link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -29,8 +31,9 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .nav-btns{display:flex;gap:8px;}
 .nav-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:.95em;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;}
 .nav-btn .badge{position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;width:16px;height:16px;border-radius:50%;font-size:.6em;display:flex;align-items:center;justify-content:center;}
+.nav-btn.admin-btn{background:rgba(255,215,0,.3);border:1.5px solid var(--gold);}
 
-/* MARQUEE NEWS */
+/* NEWS MARQUEE */
 .news-bar{background:var(--red);color:#fff;padding:6px 0;overflow:hidden;display:flex;align-items:center;gap:0;}
 .news-label{background:rgba(0,0,0,.25);padding:6px 12px;font-size:.78em;font-weight:800;white-space:nowrap;flex-shrink:0;}
 .news-ticker{overflow:hidden;flex:1;}
@@ -159,7 +162,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .info-row i{color:var(--blue);width:18px;text-align:center;}
 .call-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green-light);color:var(--green);border:1.5px solid #a5d6a7;border-radius:12px;padding:12px;font-weight:700;font-size:1em;text-decoration:none;margin-top:6px;}
 .whatsapp-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#e8f5e9;color:#1b5e20;border:1.5px solid #81c784;border-radius:12px;padding:12px;font-weight:700;font-size:1em;text-decoration:none;margin-top:6px;}
-.action-btns{display:flex;gap:8px;margin-top:10px;}
+.action-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
 /* DASHBOARD */
 .dash-card{background:var(--white);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px;}
@@ -176,12 +179,10 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .icon-btn{width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82em;}
 .icon-btn.edit{background:var(--blue-light);color:var(--blue);}
 .icon-btn.del{background:var(--red-light);color:var(--red);}
+.icon-btn.approve{background:#e8f5e9;color:#2e7d32;}
+.icon-btn.reject{background:#ffebee;color:#c62828;}
 
-/* ADMIN */
-.admin-bar{background:#1a237e;color:#fff;padding:8px 14px;font-size:.78em;font-weight:700;display:flex;align-items:center;gap:8px;}
-.admin-notif{background:var(--red);color:#fff;border-radius:20px;padding:2px 8px;font-size:.75em;}
-
-/* MESSAGES */
+/* CHAT */
 .chat-list .chat-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;}
 .chat-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1em;flex-shrink:0;}
 .chat-info{flex:1;}
@@ -225,7 +226,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
     <div class="logo-text">سوق دير الزور<small>أول سوق إلكتروني</small></div>
   </div>
   <div class="nav-btns">
-    <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
+    <button class="nav-btn admin-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
     <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i></button>
     <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i></button>
   </div>
@@ -313,6 +314,9 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
       <div class="fg"><label>رقم الهاتف أو البريد الإلكتروني</label><input type="text" id="loginEmail" placeholder="09xxxxxxxx أو example@mail.com"></div>
       <div class="fg"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••"></div>
       <button class="btn btn-blue" id="loginBtn" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
+      <div style="text-align:center;margin-top:10px;font-size:.78em;color:var(--gray)">
+        <a href="#" onclick="switchAuth('reset');return false">نسيت كلمة المرور؟</a>
+      </div>
     </div>
     <!-- SIGNUP -->
     <div id="formSignup" style="display:none">
@@ -322,11 +326,14 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
       <div class="fg"><label>كلمة المرور * (6 أحرف على الأقل)</label><input type="password" id="signupPass" placeholder="••••••••"></div>
       <button class="btn btn-blue" id="signupBtn" onclick="doSignup()"><i class="fa fa-user-plus"></i> إنشاء الحساب</button>
     </div>
-    <!-- RESET -->
+    <!-- RESET (via SMS OTP) -->
     <div id="formReset" style="display:none">
-      <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل البريد الإلكتروني المسجّل وسنرسل لك رابط إعادة تعيين كلمة المرور.</p>
-      <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="resetEmail" placeholder="example@mail.com"></div>
-      <button class="btn btn-outline" id="resetBtn" onclick="doReset()"><i class="fa fa-envelope"></i> إرسال رابط التغيير</button>
+      <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل رقم هاتفك المسجّل وسنرسل لك رمزاً لإعادة تعيين كلمة المرور عبر الرسائل القصيرة.</p>
+      <div class="fg"><label>رقم الهاتف</label><input type="tel" id="resetPhone" placeholder="09xxxxxxxx"></div>
+      <div class="fg" id="otpSection" style="display:none"><label>رمز التحقق (OTP)</label><input type="text" id="resetOtp" placeholder="أدخل الرمز"></div>
+      <div class="fg" id="newPassSection" style="display:none"><label>كلمة المرور الجديدة</label><input type="password" id="resetNewPass" placeholder="••••••••"></div>
+      <button class="btn btn-outline" id="resetBtn" onclick="doResetPhone()"><i class="fa fa-sms"></i> إرسال رمز التحقق</button>
+      <button class="btn btn-blue" id="resetConfirmBtn" style="display:none" onclick="confirmResetPhone()"><i class="fa fa-check"></i> تأكيد التغيير</button>
     </div>
   </div>
 </div>
@@ -473,7 +480,8 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 
 <script>
 /* ============ CONFIG ============ */
-const ADMIN_EMAIL = 'admin@souq-aldeir.com'; // غيّر هذا لبريدك
+// ⚠️ غيّر هذا البريد إلى بريدك الإلكتروني الذي سيكون مديراً
+const ADMIN_EMAIL = 'hg787845@gmail.com';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
 const WHATSAPP_NUMBER = '963XXXXXXXXX'; // غيّر لرقمك
@@ -491,6 +499,7 @@ const auth=firebase.auth(), db=firebase.firestore();
 let currentUser=null, isAdmin=false, allAds=[], favorites=new Set();
 let activeCat=null, selectedPlan='3 أيام - 1$', chatUnsub=null;
 let slideIdx=0, slideTimer=null, featuredAds=[];
+let resetPhoneNumber='', resetVerificationId='';
 
 /* ============ TOAST ============ */
 function showToast(msg,type=''){
@@ -720,7 +729,7 @@ async function doAddAd(){
     await db.collection('ads').add({
       title,description:desc,price:parseFloat(price)||0,phone,category:cat,area,
       imageUrl:imgUrl,featured:false,
-      userId:currentUser.uid,userEmail:currentUser.email,
+      userId:currentUser.uid,userEmail:currentUser.email||'',
       userName:currentUser.displayName||'مستخدم',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -812,6 +821,13 @@ function switchAuth(tab){
   });
   document.getElementById('authErr').className='err';
   document.getElementById('authSuc').className='suc';
+  // Reset OTP fields when switching to reset
+  if(tab==='reset'){
+    document.getElementById('otpSection').style.display='none';
+    document.getElementById('newPassSection').style.display='none';
+    document.getElementById('resetBtn').style.display='block';
+    document.getElementById('resetConfirmBtn').style.display='none';
+  }
 }
 
 async function doLogin(){
@@ -821,11 +837,10 @@ async function doLogin(){
   const btn=document.getElementById('loginBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
   try{
-    // if phone number, find email from Firestore
     if(!val.includes('@')){
       const snap=await db.collection('users').where('phone','==',val).limit(1).get();
       if(snap.empty) throw {code:'auth/user-not-found'};
-      val=snap.docs[0].data().email;
+      val=snap.docs[0].data().email||val+'@souq-aldeir.local';
     }
     await auth.signInWithEmailAndPassword(val,pass);
     closeModal('authModal'); showToast('أهلاً بعودتك 👋','ok');
@@ -844,7 +859,6 @@ async function doSignup(){
   if(!name){errEl.textContent='الاسم مطلوب';errEl.className='err show';return;}
   if(!phone){errEl.textContent='رقم الهاتف مطلوب';errEl.className='err show';return;}
   if(pass.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.className='err show';return;}
-  // use phone-based email if no email provided
   const email=emailRaw||phone.replace(/\D/g,'')+'@souq-aldeir.local';
   const btn=document.getElementById('signupBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
@@ -863,21 +877,48 @@ async function doSignup(){
   }finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-user-plus"></i> إنشاء الحساب';}
 }
 
-async function doReset(){
-  const email=document.getElementById('resetEmail').value.trim();
-  const errEl=document.getElementById('authErr'), sucEl=document.getElementById('authSuc');
-  errEl.className='err'; sucEl.className='suc';
-  if(!email){errEl.textContent='أدخل بريدك الإلكتروني';errEl.className='err show';return;}
-  const btn=document.getElementById('resetBtn');
-  btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
+/* ============ RESET PASSWORD VIA SMS (SIMULATED) ============ */
+// ملاحظة: Firebase لا يدعم OTP عبر SMS مجاناً، هذه محاكاة للواجهة.
+// في الإصدار الحقيقي، تحتاج لـ Phone Authentication أو خدمة خارجية.
+async function doResetPhone(){
+  const phone=document.getElementById('resetPhone').value.trim();
+  const errEl=document.getElementById('authErr'); errEl.className='err';
+  if(!phone){errEl.textContent='أدخل رقم الهاتف';errEl.className='err show';return;}
+  // التحقق من وجود المستخدم
+  const snap=await db.collection('users').where('phone','==',phone).limit(1).get().catch(()=>({empty:true}));
+  if(snap.empty){errEl.textContent='رقم الهاتف غير مسجل';errEl.className='err show';return;}
+  resetPhoneNumber=phone;
+  // محاكاة إرسال رمز (في الإنتاج استخدم Firebase Phone Auth)
+  const code=String(Math.floor(100000+Math.random()*900000));
+  resetVerificationId=code;
+  showToast('📱 تم إرسال رمز التحقق: '+code+' (تجريبي)','ok');
+  document.getElementById('otpSection').style.display='block';
+  document.getElementById('newPassSection').style.display='block';
+  document.getElementById('resetBtn').textContent='إعادة إرسال';
+  document.getElementById('resetConfirmBtn').style.display='block';
+}
+
+async function confirmResetPhone(){
+  const otp=document.getElementById('resetOtp').value.trim();
+  const newPass=document.getElementById('resetNewPass').value;
+  const errEl=document.getElementById('authErr'); errEl.className='err';
+  if(otp!==resetVerificationId){errEl.textContent='رمز التحقق غير صحيح';errEl.className='err show';return;}
+  if(newPass.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.className='err show';return;}
   try{
-    await auth.sendPasswordResetEmail(email,{url:'https://souq-aldeir.vercel.app',handleCodeInApp:false});
-    sucEl.textContent='✅ تم الإرسال! تحقق من بريدك الإلكتروني (وراجع مجلد Spam)';
-    sucEl.className='suc show';
+    // البحث عن البريد المرتبط بالرقم
+    const snap=await db.collection('users').where('phone','==',resetPhoneNumber).limit(1).get();
+    if(snap.empty){errEl.textContent='خطأ';errEl.className='err show';return;}
+    const email=snap.docs[0].data().email||resetPhoneNumber.replace(/\D/g,'')+'@souq-aldeir.local';
+    // تغيير كلمة المرور (يتطلب تسجيل دخول مؤقت)
+    // الحل العملي: إرسال رابط إعادة تعيين إلى البريد الإلكتروني.
+    // للتبسيط، نستخدم sendPasswordResetEmail
+    await auth.sendPasswordResetEmail(email,{url:'https://souq-aldeir.vercel.app'});
+    showToast('✅ تم إرسال رابط التغيير إلى بريدك الإلكتروني','ok');
+    closeModal('authModal');
   }catch(e){
-    const m={'auth/user-not-found':'هذا البريد غير مسجل','auth/invalid-email':'بريد غير صحيح'};
-    errEl.textContent=m[e.code]||'حدث خطأ'; errEl.className='err show';
-  }finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-envelope"></i> إرسال رابط التغيير';}
+    errEl.textContent='حدث خطأ: '+e.message;
+    errEl.className='err show';
+  }
 }
 
 /* ============ DASHBOARD ============ */
@@ -1023,7 +1064,6 @@ async function requestFeatured(){
   const adId=document.getElementById('featuredAdSel').value;
   if(!adId){showToast('اختر إعلاناً أولاً','bad');return;}
   const ad=allAds.find(a=>a.id===adId);
-  // save request to Firestore for admin notification
   await db.collection('featuredRequests').add({
     adId,adTitle:ad?ad.title:'',userId:currentUser.uid,
     userEmail:currentUser.email||'',plan:selectedPlan,
@@ -1033,6 +1073,7 @@ async function requestFeatured(){
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`,'_blank');
   closeModal('featuredModal');
   showToast('تم إرسال طلبك! سيتم التواصل قريباً ✅','ok');
+  if(isAdmin) checkAdminNotifs();
 }
 
 /* ============ ADMIN PANEL ============ */
@@ -1041,15 +1082,16 @@ async function checkAdminNotifs(){
   if(snap&&snap.size>0){
     document.getElementById('adminBadge').style.display='flex';
     document.getElementById('adminBadge').textContent=snap.size;
+  } else {
+    document.getElementById('adminBadge').style.display='none';
   }
 }
 
 async function openAdminPanel(){
-  if(!isAdmin) return;
+  if(!isAdmin){showToast('ليس لديك صلاحية','bad');return;}
   document.getElementById('adminContent').innerHTML='<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
   openModal('adminModal');
 
-  // load pending requests + users count
   const [reqSnap,usersSnap]=await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>({docs:[]})),
     db.collection('users').get().catch(()=>({size:0}))
@@ -1071,8 +1113,8 @@ async function openAdminPanel(){
           <div class="my-ad-status">${r.plan||''} · ${r.userEmail||''}</div>
         </div>
         <div class="my-ad-actions">
-          <button class="icon-btn edit" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
-          <button class="icon-btn del" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
+          <button class="icon-btn approve" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
+          <button class="icon-btn reject" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
         </div>
       </div>`).join('')
     :'<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>'}
@@ -1096,7 +1138,6 @@ async function openAdminPanel(){
     <button class="btn btn-blue btn-sm" onclick="saveNews()"><i class="fa fa-save"></i> حفظ الأخبار</button>
   `;
 
-  // load existing news
   db.collection('settings').doc('news').get().then(doc=>{
     if(doc.exists&&doc.data().items){
       document.getElementById('newsTextarea').value=doc.data().items.join('\n');
