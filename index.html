@@ -441,7 +441,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
 
 <script>
 /* ============================================================
@@ -457,7 +457,7 @@ firebase.initializeApp({
 });
 const auth=firebase.auth();
 const db=firebase.firestore();
-const storage=firebase.storage();
+
 
 let currentUser=null, allAds=[], favorites=new Set(), activeCat=null, selectedPlan='3 أيام - 1$';
 let chatUnsubscribe=null;
@@ -688,8 +688,14 @@ async function doAddAd(){
     let imgUrl=null;
     const f=document.getElementById('adImg').files[0];
     if(f){
-      const ref=storage.ref('ads/'+Date.now()+'_'+f.name);
-      await ref.put(f); imgUrl=await ref.getDownloadURL();
+      const fd=new FormData();
+      fd.append('file',f);
+      fd.append('upload_preset','souq_ads');
+      fd.append('folder','souq_ads');
+      const res=await fetch('https://api.cloudinary.com/v1_1/dzjy5tubx/image/upload',{method:'POST',body:fd});
+      const data=await res.json();
+      if(!data.secure_url) throw new Error('upload failed');
+      imgUrl=data.secure_url;
     }
     await db.collection('ads').add({
       title,description:desc,price:parseFloat(price)||0,
@@ -778,10 +784,12 @@ function updateUserBtn(){
   const btn=document.getElementById('userNavBtn');
   if(currentUser){
     btn.innerHTML='<i class="fa fa-user-check"></i>';
+    btn.style.background='rgba(255,220,50,.35)';
     btn.title='حسابي';
     btn.onclick=openDashboard;
   }else{
     btn.innerHTML='<i class="fa fa-user"></i>';
+    btn.style.background='rgba(255,255,255,.15)';
     btn.title='تسجيل الدخول';
     btn.onclick=()=>openModal('authModal');
   }
@@ -847,8 +855,8 @@ async function doReset(){
   const btn=document.getElementById('resetBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
   try{
-    await auth.sendPasswordResetEmail(email);
-    sucEl.textContent='✅ تم إرسال رابط تغيير كلمة المرور على بريدك الإلكتروني';
+    await auth.sendPasswordResetEmail(email, {url:'https://souq-aldeir.vercel.app',handleCodeInApp:false});
+    sucEl.textContent='✅ تم الإرسال! تحقق من بريدك (وتحقق من مجلد Spam)';
     sucEl.className='suc show';
   }catch(e){
     errEl.textContent='تأكد من البريد الإلكتروني وحاول مجدداً';
