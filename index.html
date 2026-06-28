@@ -480,7 +480,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 
 <script>
 /* ============ CONFIG ============ */
-// ⚠️ غيّر هذا البريد إلى بريدك الإلكتروني الذي سيكون مديراً
+// ⚠️ تم التعديل: تم ضبط بريد المدير الصحيح
 const ADMIN_EMAIL = 'hg787845@gmail.com';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
@@ -490,7 +490,8 @@ firebase.initializeApp({
   apiKey:"AIzaSyAlFgTzlcbaS6NKKlqyOvrxYAnKmxXLTLQ",
   authDomain:"souq-aldeir.firebaseapp.com",
   projectId:"souq-aldeir",
-  storageBucket:"souq-aldeir.firebasestorage.app",
+  // ⚠️ تم التعديل: تغيير storageBucket إلى الصيغة الموصى بها
+  storageBucket:"souq-aldeir.appspot.com",
   messagingSenderId:"153018999224",
   appId:"1:153018999224:web:ddfb7660584941091f6f4d"
 });
@@ -789,16 +790,27 @@ function confirmDelete(id){
 auth.onAuthStateChanged(async u=>{
   currentUser=u;
   if(u){
-    // check admin
-    const doc=await db.collection('users').doc(u.uid).get().catch(()=>null);
-    isAdmin=doc&&doc.exists&&doc.data().role==='admin';
-    document.getElementById('adminNavBtn').style.display=isAdmin?'flex':'none';
+    // ⚠️ تم التعديل: تحسين منطق التحقق من المدير (البريد الإلكتروني + role)
+    let isAdminByEmail = (u.email === ADMIN_EMAIL);
+    let isAdminByRole = false;
+    try {
+      const doc = await db.collection('users').doc(u.uid).get();
+      if(doc.exists && doc.data().role === 'admin') {
+        isAdminByRole = true;
+      }
+    } catch(e) {
+      console.log('خطأ في قراءة دور المستخدم:', e);
+    }
+    isAdmin = isAdminByEmail || isAdminByRole;
+
+    document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
     if(isAdmin) checkAdminNotifs();
   } else {
-    isAdmin=false;
+    isAdmin = false;
     document.getElementById('adminNavBtn').style.display='none';
   }
-  updateUserBtn(); loadAds();
+  updateUserBtn(); 
+  loadAds();
 });
 
 function updateUserBtn(){
@@ -821,7 +833,6 @@ function switchAuth(tab){
   });
   document.getElementById('authErr').className='err';
   document.getElementById('authSuc').className='suc';
-  // Reset OTP fields when switching to reset
   if(tab==='reset'){
     document.getElementById('otpSection').style.display='none';
     document.getElementById('newPassSection').style.display='none';
@@ -878,17 +889,13 @@ async function doSignup(){
 }
 
 /* ============ RESET PASSWORD VIA SMS (SIMULATED) ============ */
-// ملاحظة: Firebase لا يدعم OTP عبر SMS مجاناً، هذه محاكاة للواجهة.
-// في الإصدار الحقيقي، تحتاج لـ Phone Authentication أو خدمة خارجية.
 async function doResetPhone(){
   const phone=document.getElementById('resetPhone').value.trim();
   const errEl=document.getElementById('authErr'); errEl.className='err';
   if(!phone){errEl.textContent='أدخل رقم الهاتف';errEl.className='err show';return;}
-  // التحقق من وجود المستخدم
   const snap=await db.collection('users').where('phone','==',phone).limit(1).get().catch(()=>({empty:true}));
   if(snap.empty){errEl.textContent='رقم الهاتف غير مسجل';errEl.className='err show';return;}
   resetPhoneNumber=phone;
-  // محاكاة إرسال رمز (في الإنتاج استخدم Firebase Phone Auth)
   const code=String(Math.floor(100000+Math.random()*900000));
   resetVerificationId=code;
   showToast('📱 تم إرسال رمز التحقق: '+code+' (تجريبي)','ok');
@@ -905,13 +912,9 @@ async function confirmResetPhone(){
   if(otp!==resetVerificationId){errEl.textContent='رمز التحقق غير صحيح';errEl.className='err show';return;}
   if(newPass.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.className='err show';return;}
   try{
-    // البحث عن البريد المرتبط بالرقم
     const snap=await db.collection('users').where('phone','==',resetPhoneNumber).limit(1).get();
     if(snap.empty){errEl.textContent='خطأ';errEl.className='err show';return;}
     const email=snap.docs[0].data().email||resetPhoneNumber.replace(/\D/g,'')+'@souq-aldeir.local';
-    // تغيير كلمة المرور (يتطلب تسجيل دخول مؤقت)
-    // الحل العملي: إرسال رابط إعادة تعيين إلى البريد الإلكتروني.
-    // للتبسيط، نستخدم sendPasswordResetEmail
     await auth.sendPasswordResetEmail(email,{url:'https://souq-aldeir.vercel.app'});
     showToast('✅ تم إرسال رابط التغيير إلى بريدك الإلكتروني','ok');
     closeModal('authModal');
@@ -1076,15 +1079,17 @@ async function requestFeatured(){
   if(isAdmin) checkAdminNotifs();
 }
 
-/* ============ ADMIN PANEL ============ */
+/* ============ ADMIN PANEL (تم الإصلاح) ============ */
 async function checkAdminNotifs(){
-  const snap=await db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null);
-  if(snap&&snap.size>0){
-    document.getElementById('adminBadge').style.display='flex';
-    document.getElementById('adminBadge').textContent=snap.size;
-  } else {
-    document.getElementById('adminBadge').style.display='none';
-  }
+  try {
+    const snap=await db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null);
+    if(snap && snap.size > 0){
+      document.getElementById('adminBadge').style.display='flex';
+      document.getElementById('adminBadge').textContent=snap.size;
+    } else {
+      document.getElementById('adminBadge').style.display='none';
+    }
+  } catch(e){}
 }
 
 async function openAdminPanel(){
@@ -1092,59 +1097,67 @@ async function openAdminPanel(){
   document.getElementById('adminContent').innerHTML='<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
   openModal('adminModal');
 
-  const [reqSnap,usersSnap]=await Promise.all([
+  const [reqSnap, usersSnap] = await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>({docs:[]})),
     db.collection('users').get().catch(()=>({size:0}))
   ]);
 
-  const reqs=reqSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const reqs = reqSnap.docs.map(d=>({id:d.id, ...d.data()}));
 
-  let html=`
+  let html = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div class="dash-card" style="text-align:center"><div class="dash-stat">${allAds.length}</div><div style="font-size:.72em;color:var(--gray)">إجمالي الإعلانات</div></div>
-      <div class="dash-card" style="text-align:center"><div class="dash-stat">${usersSnap.size||0}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
+      <div class="dash-card" style="text-align:center"><div class="dash-stat">${usersSnap.size || 0}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
     </div>
 
     <div class="section-label">⭐ طلبات التمييز (${reqs.length})</div>
-    ${reqs.length?reqs.map(r=>`
+    ${reqs.length ? reqs.map(r => `
       <div class="my-ad-row">
         <div class="my-ad-info">
-          <div class="my-ad-title">${r.adTitle||''}</div>
-          <div class="my-ad-status">${r.plan||''} · ${r.userEmail||''}</div>
+          <div class="my-ad-title">${r.adTitle || ''}</div>
+          <div class="my-ad-status">${r.plan || ''} · ${r.userEmail || ''}</div>
         </div>
         <div class="my-ad-actions">
           <button class="icon-btn approve" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
           <button class="icon-btn reject" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
         </div>
-      </div>`).join('')
-    :'<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>'}
+      </div>
+    `).join('') : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>'}
 
     <div class="section-label">📋 إدارة الإعلانات</div>
-    ${allAds.slice(0,20).map(ad=>`
+    ${allAds.slice(0, 20).map(ad => `
       <div class="my-ad-row">
-        <div class="my-ad-img">${ad.imageUrl?`<img src="${ad.imageUrl}">`:'<i class="fa fa-image"></i>'}</div>
+        <div class="my-ad-img">${ad.imageUrl ? `<img src="${ad.imageUrl}">` : '<i class="fa fa-image"></i>'}</div>
         <div class="my-ad-info">
-          <div class="my-ad-title">${ad.title||''}</div>
-          <div class="my-ad-status">${ad.userEmail||''}</div>
+          <div class="my-ad-title">${ad.title || ''}</div>
+          <div class="my-ad-status">${ad.userEmail || ''}</div>
         </div>
         <div class="my-ad-actions">
-          <button class="icon-btn edit" title="${ad.featured?'إلغاء تمييز':'تمييز'}" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured?'★':'☆'}</button>
+          <button class="icon-btn edit" title="${ad.featured ? 'إلغاء تمييز' : 'تمييز'}" onclick="adminToggleFeatured('${ad.id}', ${!!ad.featured})">${ad.featured ? '★' : '☆'}</button>
           <button class="icon-btn del" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i></button>
         </div>
-      </div>`).join('')}
+      </div>
+    `).join('')}
 
     <div class="section-label">📰 الشريط الإخباري</div>
     <div class="fg"><label>النصوص (كل سطر نص مستقل)</label><textarea id="newsTextarea" rows="4" placeholder="نص 1&#10;نص 2&#10;نص 3"></textarea></div>
     <button class="btn btn-blue btn-sm" onclick="saveNews()"><i class="fa fa-save"></i> حفظ الأخبار</button>
   `;
 
-  db.collection('settings').doc('news').get().then(doc=>{
-    if(doc.exists&&doc.data().items){
-      document.getElementById('newsTextarea').value=doc.data().items.join('\n');
-    }
-  }).catch(()=>{});
+  // ⚠️ تم الإصلاح: نضع HTML أولاً في الصفحة، ثم نقرأ الأخبار ونضعها في textarea بعد أن يصبح العنصر موجوداً.
+  document.getElementById('adminContent').innerHTML = html;
 
-  document.getElementById('adminContent').innerHTML=html;
+  // قراءة الأخبار وتعبئتها (بعد التأكد من وجود العنصر)
+  try {
+    const doc = await db.collection('settings').doc('news').get();
+    const textarea = document.getElementById('newsTextarea');
+    if (textarea && doc.exists) {
+      const items = doc.data().items || [];
+      textarea.value = items.join('\n');
+    }
+  } catch(e) {
+    console.log('خطأ في تحميل الأخبار:', e);
+  }
 }
 
 async function approveFeature(reqId,adId){
