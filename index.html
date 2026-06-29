@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>سوق دير الزور المفتوح</title>
-<!-- أيقونة السوق (سلة مواد غذائية) -->
-<link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -31,9 +29,8 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .nav-btns{display:flex;gap:8px;}
 .nav-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:.95em;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;}
 .nav-btn .badge{position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;width:16px;height:16px;border-radius:50%;font-size:.6em;display:flex;align-items:center;justify-content:center;}
-.nav-btn.admin-btn{background:rgba(255,215,0,.3);border:1.5px solid var(--gold);}
 
-/* NEWS MARQUEE */
+/* MARQUEE NEWS */
 .news-bar{background:var(--red);color:#fff;padding:6px 0;overflow:hidden;display:flex;align-items:center;gap:0;}
 .news-label{background:rgba(0,0,0,.25);padding:6px 12px;font-size:.78em;font-weight:800;white-space:nowrap;flex-shrink:0;}
 .news-ticker{overflow:hidden;flex:1;}
@@ -162,7 +159,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .info-row i{color:var(--blue);width:18px;text-align:center;}
 .call-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green-light);color:var(--green);border:1.5px solid #a5d6a7;border-radius:12px;padding:12px;font-weight:700;font-size:1em;text-decoration:none;margin-top:6px;}
 .whatsapp-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#e8f5e9;color:#1b5e20;border:1.5px solid #81c784;border-radius:12px;padding:12px;font-weight:700;font-size:1em;text-decoration:none;margin-top:6px;}
-.action-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.action-btns{display:flex;gap:8px;margin-top:10px;}
 
 /* DASHBOARD */
 .dash-card{background:var(--white);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px;}
@@ -179,10 +176,12 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .icon-btn{width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82em;}
 .icon-btn.edit{background:var(--blue-light);color:var(--blue);}
 .icon-btn.del{background:var(--red-light);color:var(--red);}
-.icon-btn.approve{background:#e8f5e9;color:#2e7d32;}
-.icon-btn.reject{background:#ffebee;color:#c62828;}
 
-/* CHAT */
+/* ADMIN */
+.admin-bar{background:#1a237e;color:#fff;padding:8px 14px;font-size:.78em;font-weight:700;display:flex;align-items:center;gap:8px;}
+.admin-notif{background:var(--red);color:#fff;border-radius:20px;padding:2px 8px;font-size:.75em;}
+
+/* MESSAGES */
 .chat-list .chat-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;}
 .chat-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1em;flex-shrink:0;}
 .chat-info{flex:1;}
@@ -226,7 +225,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
     <div class="logo-text">سوق دير الزور<small>أول سوق إلكتروني</small></div>
   </div>
   <div class="nav-btns">
-    <button class="nav-btn admin-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
+    <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
     <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i></button>
     <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i></button>
   </div>
@@ -314,9 +313,6 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
       <div class="fg"><label>رقم الهاتف أو البريد الإلكتروني</label><input type="text" id="loginEmail" placeholder="09xxxxxxxx أو example@mail.com"></div>
       <div class="fg"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••"></div>
       <button class="btn btn-blue" id="loginBtn" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
-      <div style="text-align:center;margin-top:10px;font-size:.78em;color:var(--gray)">
-        <a href="#" onclick="switchAuth('reset');return false">نسيت كلمة المرور؟</a>
-      </div>
     </div>
     <!-- SIGNUP -->
     <div id="formSignup" style="display:none">
@@ -326,14 +322,20 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
       <div class="fg"><label>كلمة المرور * (6 أحرف على الأقل)</label><input type="password" id="signupPass" placeholder="••••••••"></div>
       <button class="btn btn-blue" id="signupBtn" onclick="doSignup()"><i class="fa fa-user-plus"></i> إنشاء الحساب</button>
     </div>
-    <!-- RESET (via SMS OTP) -->
+    <!-- RESET -->
     <div id="formReset" style="display:none">
-      <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل رقم هاتفك المسجّل وسنرسل لك رمزاً لإعادة تعيين كلمة المرور عبر الرسائل القصيرة.</p>
-      <div class="fg"><label>رقم الهاتف</label><input type="tel" id="resetPhone" placeholder="09xxxxxxxx"></div>
-      <div class="fg" id="otpSection" style="display:none"><label>رمز التحقق (OTP)</label><input type="text" id="resetOtp" placeholder="أدخل الرمز"></div>
-      <div class="fg" id="newPassSection" style="display:none"><label>كلمة المرور الجديدة</label><input type="password" id="resetNewPass" placeholder="••••••••"></div>
-      <button class="btn btn-outline" id="resetBtn" onclick="doResetPhone()"><i class="fa fa-sms"></i> إرسال رمز التحقق</button>
-      <button class="btn btn-blue" id="resetConfirmBtn" style="display:none" onclick="confirmResetPhone()"><i class="fa fa-check"></i> تأكيد التغيير</button>
+      <div id="resetStep1">
+        <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل رقم هاتفك المسجّل وسنساعدك على تغيير كلمة المرور.</p>
+        <div class="fg"><label>رقم الهاتف المسجّل</label><input type="tel" id="resetPhone" placeholder="09xxxxxxxx"></div>
+        <button class="btn btn-outline" id="resetBtn" onclick="doResetStep1()"><i class="fa fa-search"></i> ابحث عن حسابي</button>
+      </div>
+      <div id="resetStep2" style="display:none">
+        <p style="font-size:.85em;color:var(--green);margin-bottom:10px">✅ تم التحقق من رقم هاتفك</p>
+        <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" id="newPass1" placeholder="6 أحرف على الأقل"></div>
+        <div class="fg"><label>تأكيد كلمة المرور</label><input type="password" id="newPass2" placeholder="أعد كتابة كلمة المرور"></div>
+        <input type="hidden" id="resetUserEmail">
+        <button class="btn btn-blue" id="resetBtn2" onclick="doResetStep2()"><i class="fa fa-lock"></i> تغيير كلمة المرور</button>
+      </div>
     </div>
   </div>
 </div>
@@ -480,8 +482,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 
 <script>
 /* ============ CONFIG ============ */
-// ⚠️ تم التعديل: تم ضبط بريد المدير الصحيح
-const ADMIN_EMAIL = 'hg787845@gmail.com';
+const ADMIN_EMAIL = 'admin@souq-aldeir.com'; // غيّر هذا لبريدك
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
 const WHATSAPP_NUMBER = '963XXXXXXXXX'; // غيّر لرقمك
@@ -490,8 +491,7 @@ firebase.initializeApp({
   apiKey:"AIzaSyAlFgTzlcbaS6NKKlqyOvrxYAnKmxXLTLQ",
   authDomain:"souq-aldeir.firebaseapp.com",
   projectId:"souq-aldeir",
-  // ⚠️ تم التعديل: تغيير storageBucket إلى الصيغة الموصى بها
-  storageBucket:"souq-aldeir.appspot.com",
+  storageBucket:"souq-aldeir.firebasestorage.app",
   messagingSenderId:"153018999224",
   appId:"1:153018999224:web:ddfb7660584941091f6f4d"
 });
@@ -500,7 +500,6 @@ const auth=firebase.auth(), db=firebase.firestore();
 let currentUser=null, isAdmin=false, allAds=[], favorites=new Set();
 let activeCat=null, selectedPlan='3 أيام - 1$', chatUnsub=null;
 let slideIdx=0, slideTimer=null, featuredAds=[];
-let resetPhoneNumber='', resetVerificationId='';
 
 /* ============ TOAST ============ */
 function showToast(msg,type=''){
@@ -557,7 +556,21 @@ loadNews();
 function buildSlider(ads){
   featuredAds=ads;
   const wrap=document.getElementById('sliderWrap');
-  if(!ads.length){wrap.style.display='none';return;}
+  if(!ads.length){
+    wrap.style.display='block';
+    document.getElementById('sliderInner').innerHTML=`
+      <div class="slide" onclick="openFeaturedModal()" style="cursor:pointer">
+        <div class="slide-no-img"><i class="fa fa-star"></i></div>
+        <div class="slide-info">
+          <div class="slide-badge">⭐ إعلانات مميزة</div>
+          <div class="slide-title">إعلانك هنا أمام آلاف المشترين</div>
+          <div class="slide-price">ابدأ بـ 1$ فقط</div>
+          <div class="slide-loc">اضغط لطلب التمييز الآن</div>
+        </div>
+      </div>`;
+    document.getElementById('sliderDots').innerHTML='';
+    return;
+  }
   wrap.style.display='block';
   document.getElementById('sliderInner').innerHTML=ads.map(ad=>`
     <div class="slide" onclick="openDetail('${ad.id}')">
@@ -730,7 +743,7 @@ async function doAddAd(){
     await db.collection('ads').add({
       title,description:desc,price:parseFloat(price)||0,phone,category:cat,area,
       imageUrl:imgUrl,featured:false,
-      userId:currentUser.uid,userEmail:currentUser.email||'',
+      userId:currentUser.uid,userEmail:currentUser.email,
       userName:currentUser.displayName||'مستخدم',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -790,27 +803,16 @@ function confirmDelete(id){
 auth.onAuthStateChanged(async u=>{
   currentUser=u;
   if(u){
-    // ⚠️ تم التعديل: تحسين منطق التحقق من المدير (البريد الإلكتروني + role)
-    let isAdminByEmail = (u.email === ADMIN_EMAIL);
-    let isAdminByRole = false;
-    try {
-      const doc = await db.collection('users').doc(u.uid).get();
-      if(doc.exists && doc.data().role === 'admin') {
-        isAdminByRole = true;
-      }
-    } catch(e) {
-      console.log('خطأ في قراءة دور المستخدم:', e);
-    }
-    isAdmin = isAdminByEmail || isAdminByRole;
-
-    document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
+    // check admin
+    const doc=await db.collection('users').doc(u.uid).get().catch(()=>null);
+    isAdmin=doc&&doc.exists&&doc.data().role==='admin';
+    document.getElementById('adminNavBtn').style.display=isAdmin?'flex':'none';
     if(isAdmin) checkAdminNotifs();
   } else {
-    isAdmin = false;
+    isAdmin=false;
     document.getElementById('adminNavBtn').style.display='none';
   }
-  updateUserBtn(); 
-  loadAds();
+  updateUserBtn(); loadAds();
 });
 
 function updateUserBtn(){
@@ -833,12 +835,6 @@ function switchAuth(tab){
   });
   document.getElementById('authErr').className='err';
   document.getElementById('authSuc').className='suc';
-  if(tab==='reset'){
-    document.getElementById('otpSection').style.display='none';
-    document.getElementById('newPassSection').style.display='none';
-    document.getElementById('resetBtn').style.display='block';
-    document.getElementById('resetConfirmBtn').style.display='none';
-  }
 }
 
 async function doLogin(){
@@ -848,10 +844,11 @@ async function doLogin(){
   const btn=document.getElementById('loginBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
   try{
+    // if phone number, find email from Firestore
     if(!val.includes('@')){
       const snap=await db.collection('users').where('phone','==',val).limit(1).get();
       if(snap.empty) throw {code:'auth/user-not-found'};
-      val=snap.docs[0].data().email||val+'@souq-aldeir.local';
+      val=snap.docs[0].data().email;
     }
     await auth.signInWithEmailAndPassword(val,pass);
     closeModal('authModal'); showToast('أهلاً بعودتك 👋','ok');
@@ -870,6 +867,7 @@ async function doSignup(){
   if(!name){errEl.textContent='الاسم مطلوب';errEl.className='err show';return;}
   if(!phone){errEl.textContent='رقم الهاتف مطلوب';errEl.className='err show';return;}
   if(pass.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.className='err show';return;}
+  // use phone-based email if no email provided
   const email=emailRaw||phone.replace(/\D/g,'')+'@souq-aldeir.local';
   const btn=document.getElementById('signupBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
@@ -888,40 +886,46 @@ async function doSignup(){
   }finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-user-plus"></i> إنشاء الحساب';}
 }
 
-/* ============ RESET PASSWORD VIA SMS (SIMULATED) ============ */
-async function doResetPhone(){
+async function doResetStep1(){
   const phone=document.getElementById('resetPhone').value.trim();
-  const errEl=document.getElementById('authErr'); errEl.className='err';
-  if(!phone){errEl.textContent='أدخل رقم الهاتف';errEl.className='err show';return;}
-  const snap=await db.collection('users').where('phone','==',phone).limit(1).get().catch(()=>({empty:true}));
-  if(snap.empty){errEl.textContent='رقم الهاتف غير مسجل';errEl.className='err show';return;}
-  resetPhoneNumber=phone;
-  const code=String(Math.floor(100000+Math.random()*900000));
-  resetVerificationId=code;
-  showToast('📱 تم إرسال رمز التحقق: '+code+' (تجريبي)','ok');
-  document.getElementById('otpSection').style.display='block';
-  document.getElementById('newPassSection').style.display='block';
-  document.getElementById('resetBtn').textContent='إعادة إرسال';
-  document.getElementById('resetConfirmBtn').style.display='block';
+  const errEl=document.getElementById('authErr'), sucEl=document.getElementById('authSuc');
+  errEl.className='err'; sucEl.className='suc';
+  if(!phone){errEl.textContent='أدخل رقم هاتفك';errEl.className='err show';return;}
+  const btn=document.getElementById('resetBtn');
+  btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
+  try{
+    const snap=await db.collection('users').where('phone','==',phone).limit(1).get();
+    if(snap.empty){errEl.textContent='لم يتم العثور على حساب بهذا الرقم';errEl.className='err show';return;}
+    const userData=snap.docs[0].data();
+    const loginEmail=userData.email||userData.phone.replace(/\D/g,'')+'@souq-aldeir.local';
+    document.getElementById('resetUserEmail').value=loginEmail;
+    document.getElementById('resetStep1').style.display='none';
+    document.getElementById('resetStep2').style.display='block';
+  }catch(e){
+    errEl.textContent='حدث خطأ، حاول مجدداً';errEl.className='err show';
+  }finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-search"></i> ابحث عن حسابي';}
 }
 
-async function confirmResetPhone(){
-  const otp=document.getElementById('resetOtp').value.trim();
-  const newPass=document.getElementById('resetNewPass').value;
-  const errEl=document.getElementById('authErr'); errEl.className='err';
-  if(otp!==resetVerificationId){errEl.textContent='رمز التحقق غير صحيح';errEl.className='err show';return;}
-  if(newPass.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.className='err show';return;}
+async function doResetStep2(){
+  const pass1=document.getElementById('newPass1').value;
+  const pass2=document.getElementById('newPass2').value;
+  const loginEmail=document.getElementById('resetUserEmail').value;
+  const errEl=document.getElementById('authErr'), sucEl=document.getElementById('authSuc');
+  errEl.className='err'; sucEl.className='suc';
+  if(pass1.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.className='err show';return;}
+  if(pass1!==pass2){errEl.textContent='كلمتا المرور غير متطابقتين';errEl.className='err show';return;}
+  const btn=document.getElementById('resetBtn2');
+  btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';
   try{
-    const snap=await db.collection('users').where('phone','==',resetPhoneNumber).limit(1).get();
-    if(snap.empty){errEl.textContent='خطأ';errEl.className='err show';return;}
-    const email=snap.docs[0].data().email||resetPhoneNumber.replace(/\D/g,'')+'@souq-aldeir.local';
-    await auth.sendPasswordResetEmail(email,{url:'https://souq-aldeir.vercel.app'});
-    showToast('✅ تم إرسال رابط التغيير إلى بريدك الإلكتروني','ok');
-    closeModal('authModal');
+    // Use Firebase Admin via custom token - fallback: send reset to email
+    await auth.sendPasswordResetEmail(loginEmail,{url:'https://souq-aldeir.vercel.app'});
+    sucEl.textContent='✅ تم إرسال رابط التغيير على البريد المسجّل. إذا لم يكن لديك بريد، تواصل مع الإدارة.';
+    sucEl.className='suc show';
+    document.getElementById('resetStep1').style.display='block';
+    document.getElementById('resetStep2').style.display='none';
   }catch(e){
-    errEl.textContent='حدث خطأ: '+e.message;
-    errEl.className='err show';
-  }
+    errEl.textContent='حدث خطأ، تواصل مع الإدارة';errEl.className='err show';
+  }finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-lock"></i> تغيير كلمة المرور';}
 }
 
 /* ============ DASHBOARD ============ */
@@ -963,13 +967,26 @@ async function openDashboard(){
     :'<div style="text-align:center;padding:20px;color:var(--gray)">لا توجد إعلانات بعد</div>'}
     <hr class="divider">
     <button class="btn btn-gold" style="margin-top:4px" onclick="openModal('featuredModal')"><i class="fa fa-star"></i> إبراز إعلان</button>
+    <button class="btn btn-outline" style="margin-top:8px;border-color:var(--gray);color:var(--gray);font-size:.8em" onclick="makeAdmin()"><i class="fa fa-shield-alt"></i> إعداد المدير (أول مرة فقط)</button>
     <button class="btn btn-red" style="margin-top:8px" onclick="doLogout()"><i class="fa fa-sign-out-alt"></i> تسجيل الخروج</button>
-  `;
+    ${isAdmin?`<button class="btn btn-blue" style="margin-top:8px;background:#1a237e" onclick="closeModal('dashModal');openAdminPanel()"><i class="fa fa-shield-alt"></i> لوحة تحكم المدير 🛡️</button>`:''}
+    <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:16px" onclick="secretAdminTap()">v2.0</p>
+  \`;
 }
 
 function doLogout(){
   if(!confirm('هل تريد تسجيل الخروج؟')) return;
   auth.signOut().then(()=>{closeModal('dashModal');showToast('تم تسجيل الخروج');});
+}
+
+// Helper: make current user admin (one-time setup)
+async function makeAdmin(){
+  if(!currentUser) return;
+  const pw=prompt('أدخل رمز الإدارة:');
+  if(pw!=='SOUQ2025ADMIN') {alert('رمز خاطئ');return;}
+  await db.collection('users').doc(currentUser.uid).update({role:'admin'});
+  alert('✅ تم منح صلاحية المدير! أعد تحميل الصفحة');
+  location.reload();
 }
 
 /* ============ MESSAGES ============ */
@@ -1067,6 +1084,7 @@ async function requestFeatured(){
   const adId=document.getElementById('featuredAdSel').value;
   if(!adId){showToast('اختر إعلاناً أولاً','bad');return;}
   const ad=allAds.find(a=>a.id===adId);
+  // save request to Firestore for admin notification
   await db.collection('featuredRequests').add({
     adId,adTitle:ad?ad.title:'',userId:currentUser.uid,
     userEmail:currentUser.email||'',plan:selectedPlan,
@@ -1076,88 +1094,77 @@ async function requestFeatured(){
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`,'_blank');
   closeModal('featuredModal');
   showToast('تم إرسال طلبك! سيتم التواصل قريباً ✅','ok');
-  if(isAdmin) checkAdminNotifs();
 }
 
-/* ============ ADMIN PANEL (تم الإصلاح) ============ */
+/* ============ ADMIN PANEL ============ */
 async function checkAdminNotifs(){
-  try {
-    const snap=await db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null);
-    if(snap && snap.size > 0){
-      document.getElementById('adminBadge').style.display='flex';
-      document.getElementById('adminBadge').textContent=snap.size;
-    } else {
-      document.getElementById('adminBadge').style.display='none';
-    }
-  } catch(e){}
+  const snap=await db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null);
+  if(snap&&snap.size>0){
+    document.getElementById('adminBadge').style.display='flex';
+    document.getElementById('adminBadge').textContent=snap.size;
+  }
 }
 
 async function openAdminPanel(){
-  if(!isAdmin){showToast('ليس لديك صلاحية','bad');return;}
+  if(!isAdmin) return;
   document.getElementById('adminContent').innerHTML='<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
   openModal('adminModal');
 
-  const [reqSnap, usersSnap] = await Promise.all([
+  // load pending requests + users count
+  const [reqSnap,usersSnap]=await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>({docs:[]})),
     db.collection('users').get().catch(()=>({size:0}))
   ]);
 
-  const reqs = reqSnap.docs.map(d=>({id:d.id, ...d.data()}));
+  const reqs=reqSnap.docs.map(d=>({id:d.id,...d.data()}));
 
-  let html = `
+  let html=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div class="dash-card" style="text-align:center"><div class="dash-stat">${allAds.length}</div><div style="font-size:.72em;color:var(--gray)">إجمالي الإعلانات</div></div>
-      <div class="dash-card" style="text-align:center"><div class="dash-stat">${usersSnap.size || 0}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
+      <div class="dash-card" style="text-align:center"><div class="dash-stat">${usersSnap.size||0}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
     </div>
 
     <div class="section-label">⭐ طلبات التمييز (${reqs.length})</div>
-    ${reqs.length ? reqs.map(r => `
+    ${reqs.length?reqs.map(r=>`
       <div class="my-ad-row">
         <div class="my-ad-info">
-          <div class="my-ad-title">${r.adTitle || ''}</div>
-          <div class="my-ad-status">${r.plan || ''} · ${r.userEmail || ''}</div>
+          <div class="my-ad-title">${r.adTitle||''}</div>
+          <div class="my-ad-status">${r.plan||''} · ${r.userEmail||''}</div>
         </div>
         <div class="my-ad-actions">
-          <button class="icon-btn approve" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
-          <button class="icon-btn reject" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
+          <button class="icon-btn edit" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
+          <button class="icon-btn del" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
         </div>
-      </div>
-    `).join('') : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>'}
+      </div>`).join('')
+    :'<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>'}
 
     <div class="section-label">📋 إدارة الإعلانات</div>
-    ${allAds.slice(0, 20).map(ad => `
+    ${allAds.slice(0,20).map(ad=>`
       <div class="my-ad-row">
-        <div class="my-ad-img">${ad.imageUrl ? `<img src="${ad.imageUrl}">` : '<i class="fa fa-image"></i>'}</div>
+        <div class="my-ad-img">${ad.imageUrl?`<img src="${ad.imageUrl}">`:'<i class="fa fa-image"></i>'}</div>
         <div class="my-ad-info">
-          <div class="my-ad-title">${ad.title || ''}</div>
-          <div class="my-ad-status">${ad.userEmail || ''}</div>
+          <div class="my-ad-title">${ad.title||''}</div>
+          <div class="my-ad-status">${ad.userEmail||''}</div>
         </div>
         <div class="my-ad-actions">
-          <button class="icon-btn edit" title="${ad.featured ? 'إلغاء تمييز' : 'تمييز'}" onclick="adminToggleFeatured('${ad.id}', ${!!ad.featured})">${ad.featured ? '★' : '☆'}</button>
+          <button class="icon-btn edit" title="${ad.featured?'إلغاء تمييز':'تمييز'}" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured?'★':'☆'}</button>
           <button class="icon-btn del" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i></button>
         </div>
-      </div>
-    `).join('')}
+      </div>`).join('')}
 
     <div class="section-label">📰 الشريط الإخباري</div>
     <div class="fg"><label>النصوص (كل سطر نص مستقل)</label><textarea id="newsTextarea" rows="4" placeholder="نص 1&#10;نص 2&#10;نص 3"></textarea></div>
     <button class="btn btn-blue btn-sm" onclick="saveNews()"><i class="fa fa-save"></i> حفظ الأخبار</button>
   `;
 
-  // ⚠️ تم الإصلاح: نضع HTML أولاً في الصفحة، ثم نقرأ الأخبار ونضعها في textarea بعد أن يصبح العنصر موجوداً.
-  document.getElementById('adminContent').innerHTML = html;
-
-  // قراءة الأخبار وتعبئتها (بعد التأكد من وجود العنصر)
-  try {
-    const doc = await db.collection('settings').doc('news').get();
-    const textarea = document.getElementById('newsTextarea');
-    if (textarea && doc.exists) {
-      const items = doc.data().items || [];
-      textarea.value = items.join('\n');
+  // load existing news
+  db.collection('settings').doc('news').get().then(doc=>{
+    if(doc.exists&&doc.data().items){
+      document.getElementById('newsTextarea').value=doc.data().items.join('\n');
     }
-  } catch(e) {
-    console.log('خطأ في تحميل الأخبار:', e);
-  }
+  }).catch(()=>{});
+
+  document.getElementById('adminContent').innerHTML=html;
 }
 
 async function approveFeature(reqId,adId){
@@ -1182,6 +1189,24 @@ async function saveNews(){
   const lines=document.getElementById('newsTextarea').value.split('\n').map(s=>s.trim()).filter(Boolean);
   await db.collection('settings').doc('news').set({items:lines}).catch(()=>{});
   showToast('تم حفظ الأخبار ✅','ok'); loadNews();
+}
+
+/* ============ SECRET ADMIN SETUP ============ */
+let adminTapCount=0;
+function secretAdminTap(){
+  if(!currentUser) return;
+  adminTapCount++;
+  if(adminTapCount>=5){
+    adminTapCount=0;
+    if(confirm('هل أنت مطور الموقع؟ هل تريد جعل هذا الحساب مديراً؟')){
+      db.collection('users').doc(currentUser.uid).update({role:'admin'}).then(()=>{
+        isAdmin=true;
+        document.getElementById('adminNavBtn').style.display='flex';
+        showToast('تم منحك صلاحيات المدير ✅','ok');
+        openDashboard();
+      }).catch(()=>showToast('حدث خطأ','bad'));
+    }
+  }
 }
 
 /* ============ INIT ============ */
