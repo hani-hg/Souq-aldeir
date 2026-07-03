@@ -1,103 +1,71 @@
-import {
-  db,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  serverTimestamp
-} from "./firebase.js";
+// ===== js/app.js — المنطق الرئيسي للتطبيق =====
+import { auth, db } from './firebase.js';
+import { toast, openM, closeM, setBnav, buildCats, loadAds, applyFilter, slideTo, loadSlider, startSlider, toggleFav, openFavs, openDetail, delAd, openEdit, doAddAd, doEditAd, openDash, setupAdmin, doLogout, onUserBtn } from './ads.js';
+import { openMsgs, startChat, openChat, sendMsg, stopChat } from './chat.js';
+import { openAdmin, approveReq, rejectReq, adminDel, adminToggleFeat, saveNews, checkAdminBadge } from './admin.js';
+import { doLogin, doSignup, sendOTP, verifyOTP, switchTab, updateUserBtn, setupAuthListener } from './auth.js';
 
-const latestAds = document.getElementById("latestAds");
-const featuredAds = document.getElementById("featuredAds");
+// ===== جعل الدوال عامة للاستخدام في onclick =====
+window.doLogin = doLogin;
+window.doSignup = doSignup;
+window.sendOTP = sendOTP;
+window.verifyOTP = verifyOTP;
+window.switchTab = switchTab;
+window.openM = openM;
+window.closeM = closeM;
+window.toast = toast;
+window.setBnav = setBnav;
+window.pickCat = (n) => { window.activeCat = n === 'الكل' ? null : n; buildCats(); applyFilter(); };
+window.applyFilter = applyFilter;
+window.slideTo = slideTo;
+window.toggleFav = toggleFav;
+window.openFavs = openFavs;
+window.openDetail = openDetail;
+window.doAddAd = doAddAd;
+window.doEditAd = doEditAd;
+window.delAd = delAd;
+window.openEdit = openEdit;
+window.openDash = openDash;
+window.setupAdmin = setupAdmin;
+window.doLogout = doLogout;
+window.onUserBtn = onUserBtn;
+window.openMsgs = openMsgs;
+window.startChat = startChat;
+window.openChat = openChat;
+window.sendMsg = sendMsg;
+window.stopChat = stopChat;
+window.openFeatured = () => { openM('featModal'); fillFeatSel(); };
+window.pickPlan = (el, plan) => { document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('on')); el.classList.add('on'); window.chosenPlan = plan; };
+window.reqFeatured = reqFeatured;
+window.openAdmin = openAdmin;
+window.approveReq = approveReq;
+window.rejectReq = rejectReq;
+window.adminDel = adminDel;
+window.adminToggleFeat = adminToggleFeat;
+window.saveNews = saveNews;
 
-// إنشاء بطاقة إعلان
-function createCard(ad) {
-  return `
-    <div class="card">
-      <img src="${ad.image}" alt="${ad.title}">
-      <div class="cardBody">
-        <h3>${ad.title}</h3>
-        <p>${ad.category}</p>
-        <p>${ad.city}</p>
-        <div class="price">${ad.price} $</div>
-      </div>
-    </div>
-  `;
-}
-
-// تحميل الإعلانات من Firestore
-async function loadAds() {
-  latestAds.innerHTML = "جاري التحميل...";
-  featuredAds.innerHTML = "جاري التحميل...";
-
-  const q = query(
-    collection(db, "ads"),
-    orderBy("createdAt", "desc")
-  );
-
-  const snapshot = await getDocs(q);
-
-  latestAds.innerHTML = "";
-  featuredAds.innerHTML = "";
-
-  const ads = [];
-
-  snapshot.forEach(doc => {
-    ads.push({
-      id: doc.id,
-      ...doc.data()
-    });
+// ===== تشغيل التطبيق =====
+document.addEventListener('DOMContentLoaded', () => {
+  // بناء الفئات
+  buildCats();
+  // تحميل الإعلانات
+  loadAds();
+  // مراقبة حالة المصادقة
+  setupAuthListener();
+  // رفع الصورة في نموذج الإضافة
+  document.getElementById('adImg')?.addEventListener('change', function() {
+    const f = this.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = e => document.getElementById('imgPrev').innerHTML = `<img src="${e.target.result}">`;
+    r.readAsDataURL(f);
   });
-
-  ads.forEach(ad => {
-    latestAds.innerHTML += createCard(ad);
-  });
-
-  ads.slice(0, 3).forEach(ad => {
-    featuredAds.innerHTML += createCard(ad);
-  });
-}
-
-// إضافة أول إعلان تجريبي إلى قاعدة البيانات
-async function addFirstAd() {
-
-  const snapshot = await getDocs(collection(db, "ads"));
-
-  // إذا كانت القاعدة فارغة فقط
-  if (snapshot.empty) {
-
-    await addDoc(collection(db, "ads"), {
-      title: "هيونداي توسان 2020",
-      price: 18500,
-      category: "سيارات",
-      city: "دير الزور",
-      image: "https://picsum.photos/500/350?car",
-      createdAt: serverTimestamp()
-    });
-
-    await addDoc(collection(db, "ads"), {
-      title: "منزل للبيع",
-      price: 45000,
-      category: "عقارات",
-      city: "الميادين",
-      image: "https://picsum.photos/500/350?house",
-      createdAt: serverTimestamp()
-    });
-
-    await addDoc(collection(db, "ads"), {
-      title: "iPhone 15 Pro",
-      price: 900,
-      category: "موبايلات",
-      city: "البوكمال",
-      image: "https://picsum.photos/500/350?phone",
-      createdAt: serverTimestamp()
-    });
-
-    console.log("تم إنشاء أول بيانات في Firestore");
-  }
-}
-
-// التشغيل
-await addFirstAd();
-await loadAds();
+  // زر الإضافة
+  document.getElementById('fabBtn').onclick = function() {
+    if (!window.CU) { openM('authModal'); toast('سجل دخولك أولاً', 'bad'); return; }
+    document.getElementById('addErr').className = 'errmsg';
+    openM('addModal');
+  };
+  // البحث والفرز
+  document.getElementById('searchQ')?.addEventListener('input', applyFilter);
+  document.getElementById('sortEl')?.addEventListener('change', applyFilter);
+});
