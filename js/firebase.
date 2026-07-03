@@ -2,47 +2,44 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
 import {
-getFirestore
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 import {
-getAuth
+  getAuth
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-import {
-getStorage
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
-
-// بيانات المشروع
-
+// إعدادات مشروعك
 const firebaseConfig = {
-
-apiKey: "AIzaSyAlFgTzlcbaS6NKKlqyOvrxYAnKmxXLTLQ",
-
-authDomain: "souq-aldeir.firebaseapp.com",
-
-projectId: "souq-aldeir",
-
-storageBucket: "souq-aldeir.firebasestorage.app",
-
-messagingSenderId: "153018999224",
-
-appId: "1:153018999224:web:ddfb7660584941091f6f4d"
-
+  apiKey: "AIzaSyAlFgTzlcbaS6NKKlqyOvrxYAnKmxXLTLQ",
+  authDomain: "souq-aldeir.firebaseapp.com",
+  projectId: "souq-aldeir",
+  storageBucket: "souq-aldeir.firebasestorage.app",
+  messagingSenderId: "153018999224",
+  appId: "1:153018999224:web:ddfb7660584941091f6f4d"
 };
 
 // تشغيل Firebase
-
 const app = initializeApp(firebaseConfig);
 
 // الخدمات
-
 const db = getFirestore(app);
-
 const auth = getAuth(app);
 
-const storage = getStorage(app);
-
 // تصديرها
-
-export { app, db, auth, storage };
+export {
+  db,
+  auth,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
+};
