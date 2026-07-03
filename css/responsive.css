@@ -1,1 +1,129 @@
+/* ===== responsive.css — أنماط الجوال والتجاوب ===== */
 
+/* للأجهزة الصغيرة جداً (جوالات صغيرة) */
+@media (max-width: 480px) {
+  .ads-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .slide-title {
+    font-size: 0.85em;
+  }
+
+  .slide-img,
+  .slide-noimg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .slider-section {
+    min-height: 100px;
+  }
+
+  .slide {
+    padding: 12px 14px;
+  }
+
+  .topnav .logo-text {
+    font-size: 0.95em;
+  }
+
+  .nav-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85em;
+  }
+
+  .sheet {
+    padding: 12px 14px 24px;
+  }
+
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+
+  .plans-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .promo-btn {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .promo-btn .ptxt h4 {
+    text-align: center;
+  }
+
+  .promo-btn .ptxt p {
+    text-align: center;
+  }
+
+  .bnav-btn {
+    font-size: 0.55em;
+    padding: 0 5px;
+  }
+
+  .bnav-btn i {
+    font-size: 1.15em;
+  }
+
+  .fab {
+    padding: 10px 20px;
+    font-size: 0.85em;
+    bottom: 72px;
+  }
+
+  .cat-chip {
+    padding: 6px 10px;
+    min-width: 58px;
+  }
+
+  .cat-chip span {
+    font-size: 0.65em;
+  }
+
+  .cat-chip i {
+    font-size: 1em;
+  }
+
+  .detail-price {
+    font-size: 1.2em;
+  }
+}
+
+/* للأجهزة المتوسطة (تابلت) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .ads-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .slider-section {
+    min-height: 120px;
+  }
+
+  .slide-img,
+  .slide-noimg {
+    width: 75px;
+    height: 75px;
+  }
+}
+
+/* للأجهزة الكبيرة (شاشات كمبيوتر) */
+@media (min-width: 769px) {
+  .ads-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* تحسينات إضافية للشاشات العريضة جداً */
+@media (min-width: 1200px) {
+  .ads-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
