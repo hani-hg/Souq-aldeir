@@ -1,16 +1,19 @@
 {
-  "firestore": {
-    "rules": "firestore.rules"
-  },
   "hosting": {
     "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "README.md",
+      "vercel.json"
     ],
     "rewrites": [
-      { "source": "**", "destination": "/index.html" }
+      { "source": "/admin", "destination": "/admin.html" },
+      { "source": "/login", "destination": "/login.html" }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }
