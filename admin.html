@@ -3,119 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة تحكم المدير - سوق دير الزور</title>
+<title>لوحة المدير - سوق دير الزور</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
 
-<!-- NAV -->
+<!-- TOP NAV -->
 <div class="topnav">
   <div class="logo-wrap">
     <div class="logo-icon">🛡️</div>
-    <div class="logo-text">لوحة تحكم المدير<small>سوق دير الزور</small></div>
+    <div class="logo-text">لوحة المدير<small>سوق دير الزور</small></div>
   </div>
   <div class="nav-btns">
-    <a href="index.html" class="nav-btn" title="العودة للموقع"><i class="fa fa-home"></i></a>
+    <a href="index.html" class="nav-btn" title="رجوع للسوق"><i class="fa fa-arrow-right"></i></a>
   </div>
 </div>
 
-<div class="admin-page-wrap">
-
-  <!-- تظهر هذه إذا لم يكن المستخدم مديراً -->
-  <div class="admin-lock" id="lockedView" style="display:none">
-    <i class="fa fa-lock"></i>
-    <h3 style="margin-bottom:8px">هذه الصفحة للمدير فقط</h3>
-    <p style="font-size:.9em;margin-bottom:16px">سجّل الدخول بحساب يملك صلاحية المدير للمتابعة</p>
-    <button class="btn btn-blue" style="width:auto;padding:10px 24px" onclick="openM('authModal')"><i class="fa fa-sign-in-alt"></i> تسجيل الدخول</button>
+<!-- GUARD (shown until we confirm the signed-in user is an admin) -->
+<div id="guardArea" class="admin-guard">
+  <div>
+    <i class="fa fa-spinner fa-spin" style="font-size:2em"></i>
+    <p style="margin-top:10px">جاري التحقق من صلاحياتك...</p>
   </div>
-
-  <!-- محتوى لوحة التحكم -->
-  <div id="adminPageBody" style="display:none;padding-top:14px"></div>
-
 </div>
 
-<!-- ======= MODAL: AUTH (لتسجيل الدخول من هذه الصفحة أيضاً) ======= -->
-<div class="modal" id="authModal">
+<!-- MODAL: ADMIN PANEL (same sheet UI as index.html, opened automatically below) -->
+<div class="modal" id="adminModal">
   <div class="sheet">
     <div class="handle"></div>
-    <div class="sheet-head"><span class="sheet-title">تسجيل الدخول</span><button class="xbtn" onclick="closeM('authModal')">✕</button></div>
-    <div class="errmsg" id="authErr"></div>
-    <div class="sucmsg" id="authSuc"></div>
-    <div id="pLogin">
-      <div class="fg"><label>رقم الهاتف أو البريد الإلكتروني</label><input type="text" id="liEmail" placeholder="09xxxxxxxx أو example@mail.com"></div>
-      <div class="fg"><label>كلمة المرور</label><input type="password" id="liPass" placeholder="••••••••"></div>
-      <button class="btn btn-blue" id="liBtn" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
+    <div class="sheet-head">
+      <span class="sheet-title">🛡️ لوحة المدير</span>
+      <a href="index.html" class="x-btn">✕</a>
     </div>
+    <div id="adminContent"></div>
   </div>
 </div>
 
-<!-- ======= MODAL: AD DETAIL (يُستخدم عند حذف إعلان من اللوحة) ======= -->
+<!-- MODAL: AD DETAIL (so the admin can inspect an ad from the moderation list) -->
 <div class="modal" id="detailModal">
   <div class="sheet">
     <div class="handle"></div>
-    <div class="sheet-head"><span class="sheet-title">تفاصيل الإعلان</span><button class="xbtn" onclick="closeM('detailModal')">✕</button></div>
-    <div id="detailBody"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">تفاصيل الإعلان</span>
+      <button class="x-btn" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div id="detailContent"></div>
   </div>
 </div>
 
-<div class="toast" id="toastEl"></div>
+<div class="toast" id="toast"></div>
 
-<!-- ===== SCRIPTS ===== -->
+<!-- Firebase SDK v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+<!-- App scripts (only what the admin panel needs) -->
 <script src="src/js/firebase.js"></script>
 <script src="src/js/utils.js"></script>
 <script src="src/components/toast.js"></script>
 <script src="src/components/modal.js"></script>
-<script src="src/js/auth.js"></script>
 <script src="src/js/ads.js"></script>
 <script src="src/js/admin.js"></script>
 
 <script>
-/* عند تغيّر حالة تسجيل الدخول، تحقق من صلاحية المدير وأظهر/أخفِ المحتوى */
-async function onAuthReady(user) {
-  const locked = document.getElementById('lockedView');
-  const body = document.getElementById('adminPageBody');
-  if (!user) {
-    locked.style.display = 'flex';
-    body.style.display = 'none';
-    return;
-  }
-  // isAdmin يُحدَّث تلقائياً داخل auth.js قبل استدعاء هذا الـ hook
-  if (!isAdmin) {
-    locked.innerHTML = `
-      <i class="fa fa-lock"></i>
-      <h3 style="margin-bottom:8px">حسابك لا يملك صلاحية المدير</h3>
-      <p style="font-size:.9em;margin-bottom:16px">اذهب لصفحة "حسابي" في الموقع الرئيسي واضغط "إعداد صلاحية المدير"</p>
-      <a href="index.html" class="btn btn-outline" style="width:auto;padding:10px 24px;display:inline-flex"><i class="fa fa-home"></i> العودة للموقع</a>
-    `;
-    locked.style.display = 'flex';
-    body.style.display = 'none';
-    return;
-  }
-  locked.style.display = 'none';
-  body.style.display = 'block';
-  // نحتاج allAds لعرض لوحة التحكم - نحمّلها ثم نعرض اللوحة
-  await loadAdsForAdmin();
-  renderAdminBody('adminPageBody');
-}
+  initModals();
 
-/* تحميل الإعلانات (بدون عرضها في شبكة، فقط لتعبئة allAds المستخدمة في admin.js) */
-function loadAdsForAdmin() {
-  return db.collection('ads').orderBy('createdAt', 'desc').get().then(snap => {
-    allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  }).catch(() => { allAds = []; });
-}
-
-/* اجعل loadAds المستدعاة من admin.js/ads.js تُحدّث اللوحة بدل الشبكة الرئيسية */
-async function loadAds() {
-  await loadAdsForAdmin();
-  if (isAdmin) renderAdminBody('adminPageBody');
-}
+  auth.onAuthStateChanged(async (u) => {
+    const guard = document.getElementById('guardArea');
+    if (!u) {
+      guard.innerHTML = '<div><i class="fa fa-lock" style="font-size:2em"></i>' +
+        '<p style="margin-top:10px">سجّل دخولك من الصفحة الرئيسية أولاً، ثم عد لهذه الصفحة.</p>' +
+        '<a href="index.html" class="btn btn-blue" style="margin-top:14px;display:inline-flex;width:auto;padding:10px 22px">الذهاب لتسجيل الدخول</a></div>';
+      return;
+    }
+    currentUser = u;
+    const doc = await db.collection('users').doc(u.uid).get().catch(() => null);
+    isAdmin = doc && doc.exists && doc.data().role === 'admin';
+    if (!isAdmin) {
+      guard.innerHTML = '<div><i class="fa fa-ban" style="font-size:2em"></i>' +
+        '<p style="margin-top:10px">هذا الحساب لا يملك صلاحية الوصول للوحة المدير.</p>' +
+        '<a href="index.html" class="btn btn-outline" style="margin-top:14px;display:inline-flex;width:auto;padding:10px 22px">رجوع للسوق</a></div>';
+      return;
+    }
+    guard.style.display = 'none';
+    // Load ads (admin.js reads the shared `allAds` array) then open the panel.
+    db.collection('ads').orderBy('createdAt', 'desc').get().then(snap => {
+      allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      openAdminPanel();
+    });
+  });
 </script>
 </body>
 </html>
