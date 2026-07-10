@@ -1,122 +1,287 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>سوق دير الزور المفتوح</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="src/CSS/style.css">
+<link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="topnav">
-  <div class="logo-wrap"><div class="logo-icon">🛒</div><div class="logo-text">سوق دير الزور<small>أول سوق إلكتروني</small></div></div>
-  <div class="nav-btns">
-    <button class="nav-btn" id="adminBtn" style="display:none" onclick="window.openAdmin()" title="المدير"><i class="fa fa-shield-alt"></i></button>
-    <button class="nav-btn" id="msgBtn" onclick="window.openMsgs()" title="رسائل"><i class="fa fa-comment-dots"></i></button>
-    <button class="nav-btn" id="userBtn" onclick="window.onUserBtn()"><i class="fa fa-user"></i></button>
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="logo-wrap">
+    <div class="logo-icon">🛒</div>
+    <div class="logo-text">سوق دير الزور<small>أول سوق إلكتروني</small></div>
   </div>
-</header>
+  <div class="nav-btns">
+    <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
+    <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i></button>
+    <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i></button>
+  </div>
+</div>
 
-<div class="news-bar"><div class="news-label">📢 أخبار</div><div class="news-track"><div class="news-inner" id="newsInner"></div></div></div>
+<!-- NEWS MARQUEE -->
+<div class="news-bar" id="newsBar">
+  <div class="news-label">📢 أخبار</div>
+  <div class="news-ticker"><div class="news-ticker-inner" id="newsTicker"></div></div>
+</div>
 
-<div class="searchbar"><div class="search-wrap"><i class="fa fa-search"></i><input id="searchQ" type="text" placeholder="ابحث في سوق دير الزور..."></div></div>
+<!-- SEARCH -->
+<div class="searchbar">
+  <div class="search-wrap">
+    <i class="fa fa-search" style="color:var(--gray)"></i>
+    <input id="searchInput" type="text" placeholder="ابحث في سوق دير الزور...">
+  </div>
+</div>
 
-<div class="cats-scroll" id="catsEl"></div>
+<!-- CATEGORIES -->
+<div class="cats-scroll" id="catsScroll"></div>
 
-<div class="filter-bar"><span class="ads-count" id="adsCountEl">جاري...</span><select class="sort-select" id="sortEl" onchange="window.applyFilter()"><option value="new">الأحدث</option><option value="asc">السعر: الأقل</option><option value="desc">السعر: الأعلى</option></select></div>
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="ads-count" id="adsCount">جاري التحميل...</span>
+  <select class="sort-btn" id="sortSelect" onchange="applyFilter()">
+    <option value="new">الأحدث</option>
+    <option value="price_asc">السعر: الأقل</option>
+    <option value="price_desc">السعر: الأعلى</option>
+  </select>
+</div>
 
-<div class="slider-section" id="sliderEl"><div class="slider-track" id="sliderTrack"></div><div class="slider-arrows"><button class="sarrow" onclick="window.slideTo(window.curSlide-1)"><i class="fa fa-chevron-right"></i></button><button class="sarrow" onclick="window.slideTo(window.curSlide+1)"><i class="fa fa-chevron-left"></i></button></div><div class="slider-dots" id="sliderDots"></div></div>
+<!-- FEATURED SLIDER -->
+<div class="slider-wrap" id="sliderWrap" style="display:none">
+  <div class="slider-inner" id="sliderInner"></div>
+  <div class="slider-arrows">
+    <button class="slider-arrow" onclick="slideMove(-1)"><i class="fa fa-chevron-right"></i></button>
+    <button class="slider-arrow" onclick="slideMove(1)"><i class="fa fa-chevron-left"></i></button>
+  </div>
+  <div class="slider-dots" id="sliderDots"></div>
+</div>
 
-<button class="promo-btn" onclick="window.openFeatured()"><div><h4>⭐ أبرز إعلانك</h4><p>وصل لآلاف المشترين</p></div><div style="font-size:2em">🚀</div></button>
+<!-- PROMO BANNER -->
+<div class="promo-banner" onclick="openFeaturedModal()">
+  <div class="txt"><h4>⭐ أبرز إعلانك</h4><p>وصل لآلاف المشترين في دير الزور</p></div>
+  <div style="font-size:2em">🚀</div>
+</div>
 
-<div class="ads-wrap"><div class="ads-grid" id="adsGrid"><div class="loading-state"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div></div></div>
+<!-- ADS -->
+<div class="ads-container">
+  <div class="ads-grid" id="adsGrid">
+    <div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>
+  </div>
+</div>
 
+<!-- FAB -->
 <button class="fab" id="fabBtn"><i class="fa fa-plus"></i> أضف إعلان</button>
 
-<nav class="bnav">
-  <button class="bnav-btn on" id="bn-home" onclick="window.setBnav('home')"><i class="fa fa-home"></i><span>الرئيسية</span></button>
-  <button class="bnav-btn" id="bn-fav" onclick="window.setBnav('fav');window.openFavs()"><i class="fa fa-heart"></i><span>المفضلة</span></button>
-  <button class="bnav-btn" id="bn-add" onclick="window.setBnav('add');document.getElementById('fabBtn').click()"><i class="fa fa-plus-circle"></i><span>أضف</span></button>
-  <button class="bnav-btn" id="bn-msg" onclick="window.setBnav('msg');window.openMsgs()"><i class="fa fa-comment-dots"></i><span>رسائل</span></button>
-  <button class="bnav-btn" id="bn-me" onclick="window.setBnav('me');window.openDash()"><i class="fa fa-user-circle"></i><span>حسابي</span></button>
-</nav>
+<!-- BOTTOM NAV -->
+<div class="bottomnav">
+  <button class="bnav-btn active" id="bnav-home" onclick="setBnav('home')"><i class="fa fa-home"></i><span>الرئيسية</span></button>
+  <button class="bnav-btn" id="bnav-fav" onclick="setBnav('fav');showFavorites()"><i class="fa fa-heart"></i><span>المفضلة</span></button>
+  <button class="bnav-btn" id="bnav-add" onclick="setBnav('add');document.getElementById('fabBtn').click()"><i class="fa fa-plus-circle"></i><span>أضف</span></button>
+  <button class="bnav-btn" id="bnav-msg" onclick="setBnav('msg');openMessages()"><i class="fa fa-comment-dots"></i><span>رسائل</span></button>
+  <button class="bnav-btn" id="bnav-me" onclick="setBnav('me');openDashboard()"><i class="fa fa-user-circle"></i><span>حسابي</span></button>
+</div>
 
-<!-- MODALS -->
-<div class="modal" id="authModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">الدخول إلى السوق</span><button class="xbtn" onclick="window.closeM('authModal')">✕</button></div><div class="tab-bar"><button class="tab-btn on" onclick="window.switchAuth('login')">دخول</button><button class="tab-btn" onclick="window.switchAuth('signup')">حساب جديد</button><button class="tab-btn" onclick="window.switchAuth('reset')">نسيت كلمة المرور</button></div><div class="errmsg" id="authErr"></div><div class="sucmsg" id="authSuc"></div><div id="pLogin"></div><div id="pSignup" style="display:none"></div><div id="pReset" style="display:none"></div></div></div>
+<!-- MODAL: AUTH -->
+<div class="modal" id="authModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">الدخول إلى السوق</span>
+      <button class="x-btn" onclick="closeModal('authModal')">✕</button>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active" id="tabLogin" onclick="switchAuth('login')">دخول</div>
+      <div class="tab-item" id="tabSignup" onclick="switchAuth('signup')">حساب جديد</div>
+      <div class="tab-item" id="tabReset" onclick="switchAuth('reset')">نسيت كلمة المرور</div>
+    </div>
+    <div class="err" id="authErr"></div>
+    <div class="suc" id="authSuc"></div>
+    <!-- LOGIN -->
+    <div id="formLogin">
+      <div class="fg"><label>رقم الهاتف أو البريد الإلكتروني</label><input type="text" id="loginEmail" placeholder="09xxxxxxxx أو example@mail.com"></div>
+      <div class="fg"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <button class="btn btn-blue" id="loginBtn" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
+    </div>
+    <!-- SIGNUP -->
+    <div id="formSignup" style="display:none">
+      <div class="fg"><label>الاسم الكامل *</label><input type="text" id="signupName" placeholder="اسمك الكامل"></div>
+      <div class="fg"><label>رقم الهاتف * <small style="color:var(--red)">(إجباري)</small></label><input type="tel" id="signupPhone" placeholder="09xxxxxxxx"></div>
+      <div class="fg"><label>البريد الإلكتروني <small style="color:var(--gray)">(اختياري)</small></label><input type="email" id="signupEmail" placeholder="example@mail.com"></div>
+      <div class="fg"><label>كلمة المرور * (6 أحرف على الأقل)</label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn btn-blue" id="signupBtn" onclick="doSignup()"><i class="fa fa-user-plus"></i> إنشاء الحساب</button>
+    </div>
+    <!-- RESET -->
+    <div id="formReset" style="display:none">
+      <div id="resetStep1">
+        <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل رقم هاتفك المسجّل وسنساعدك على تغيير كلمة المرور.</p>
+        <div class="fg"><label>رقم الهاتف المسجّل</label><input type="tel" id="resetPhone" placeholder="09xxxxxxxx"></div>
+        <button class="btn btn-outline" id="resetBtn" onclick="doResetStep1()"><i class="fa fa-search"></i> ابحث عن حسابي</button>
+      </div>
+      <div id="resetStep2" style="display:none">
+        <p style="font-size:.85em;color:var(--green);margin-bottom:10px">✅ تم التحقق من رقم هاتفك</p>
+        <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" id="newPass1" placeholder="6 أحرف على الأقل"></div>
+        <div class="fg"><label>تأكيد كلمة المرور</label><input type="password" id="newPass2" placeholder="أعد كتابة كلمة المرور"></div>
+        <input type="hidden" id="resetUserEmail">
+        <button class="btn btn-blue" id="resetBtn2" onclick="doResetStep2()"><i class="fa fa-lock"></i> تغيير كلمة المرور</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-<div class="modal" id="addModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">نشر إعلان جديد</span><button class="xbtn" onclick="window.closeM('addModal')">✕</button></div><div class="errmsg" id="addErr"></div><div class="fg"><label>عنوان الإعلان *</label><input type="text" id="adT"></div><div class="fg"><label>الوصف *</label><textarea id="adD"></textarea></div><div class="row2"><div class="fg"><label>السعر ($) *</label><input type="number" id="adPr" min="0"></div><div class="fg"><label>رقم الهاتف *</label><input type="tel" id="adPh"></div></div><div class="fg"><label>الفئة *</label><select id="adCat"><option value="">اختر...</option></select></div><div class="fg"><label>المنطقة</label><select id="adArea"><option value="دير الزور">دير الزور - المدينة</option><option value="الميادين">الميادين</option><option value="البوكمال">البوكمال</option><option value="الموحسن">الموحسن</option><option value="عشارة">عشارة</option><option value="أخرى">منطقة أخرى</option></select></div><div class="fg"><label>صورة (اختياري)</label><input type="file" id="adImg" accept="image/*"><div id="imgPrev"></div></div><button id="addBtn" class="btn btn-orange" onclick="window.doAddAd()"><i class="fa fa-paper-plane"></i> نشر الإعلان</button></div></div>
+<!-- MODAL: ADD AD -->
+<div class="modal" id="addModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">نشر إعلان جديد</span>
+      <button class="x-btn" onclick="closeModal('addModal')">✕</button>
+    </div>
+    <div class="err" id="addErr"></div>
+    <div class="fg"><label>عنوان الإعلان *</label><input type="text" id="adTitle" placeholder="مثال: آيفون 14 للبيع"></div>
+    <div class="fg"><label>الوصف *</label><textarea id="adDesc" placeholder="اكتب تفاصيل الإعلان هنا..."></textarea></div>
+    <div class="row2">
+      <div class="fg"><label>السعر ($) *</label><input type="number" id="adPrice" placeholder="0" min="0"></div>
+      <div class="fg"><label>رقم الهاتف *</label><input type="text" id="adPhone" placeholder="09xxxxxxxx"></div>
+    </div>
+    <div class="fg"><label>الفئة *</label><select id="adCat"><option value="">اختر الفئة...</option></select></div>
+    <div class="fg"><label>المنطقة</label>
+      <select id="adArea">
+        <option value="دير الزور">دير الزور - المدينة</option>
+        <option value="الميادين">الميادين</option>
+        <option value="البوكمال">البوكمال</option>
+        <option value="الموحسن">الموحسن</option>
+        <option value="عشارة">عشارة</option>
+        <option value="أخرى">منطقة أخرى</option>
+      </select>
+    </div>
+    <div class="fg"><label>صورة الإعلان (اختياري)</label><input type="file" id="adImg" accept="image/*"><div id="imgPreview"></div></div>
+    <button class="btn btn-orange" id="addSubmit" onclick="doAddAd()"><i class="fa fa-paper-plane"></i> نشر الإعلان</button>
+  </div>
+</div>
 
-<div class="modal" id="editModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">تعديل الإعلان</span><button class="xbtn" onclick="window.closeM('editModal')">✕</button></div><div class="errmsg" id="editErr"></div><input type="hidden" id="edId"><div class="fg"><label>العنوان *</label><input type="text" id="edT"></div><div class="fg"><label>الوصف *</label><textarea id="edD"></textarea></div><div class="row2"><div class="fg"><label>السعر ($)</label><input type="number" id="edPr" min="0"></div><div class="fg"><label>رقم الهاتف</label><input type="tel" id="edPh"></div></div><div class="fg"><label>الفئة</label><select id="edCat"></select></div><button class="btn btn-blue" onclick="window.doEditAd()"><i class="fa fa-save"></i> حفظ التعديلات</button></div></div>
+<!-- MODAL: EDIT AD -->
+<div class="modal" id="editModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">تعديل الإعلان</span>
+      <button class="x-btn" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="err" id="editErr"></div>
+    <div class="fg"><label>العنوان *</label><input type="text" id="editTitle"></div>
+    <div class="fg"><label>الوصف *</label><textarea id="editDesc"></textarea></div>
+    <div class="row2">
+      <div class="fg"><label>السعر ($)</label><input type="number" id="editPrice" min="0"></div>
+      <div class="fg"><label>رقم الهاتف</label><input type="text" id="editPhone"></div>
+    </div>
+    <div class="fg"><label>الفئة</label><select id="editCat"></select></div>
+    <input type="hidden" id="editAdId">
+    <button class="btn btn-blue" id="editSubmit" onclick="doEditAd()"><i class="fa fa-save"></i> حفظ التعديلات</button>
+  </div>
+</div>
 
-<div class="modal" id="detailModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">تفاصيل الإعلان</span><button class="xbtn" onclick="window.closeM('detailModal')">✕</button></div><div id="detailBody"></div></div></div>
+<!-- MODAL: AD DETAIL -->
+<div class="modal" id="detailModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">تفاصيل الإعلان</span>
+      <button class="x-btn" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
 
-<div class="modal" id="dashModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">حسابي</span><button class="xbtn" onclick="window.closeM('dashModal')">✕</button></div><div id="dashBody"></div></div></div>
+<!-- MODAL: DASHBOARD -->
+<div class="modal" id="dashModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">حسابي</span>
+      <button class="x-btn" onclick="closeModal('dashModal')">✕</button>
+    </div>
+    <div id="dashContent"></div>
+  </div>
+</div>
 
-<div class="modal" id="msgModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title" id="msgTitle">الرسائل</span><button class="xbtn" onclick="window.closeM('msgModal');window.stopChat()">✕</button></div><div id="msgBody"></div></div></div>
+<!-- MODAL: MESSAGES -->
+<div class="modal" id="msgModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title" id="msgTitle">الرسائل</span>
+      <button class="x-btn" onclick="closeModal('msgModal');if(chatUnsub)chatUnsub();">✕</button>
+    </div>
+    <div id="msgContent"></div>
+  </div>
+</div>
 
-<div class="modal" id="featModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">⭐ إعلانات مميزة</span><button class="xbtn" onclick="window.closeM('featModal')">✕</button></div><p style="font-size:.85em;color:#6b7280;margin-bottom:14px">أبرز إعلانك أمام آلاف المشترين في دير الزور</p><div class="plans-grid" id="plansGrid"></div><div class="fg"><label>اختر إعلانك</label><select id="featAdSel"><option value="">-- اختر إعلانك --</option></select></div><button class="btn btn-gold" onclick="window.reqFeatured()"><i class="fa fa-star"></i> طلب التمييز</button><p style="font-size:.73em;color:#6b7280;text-align:center;margin-top:8px">سيتم التواصل معك عبر واتساب</p></div></div>
+<!-- MODAL: FEATURED -->
+<div class="modal" id="featuredModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">⭐ إعلانات مميزة</span>
+      <button class="x-btn" onclick="closeModal('featuredModal')">✕</button>
+    </div>
+    <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;">أبرز إعلانك في أعلى الصفحة أمام آلاف المشترين</p>
+    <div class="promo-plans">
+      <div class="plan-card selected" onclick="selectPlan(this,'3 أيام - 1$')"><div class="plan-name">3 أيام</div><div class="plan-price">1$</div><div class="plan-desc">للإعلانات السريعة</div></div>
+      <div class="plan-card" onclick="selectPlan(this,'7 أيام - 2$')"><div class="plan-name">7 أيام</div><div class="plan-price">2$</div><div class="plan-desc">الأكثر شعبية ✨</div></div>
+      <div class="plan-card" onclick="selectPlan(this,'15 يوم - 3$')"><div class="plan-name">15 يوم</div><div class="plan-price">3$</div><div class="plan-desc">للبضائع التي تحتاج وقتاً</div></div>
+      <div class="plan-card" onclick="selectPlan(this,'30 يوم - 5$')"><div class="plan-name">30 يوم</div><div class="plan-price">5$</div><div class="plan-desc">للمتاجر والتجار</div></div>
+    </div>
+    <div class="fg"><label>اختر إعلانك</label><select id="featuredAdSel"><option value="">-- اختر إعلانك --</option></select></div>
+    <button class="btn btn-gold" onclick="requestFeatured()"><i class="fa fa-star"></i> طلب التمييز</button>
+    <p style="font-size:.73em;color:var(--gray);text-align:center;margin-top:8px;">سيتم التواصل معك عبر واتساب لإتمام الدفع</p>
+  </div>
+</div>
 
-<div class="modal" id="favModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">❤️ المفضلة</span><button class="xbtn" onclick="window.closeM('favModal')">✕</button></div><div id="favBody"></div></div></div>
+<!-- MODAL: FAVORITES -->
+<div class="modal" id="favModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">❤️ المفضلة</span>
+      <button class="x-btn" onclick="closeModal('favModal')">✕</button>
+    </div>
+    <div id="favContent"></div>
+  </div>
+</div>
 
-<div class="modal" id="adminModal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><span class="sheet-title">🛡️ لوحة تحكم المدير</span><button class="xbtn" onclick="window.closeM('adminModal')">✕</button></div><div id="adminBody"></div></div></div>
+<!-- MODAL: ADMIN -->
+<div class="modal" id="adminModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">🛡️ لوحة المدير</span>
+      <button class="x-btn" onclick="closeModal('adminModal')">✕</button>
+    </div>
+    <div id="adminContent"></div>
+  </div>
+</div>
 
-<div class="toast" id="toastEl"></div>
+<div class="toast" id="toast"></div>
 
-<!-- Firebase -->
+<!-- Firebase SDK v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-<!-- App Scripts -->
-<script src="src/js/Firebase/config.js"></script>
-<script src="src/js/utils/helpers.js"></script>
-<script src="src/components/slider.js"></script>
-<script src="src/js/Firebase/auth.js"></script>
-<script src="src/js/Firebase/storage.js"></script>
-<script src="src/js/modules/ads.js"></script>
-<script src="src/js/modules/chat.js"></script>
-<script src="src/js/modules/cart.js"></script>
-<script src="src/js/modules/products.js"></script>
-<script src="src/js/admin/dashboard.js"></script>
-<script src="src/js/admin/users.js"></script>
-<script src="src/components/modal.js"></script>
+<!-- App scripts: order matters -->
+<script src="src/js/firebase.js"></script>
+<script src="src/js/utils.js"></script>
 <script src="src/components/toast.js"></script>
-<script src="src/components/navbar.js"></script>
-<script src="src/js/utils/rtl.js"></script>
-
-<script>
-// التهيئة العامة
-document.addEventListener('DOMContentLoaded', function() {
-  db.collection('news').orderBy('createdAt', 'desc').limit(10).get().then(snap => {
-    const inner = document.getElementById('newsInner');
-    inner.innerHTML = snap.docs.map(d => d.data().text).join(' • ') + ' • ' + snap.docs.map(d => d.data().text).join(' • ');
-  });
-  db.collection('categories').orderBy('name').get().then(snap => {
-    const catsEl = document.getElementById('catsEl');
-    catsEl.innerHTML = `<button class="cat-pill active" onclick="window.loadAds('')">الكل</button>`;
-    snap.forEach(doc => {
-      catsEl.innerHTML += `<button class="cat-pill" onclick="window.loadAds('${doc.id}');this.classList.add('active');">${doc.data().name}</button>`;
-    });
-  });
-  window.loadSlider([
-    'https://via.placeholder.com/800x200?text=عرض+خاص',
-    'https://via.placeholder.com/800x200?text=سوق+دير+الزور'
-  ]);
-  window.openFeatured = function() { window.showToast('سيتم التواصل معك قريباً'); };
-  window.reqFeatured = function() { window.showToast('تم إرسال طلب التمييز'); };
-  window.setBnav = function(tab) {
-    document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('on'));
-    document.getElementById('bn-' + tab).classList.add('on');
-  };
-  document.getElementById('fabBtn').addEventListener('click', function() {
-    if (!auth.currentUser) return window.onUserBtn();
-    window.openM('addModal');
-  });
-});
-</script>
-
+<script src="src/components/modal.js"></script>
+<script src="src/components/slider.js"></script>
+<script src="src/js/ads.js"></script>
+<script src="src/js/auth.js"></script>
+<script src="src/js/chat.js"></script>
+<script src="src/js/admin.js"></script>
+<script src="src/js/app.js"></script>
 </body>
 </html>
