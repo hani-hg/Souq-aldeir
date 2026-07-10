@@ -1,1 +1,22 @@
-
+/* admin.css */
+.admin-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.admin-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-box {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+}
+.stat-box h3 { font-size: 1.4rem; color: var(--primary); }
+.stat-box p { font-size: 0.7rem; color: #888; }
