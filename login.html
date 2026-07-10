@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول - سوق دير الزور</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="src/css/style.css">
+<style>
+  .login-page{max-width:420px;margin:0 auto;padding:16px 18px 40px;}
+  .login-logo{text-align:center;margin:28px 0 20px;}
+  .login-logo .logo-icon{width:64px;height:64px;font-size:2em;margin:0 auto 10px;background:var(--gold);border-radius:16px;display:flex;align-items:center;justify-content:center;}
+  .login-logo h1{font-size:1.2em;font-weight:800;color:var(--dark);}
+</style>
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-logo">
+    <div class="logo-icon">🛒</div>
+    <h1>سوق دير الزور المفتوح</h1>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item active" id="tabLogin" onclick="switchAuth('login')">دخول</div>
+    <div class="tab-item" id="tabSignup" onclick="switchAuth('signup')">حساب جديد</div>
+    <div class="tab-item" id="tabReset" onclick="switchAuth('reset')">نسيت كلمة المرور</div>
+  </div>
+  <div class="err" id="authErr"></div>
+  <div class="suc" id="authSuc"></div>
+
+  <!-- LOGIN -->
+  <div id="formLogin">
+    <div class="fg"><label>رقم الهاتف أو البريد الإلكتروني</label><input type="text" id="loginEmail" placeholder="09xxxxxxxx أو example@mail.com"></div>
+    <div class="fg"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+    <button class="btn btn-blue" id="loginBtn" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
+  </div>
+
+  <!-- SIGNUP -->
+  <div id="formSignup" style="display:none">
+    <div class="fg"><label>الاسم الكامل *</label><input type="text" id="signupName" placeholder="اسمك الكامل"></div>
+    <div class="fg"><label>رقم الهاتف * <small style="color:var(--red)">(إجباري)</small></label><input type="tel" id="signupPhone" placeholder="09xxxxxxxx"></div>
+    <div class="fg"><label>البريد الإلكتروني <small style="color:var(--gray)">(اختياري)</small></label><input type="email" id="signupEmail" placeholder="example@mail.com"></div>
+    <div class="fg"><label>كلمة المرور * (6 أحرف على الأقل)</label><input type="password" id="signupPass" placeholder="••••••••"></div>
+    <button class="btn btn-blue" id="signupBtn" onclick="doSignup()"><i class="fa fa-user-plus"></i> إنشاء الحساب</button>
+  </div>
+
+  <!-- RESET -->
+  <div id="formReset" style="display:none">
+    <div id="resetStep1">
+      <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل رقم هاتفك المسجّل وسنساعدك على تغيير كلمة المرور.</p>
+      <div class="fg"><label>رقم الهاتف المسجّل</label><input type="tel" id="resetPhone" placeholder="09xxxxxxxx"></div>
+      <button class="btn btn-outline" id="resetBtn" onclick="doResetStep1()"><i class="fa fa-search"></i> ابحث عن حسابي</button>
+    </div>
+    <div id="resetStep2" style="display:none">
+      <p style="font-size:.85em;color:var(--green);margin-bottom:10px">✅ تم التحقق من رقم هاتفك</p>
+      <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" id="newPass1" placeholder="6 أحرف على الأقل"></div>
+      <div class="fg"><label>تأكيد كلمة المرور</label><input type="password" id="newPass2" placeholder="أعد كتابة كلمة المرور"></div>
+      <input type="hidden" id="resetUserEmail">
+      <button class="btn btn-blue" id="resetBtn2" onclick="doResetStep2()"><i class="fa fa-lock"></i> تغيير كلمة المرور</button>
+    </div>
+  </div>
+
+  <p style="text-align:center;margin-top:18px;font-size:.85em;color:var(--gray)">
+    <a href="index.html" style="color:var(--blue);text-decoration:none;font-weight:700">رجوع إلى السوق</a>
+  </p>
+</div>
+
+<!-- Hidden placeholder: auth.js calls closeModal('authModal') on success;
+     it isn't a real popup here since this whole page IS the auth screen. -->
+<div class="modal" id="authModal" style="display:none"></div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- App scripts (only what login/signup/reset needs) -->
+<script src="src/js/firebase.js"></script>
+<script src="src/components/toast.js"></script>
+<script src="src/js/auth.js"></script>
+
+<script>
+  // After a successful login/signup this modal-based function is normally
+  // called by closeModal('authModal'); on this standalone page we redirect
+  // to the marketplace instead once Firebase confirms the session.
+  auth.onAuthStateChanged(u => {
+    if (u) window.location.href = 'index.html';
+  });
+</script>
+</body>
+</html>
