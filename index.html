@@ -70,7 +70,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-<!-- App Scripts - حسب الهيكل الجديد -->
+<!-- App Scripts -->
 <script src="src/js/Firebase/config.js"></script>
 <script src="src/js/utils/helpers.js"></script>
 <script src="src/components/slider.js"></script>
@@ -88,7 +88,7 @@
 <script src="src/js/utils/rtl.js"></script>
 
 <script>
-// التهيئة العامة (app.js)
+// التهيئة العامة
 document.addEventListener('DOMContentLoaded', function() {
   db.collection('news').orderBy('createdAt', 'desc').limit(10).get().then(snap => {
     const inner = document.getElementById('newsInner');
