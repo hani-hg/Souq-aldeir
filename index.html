@@ -72,21 +72,21 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .sort-btn{border:1.5px solid var(--border);background:#fff;border-radius:20px;padding:5px 12px;font-size:.8em;font-family:'Tajawal',sans-serif;color:var(--dark);cursor:pointer;}
 
 /* FEATURED SLIDER */
-.slider-wrap{margin:10px 12px 0;border-radius:var(--radius);overflow:hidden;position:relative;background:linear-gradient(135deg,#1565c0,#283593);min-height:74px;}
+.slider-wrap{margin:12px 12px 0;border-radius:var(--radius);overflow:hidden;position:relative;background:linear-gradient(135deg,#1565c0,#283593);min-height:170px;}
 .slider-inner{display:flex;transition:transform .5s ease;height:100%;}
-.slide{min-width:100%;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;}
-.slide-img{width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:rgba(255,255,255,.1);}
-.slide-no-img{width:52px;height:52px;border-radius:10px;flex-shrink:0;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:1.3em;}
+.slide{min-width:100%;padding:20px 22px;display:flex;align-items:center;gap:16px;cursor:pointer;position:relative;}
+.slide-img{width:112px;height:112px;object-fit:cover;border-radius:14px;flex-shrink:0;background:rgba(255,255,255,.1);}
+.slide-no-img{width:112px;height:112px;border-radius:14px;flex-shrink:0;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:2.2em;}
 .slide-info{flex:1;color:#fff;min-width:0;}
-.slide-badge{background:var(--gold);color:#7a5000;font-size:.58em;font-weight:800;padding:1px 7px;border-radius:20px;display:inline-block;margin-bottom:3px;}
-.slide-title{font-size:.84em;font-weight:800;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.slide-price{font-size:.78em;color:#ffd54f;font-weight:700;}
-.slide-loc{font-size:.65em;opacity:.75;margin-top:1px;}
+.slide-badge{background:var(--gold);color:#7a5000;font-size:.68em;font-weight:800;padding:2px 9px;border-radius:20px;display:inline-block;margin-bottom:6px;}
+.slide-title{font-size:1.12em;font-weight:800;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slide-price{font-size:1em;color:#ffd54f;font-weight:700;}
+.slide-loc{font-size:.8em;opacity:.75;margin-top:3px;}
 .slider-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;}
 .sdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;}
 .sdot.active{background:#fff;}
 .slider-arrows{position:absolute;top:50%;transform:translateY(-50%);width:100%;display:flex;justify-content:space-between;padding:0 6px;pointer-events:none;}
-.slider-arrow{pointer-events:all;background:rgba(255,255,255,.2);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7em;}
+.slider-arrow{pointer-events:all;background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8em;}
 .promo-banner{margin:10px 12px 0;background:linear-gradient(135deg,var(--gold),var(--orange));border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
 .promo-banner .txt h4{color:#fff;font-size:.95em;font-weight:800;}
 .promo-banner .txt p{color:rgba(255,255,255,.85);font-size:.75em;margin-top:2px;}
@@ -244,7 +244,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
   <div class="nav-btns">
     <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
     <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i><span class="badge" id="msgBadge" style="display:none">!</span></button>
-    <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i></button>
+    <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i><span class="badge" id="userBadge" style="display:none">!</span></button>
   </div>
 </div>
 
@@ -301,7 +301,7 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
   <button class="bnav-btn" id="bnav-fav" onclick="setBnav('fav');showFavorites()"><i class="fa fa-heart"></i><span>المفضلة</span></button>
   <button class="bnav-btn" id="bnav-add" onclick="setBnav('add');document.getElementById('fabBtn').click()"><i class="fa fa-plus-circle"></i><span>أضف</span></button>
   <button class="bnav-btn" id="bnav-msg" onclick="setBnav('msg');openMessages()" style="position:relative"><i class="fa fa-comment-dots"></i><span>رسائل</span><span class="badge" id="msgBadgeBottom" style="display:none;position:absolute;top:2px;right:18px"></span></button>
-  <button class="bnav-btn" id="bnav-me" onclick="setBnav('me');openDashboard()"><i class="fa fa-user-circle"></i><span>حسابي</span></button>
+  <button class="bnav-btn" id="bnav-me" onclick="setBnav('me');openDashboard()" style="position:relative"><i class="fa fa-user-circle"></i><span>حسابي</span><span class="badge" id="userBadgeBottom" style="display:none;position:absolute;top:2px;right:18px"></span></button>
 </div>
 
 <!-- MODAL: AUTH -->
@@ -524,6 +524,7 @@ let chatSeenMap = {};        // { chatId: lastSeenMillis } - loaded from/saved t
 let slideIdx = 0;
 let slideTimer = null;
 let featuredAds = [];
+let myWarnings = []; // unread admin warnings for the signed-in user
 
 
 /* ============================================================
@@ -648,7 +649,7 @@ function startSlider() {
 /* ============ CATEGORIES ============ */
 const CATS = [
   { n: 'الكل', i: 'fa-th-large' }, { n: 'سيارات', i: 'fa-car' }, { n: 'عقارات', i: 'fa-home' },
-  { n: 'إلكترونيات', i: 'fa-mobile-alt' }, { n: 'ملابس', i: 'fa-tshirt' }, { n: 'أثاث', i: 'fa-couch' },
+  { n: 'إلكترونيات', i: 'fa-mobile-alt' }, { n: 'أدوات كهربائية', i: 'fa-plug' }, { n: 'ملابس', i: 'fa-tshirt' }, { n: 'أثاث', i: 'fa-couch' },
   { n: 'وظائف', i: 'fa-briefcase' }, { n: 'خدمات', i: 'fa-tools' }, { n: 'حيوانات', i: 'fa-paw' },
   { n: 'رياضة', i: 'fa-futbol' }, { n: 'طعام', i: 'fa-utensils' }, { n: 'أخرى', i: 'fa-box' }
 ];
@@ -925,10 +926,20 @@ function initAuthListener() {
     currentUser = u;
     if (u) {
       const doc = await db.collection('users').doc(u.uid).get().catch(() => null);
+      if (doc && doc.exists && doc.data().banned) {
+        await auth.signOut();
+        showToast('تم حظر هذا الحساب من قبل الإدارة', 'bad');
+        currentUser = null; isAdmin = false;
+        document.getElementById('adminNavBtn').style.display = 'none';
+        stopChatsListener();
+        updateUserBtn(); loadAds();
+        return;
+      }
       isAdmin = doc && doc.exists && doc.data().role === 'admin';
       document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
       if (isAdmin) checkAdminNotifs();
       initChatsListener();
+      checkMyWarnings();
     } else {
       isAdmin = false;
       document.getElementById('adminNavBtn').style.display = 'none';
@@ -941,14 +952,15 @@ function initAuthListener() {
 function updateUserBtn() {
   const btn = document.getElementById('userNavBtn');
   if (currentUser) {
-    btn.innerHTML = '<i class="fa fa-user-check"></i>';
+    btn.innerHTML = '<i class="fa fa-user-check"></i><span class="badge" id="userBadge" style="display:none">!</span>';
     btn.style.background = 'rgba(255,220,50,.35)';
     btn.onclick = openDashboard;
   } else {
-    btn.innerHTML = '<i class="fa fa-user"></i>';
+    btn.innerHTML = '<i class="fa fa-user"></i><span class="badge" id="userBadge" style="display:none">!</span>';
     btn.style.background = 'rgba(255,255,255,.15)';
     btn.onclick = () => openModal('authModal');
   }
+  updateWarningBadge();
 }
 
 function switchAuth(tab) {
@@ -1038,6 +1050,33 @@ async function doResetStep1() {
   } finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-search"></i> ابحث عن حسابي'; }
 }
 
+/* ============ ADMIN WARNINGS (شارة + عرض في لوحة "حسابي") ============ */
+async function checkMyWarnings() {
+  if (!currentUser) { myWarnings = []; updateWarningBadge(); return; }
+  const snap = await db.collection('users').doc(currentUser.uid).collection('warnings')
+    .where('read', '==', false).get().catch(() => null);
+  myWarnings = snap ? snap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+  updateWarningBadge();
+}
+
+function updateWarningBadge() {
+  const count = myWarnings.length;
+  ['userBadge', 'userBadgeBottom'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (count > 0) { el.style.display = 'flex'; el.textContent = count > 9 ? '9+' : count; }
+    else { el.style.display = 'none'; }
+  });
+}
+
+async function ackWarning(warningId) {
+  if (!currentUser) return;
+  await db.collection('users').doc(currentUser.uid).collection('warnings').doc(warningId).update({ read: true }).catch(() => {});
+  myWarnings = myWarnings.filter(w => w.id !== warningId);
+  updateWarningBadge();
+  openDashboard(); // re-render without the acknowledged warning
+}
+
 /* ============ DASHBOARD (حسابي) ============ */
 async function openDashboard() {
   if (!currentUser) { openModal('authModal'); return; }
@@ -1047,6 +1086,14 @@ async function openDashboard() {
   let userDoc = { name: currentUser.displayName || 'مستخدم', phone: '', email: '' };
   try { const doc = await db.collection('users').doc(currentUser.uid).get(); if (doc.exists) userDoc = { ...userDoc, ...doc.data() }; } catch (e) {}
   document.getElementById('dashContent').innerHTML = `
+    ${myWarnings.length ? myWarnings.map(w => `
+      <div style="background:var(--red-light);border:1.5px solid #ef9a9a;border-radius:12px;padding:10px 12px;margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <i class="fa fa-triangle-exclamation" style="color:var(--red);margin-top:2px"></i>
+          <div style="flex:1;font-size:.85em;color:#7a1a1a;line-height:1.6">${w.message}</div>
+        </div>
+        <button class="btn btn-red btn-sm" style="margin-top:8px" onclick="ackWarning('${w.id}')">فهمت</button>
+      </div>`).join('') : ''}
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <div style="width:52px;height:52px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4em;font-weight:800">${(userDoc.name || 'U').charAt(0).toUpperCase()}</div>
       <div>
@@ -1231,6 +1278,7 @@ function startChat(adId, sellerId, adTitle) {
 }
 
 function openChat(chatId, otherId, otherName, adTitle) {
+  openModal('msgModal');
   markChatSeen(chatId);
   document.getElementById('msgTitle').textContent = otherName;
   const content = document.getElementById('msgContent');
@@ -1277,10 +1325,13 @@ async function sendMsg(chatId, otherId) {
 /* ============================================================
    admin.js
    Admin-only panel: pending "featured" requests, ad moderation
-   (delete / toggle featured), and the news-ticker editor.
+   (delete / toggle featured), user management (ban / warn),
+   and the news-ticker editor.
+
    Every exported function here checks `isAdmin` where relevant;
    Firestore security rules must enforce this server-side too
-   (see /firestore.rules).
+   (see /firestore.rules) — client-side checks alone are only a
+   convenience, not real security.
    ============================================================ */
 
 async function checkAdminNotifs() {
@@ -1298,15 +1349,16 @@ async function openAdminPanel() {
 
   const [reqSnap, usersSnap] = await Promise.all([
     db.collection('featuredRequests').where('status', '==', 'pending').get().catch(() => ({ docs: [] })),
-    db.collection('users').get().catch(() => ({ size: 0 }))
+    db.collection('users').get().catch(() => ({ docs: [] }))
   ]);
 
   const reqs = reqSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
   let html = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div class="dash-card" style="text-align:center"><div class="dash-stat">${allAds.length}</div><div style="font-size:.72em;color:var(--gray)">إجمالي الإعلانات</div></div>
-      <div class="dash-card" style="text-align:center"><div class="dash-stat">${usersSnap.size || 0}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
+      <div class="dash-card" style="text-align:center"><div class="dash-stat">${users.length}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
     </div>
 
     <div class="section-label">⭐ طلبات التمييز (${reqs.length})</div>
@@ -1336,6 +1388,24 @@ async function openAdminPanel() {
           <button class="icon-btn del" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i></button>
         </div>
       </div>`).join('')}
+
+    <div class="section-label">👥 إدارة المستخدمين (${users.length})</div>
+    ${users.length ? users.map(u => {
+      const adsCount = allAds.filter(a => a.userId === u.id).length;
+      const banned = !!u.banned;
+      return `
+      <div class="my-ad-row">
+        <div class="my-ad-img"><i class="fa fa-user"></i></div>
+        <div class="my-ad-info">
+          <div class="my-ad-title">${u.name || 'مستخدم'} ${banned ? '<span style="color:var(--red);font-size:.8em">(محظور)</span>' : ''}</div>
+          <div class="my-ad-status">${u.phone || ''} ${u.email ? '· ' + u.email : ''} · ${adsCount} إعلان</div>
+        </div>
+        <div class="my-ad-actions">
+          <button class="icon-btn" style="background:var(--gold-light);color:#7a5000" title="إرسال إنذار" onclick="sendWarningToUser('${u.id}')"><i class="fa fa-bell"></i></button>
+          <button class="icon-btn ${banned ? 'edit' : 'del'}" title="${banned ? 'رفع الحظر' : 'حظر'}" onclick="toggleBanUser('${u.id}',${banned})"><i class="fa ${banned ? 'fa-unlock' : 'fa-ban'}"></i></button>
+        </div>
+      </div>`;
+    }).join('') : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا يوجد مستخدمون</p>'}
 
     <div class="section-label">📰 الشريط الإخباري</div>
     <div class="fg"><label>النصوص (كل سطر نص مستقل)</label><textarea id="newsTextarea" rows="4" placeholder="نص 1&#10;نص 2&#10;نص 3"></textarea></div>
@@ -1377,6 +1447,27 @@ async function saveNews() {
   const lines = document.getElementById('newsTextarea').value.split('\n').map(s => s.trim()).filter(Boolean);
   await db.collection('settings').doc('news').set({ items: lines }).catch(() => {});
   showToast('تم حفظ الأخبار ✅', 'ok'); loadNews();
+}
+
+/* ============ USER MANAGEMENT ============ */
+
+async function toggleBanUser(uid, currentlyBanned) {
+  const msg = currentlyBanned ? 'رفع الحظر عن هذا المستخدم؟' : 'حظر هذا المستخدم؟ لن يستطيع تسجيل الدخول بعد الآن.';
+  if (!confirm(msg)) return;
+  await db.collection('users').doc(uid).update({ banned: !currentlyBanned }).catch(() => {});
+  showToast(currentlyBanned ? 'تم رفع الحظر' : 'تم حظر المستخدم', 'ok');
+  openAdminPanel();
+}
+
+async function sendWarningToUser(uid) {
+  const text = prompt('اكتب نص الإنذار الذي سيظهر للمستخدم في صفحة "حسابي":');
+  if (!text || !text.trim()) return;
+  await db.collection('users').doc(uid).collection('warnings').add({
+    message: text.trim(),
+    read: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(() => { showToast('تعذر إرسال الإنذار', 'bad'); return; });
+  showToast('تم إرسال الإنذار ✅', 'ok');
 }
 
 
