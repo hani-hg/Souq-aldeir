@@ -155,7 +155,8 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .err{color:var(--red);background:var(--red-light);}
 .suc{color:var(--green);background:var(--green-light);}
 .err.show,.suc.show{display:block;}
-#imgPreview img{width:100%;border-radius:10px;margin-top:8px;}
+#imgPreview img{width:72px;height:72px;object-fit:cover;border-radius:10px;margin-top:8px;}
+#videoPreview{font-size:.8em;color:var(--gray);margin-top:6px;}
 
 /* TABS */
 .tab-bar{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px;margin-bottom:14px;}
@@ -230,6 +231,13 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 
 /* ADMIN-ONLY PAGE HELPERS (admin.html) */
 .admin-guard{display:flex;align-items:center;justify-content:center;min-height:70vh;text-align:center;padding:24px;color:var(--gray);}
+
+/* Collapsible admin panel sections */
+#adminContent details{border-radius:10px;}
+#adminContent summary{list-style:none;display:flex;align-items:center;justify-content:space-between;}
+#adminContent summary::-webkit-details-marker{display:none;}
+#adminContent summary::after{content:'\f107';font-family:'Font Awesome 6 Free';font-weight:900;color:var(--gray);transition:transform .2s;}
+#adminContent details[open] summary::after{transform:rotate(180deg);}
 
 </style>
 </head>
@@ -396,7 +404,8 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
       </select>
       <input type="text" id="adAreaOther" placeholder="اكتب اسم القرية أو المنطقة" style="display:none;margin-top:8px">
     </div>
-    <div class="fg"><label>صورة الإعلان (اختياري)</label><input type="file" id="adImg" accept="image/*"><div id="imgPreview"></div></div>
+    <div class="fg"><label>صور الإعلان (حتى 5 صور، اختياري)</label><input type="file" id="adImg" accept="image/*" multiple><div id="imgPreview" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
+    <div class="fg"><label>فيديو للإعلان (اختياري، حتى 30 ثانية يُفضّل)</label><input type="file" id="adVideo" accept="video/*"><div id="videoPreview"></div></div>
     <div class="fg" style="display:flex;align-items:flex-start;gap:8px">
       <input type="checkbox" id="adAgreeTerms" style="width:auto;margin-top:3px">
       <label for="adAgreeTerms" style="font-weight:400;font-size:.82em;color:var(--dark);margin-bottom:0">أوافق على <a href="#" onclick="openModal('termsModal');return false;" style="color:var(--blue);font-weight:700">شروط استخدام السوق</a> وأتحمّل مسؤولية صحة إعلاني والتعامل مع الطرف الآخر</label>
@@ -782,8 +791,21 @@ function loadAds() {
       buildSlider(fAds);
       applyFilter();
       populateFeaturedSelect();
+      openSharedAdIfAny();
     })
     .catch(() => { g.innerHTML = '<div class="empty-state"><i class="fa fa-exclamation-circle"></i><p>تعذر التحميل</p></div>'; });
+}
+
+/* Opens the ad referenced by ?ad=ID in the URL (from shareAd()'s link), once. */
+let sharedAdOpened = false;
+function openSharedAdIfAny() {
+  if (sharedAdOpened) return;
+  const adId = new URLSearchParams(location.search).get('ad');
+  if (!adId) return;
+  if (allAds.find(a => a.id === adId)) {
+    sharedAdOpened = true;
+    openDetail(adId);
+  }
 }
 
 function applyFilter() {
@@ -802,13 +824,17 @@ function renderAds(list) {
   const g = document.getElementById('adsGrid');
   document.getElementById('adsCount').textContent = list.length + ' إعلان';
   if (!list.length) { g.innerHTML = '<div class="empty-state"><i class="fa fa-search"></i><p>لا توجد نتائج</p></div>'; return; }
-  g.innerHTML = list.map(ad => `
+  g.innerHTML = list.map(ad => {
+    const cover = (ad.images && ad.images.length) ? ad.images[0] : ad.imageUrl;
+    const photoCount = (ad.images && ad.images.length) ? ad.images.length : (ad.imageUrl ? 1 : 0);
+    return `
     <div class="ad-card ${ad.featured ? 'featured' : ''}" onclick="openDetail('${ad.id}')">
       ${ad.featured ? '<div class="featured-badge">⭐ مميز</div>' : ''}
       <div style="position:relative">
-        ${ad.imageUrl ? `<img class="ad-img" src="${ad.imageUrl}" alt="${ad.title || ''}" loading="lazy">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
+        ${cover ? `<img class="ad-img" src="${cover}" alt="${ad.title || ''}" loading="lazy">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
         <button class="ad-fav ${favorites.has(ad.id) ? 'liked' : ''}" onclick="event.stopPropagation();toggleFav('${ad.id}',this)"><i class="fa fa-heart"></i></button>
         ${ad.category ? `<span class="ad-cat-badge">${ad.category}</span>` : ''}
+        ${(photoCount > 1 || ad.videoUrl) ? `<span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.62em;font-weight:700;padding:2px 7px;border-radius:20px">${ad.videoUrl ? '<i class="fa fa-video"></i>' : ''} ${photoCount > 1 ? photoCount : ''}</span>` : ''}
       </div>
       <div class="ad-body">
         <div class="ad-price">${formatPrice(ad)}</div>
@@ -816,7 +842,8 @@ function renderAds(list) {
         <div class="ad-loc"><i class="fa fa-map-marker-alt"></i> ${ad.area || 'دير الزور'}</div>
         <div class="ad-time">${timeAgo(ad.createdAt)}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ============ FAVORITES ============ */
@@ -848,8 +875,12 @@ function openDetail(id) {
   const ad = allAds.find(a => a.id === id); if (!ad) return;
   const isOwner = currentUser && currentUser.uid === ad.userId;
   const canAdmin = isAdmin;
+  const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
   document.getElementById('detailContent').innerHTML = `
-    ${ad.imageUrl ? `<img class="detail-img" src="${ad.imageUrl}" alt="${ad.title}">` : ''}
+    ${images.length > 1
+      ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `<img src="${url}" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${ad.title}">`).join('')}</div>`
+      : (images.length === 1 ? `<img class="detail-img" src="${images[0]}" alt="${ad.title}">` : '')}
+    ${ad.videoUrl ? `<video controls style="width:100%;border-radius:14px;margin-bottom:12px;background:#000"><source src="${ad.videoUrl}">متصفحك لا يدعم تشغيل الفيديو</video>` : ''}
     ${ad.featured ? '<div style="color:var(--gold);font-weight:800;margin-bottom:6px">⭐ إعلان مميز</div>' : ''}
     <span style="background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:.78em;font-weight:700">${ad.category || ''}</span>
     <h3 style="font-size:1.1em;font-weight:800;margin:10px 0 4px">${ad.title || ''}</h3>
@@ -859,15 +890,29 @@ function openDetail(id) {
       ${ad.phone ? `<div class="info-row"><i class="fa fa-phone"></i><span>${ad.phone}</span></div>` : ''}
       <div class="info-row"><i class="fa fa-map-marker-alt"></i><span>${ad.area || 'دير الزور'}</span></div>
       <div class="info-row"><i class="fa fa-clock"></i><span>${timeAgo(ad.createdAt)}</span></div>
+      <div class="info-row"><i class="fa fa-eye"></i><span>${(ad.views || 0) + 1} مشاهدة</span></div>
     </div>
     ${ad.phone ? `
       <a href="tel:${ad.phone}" class="call-btn"><i class="fa fa-phone-alt"></i> اتصل بالبائع</a>
       <a href="https://wa.me/${ad.phone.replace(/\D/g, '')}" target="_blank" class="whatsapp-btn"><i class="fa fa-comment"></i> تواصل عبر واتساب</a>` : ''}
+    <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
     ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="startChat('${ad.id}','${ad.userId}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-flag"></i> إبلاغ</button></div>` : ''}
     ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>` : ''}
     ${canAdmin && !isOwner ? `<div class="action-btns" style="margin-top:6px"><button class="btn btn-red btn-sm" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i> حذف (مدير)</button><button class="btn btn-outline btn-sm" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? 'إلغاء التمييز' : '⭐ تمييز'}</button></div>` : ''}
   `;
   openModal('detailModal');
+  db.collection('ads').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
+}
+
+/* Shareable per-ad link: ?ad=ID auto-opens that ad's detail on load (see app.js) */
+function shareAd(adId, adTitle) {
+  const url = `${location.origin}${location.pathname}?ad=${adId}`;
+  if (navigator.share) {
+    navigator.share({ title: adTitle || 'إعلان', text: 'شاهد هذا الإعلان في سوق دير الزور', url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('تم نسخ رابط الإعلان 🔗', 'ok'))
+      .catch(() => showToast(url, ''));
+  }
 }
 
 /* ============ ADD AD ============ */
@@ -878,10 +923,19 @@ function initAddAdForm() {
     openModal('addModal');
   };
   document.getElementById('adImg').onchange = function () {
-    const f = this.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = e => document.getElementById('imgPreview').innerHTML = `<img src="${e.target.result}">`;
-    r.readAsDataURL(f);
+    const files = Array.from(this.files || []).slice(0, 5);
+    const preview = document.getElementById('imgPreview');
+    preview.innerHTML = '';
+    if (this.files.length > 5) showToast('حد أقصى 5 صور، تم أخذ أول 5 فقط', 'bad');
+    files.forEach(f => {
+      const r = new FileReader();
+      r.onload = e => { const img = document.createElement('img'); img.src = e.target.result; preview.appendChild(img); };
+      r.readAsDataURL(f);
+    });
+  };
+  document.getElementById('adVideo').onchange = function () {
+    const f = this.files[0];
+    document.getElementById('videoPreview').textContent = f ? `🎬 ${f.name}` : '';
   };
 }
 
@@ -904,19 +958,31 @@ async function doAddAd() {
   const btn = document.getElementById('addSubmit');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري النشر...';
   try {
-    let imgUrl = null;
-    const f = document.getElementById('adImg').files[0];
-    if (f) {
+    const imgFiles = Array.from(document.getElementById('adImg').files || []).slice(0, 5);
+    const images = [];
+    for (const f of imgFiles) {
       const fd = new FormData();
       fd.append('file', f); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads');
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
       const data = await res.json();
-      if (!data.secure_url) throw new Error('فشل رفع الصورة');
-      imgUrl = data.secure_url;
+      if (!data.secure_url) throw new Error('فشل رفع إحدى الصور');
+      images.push(data.secure_url);
     }
+
+    let videoUrl = null;
+    const videoFile = document.getElementById('adVideo').files[0];
+    if (videoFile) {
+      const fd = new FormData();
+      fd.append('file', videoFile); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads_video');
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.secure_url) throw new Error('فشل رفع الفيديو');
+      videoUrl = data.secure_url;
+    }
+
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
-      imageUrl: imgUrl, featured: false,
+      images, imageUrl: images[0] || null, videoUrl, featured: false, views: 0,
       userId: currentUser.uid, userEmail: currentUser.email,
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -927,6 +993,9 @@ async function doAddAd() {
     document.getElementById('adAreaOther').style.display = 'none';
     document.getElementById('adAgreeTerms').checked = false;
     document.getElementById('imgPreview').innerHTML = '';
+    document.getElementById('videoPreview').innerHTML = '';
+    document.getElementById('adImg').value = '';
+    document.getElementById('adVideo').value = '';
     showToast('تم نشر إعلانك بنجاح! 🎉', 'ok');
     loadAds();
   } catch (ex) {
@@ -1464,15 +1533,25 @@ async function sendMsg(chatId, otherId) {
 
 /* ============================================================
    admin.js
-   Admin-only panel: pending "featured" requests, ad moderation
-   (delete / toggle featured), user management (ban / warn),
-   and the news-ticker editor.
+   Admin-only panel: pending "featured" requests, ad moderation,
+   user management (search / ban / warn / drill into a user's
+   ads), pending reports, and the news-ticker editor.
+
+   Sections are native <details>/<summary> accordions (collapsible,
+   zero extra JS needed for the expand/collapse itself) so the
+   panel stays scannable as the marketplace grows.
 
    Every exported function here checks `isAdmin` where relevant;
    Firestore security rules must enforce this server-side too
    (see /firestore.rules) — client-side checks alone are only a
    convenience, not real security.
    ============================================================ */
+
+let adminUsersCache = [];
+let adminReqsCache = [];
+let adminReportsCache = [];
+let adminUserFilter = null;     // uid, or null: "show only this user's ads"
+let adminUserFilterName = '';
 
 async function checkAdminNotifs() {
   const [reqSnap, reportsSnap] = await Promise.all([
@@ -1497,88 +1576,174 @@ async function openAdminPanel() {
     db.collection('reports').where('status', '==', 'pending').get().catch(() => ({ docs: [] }))
   ]);
 
-  const reqs = reqSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  const reports = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  adminReqsCache = reqSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  adminUsersCache = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  adminReportsCache = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  let html = `
+  document.getElementById('adminContent').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div class="dash-card" style="text-align:center"><div class="dash-stat">${allAds.length}</div><div style="font-size:.72em;color:var(--gray)">إجمالي الإعلانات</div></div>
-      <div class="dash-card" style="text-align:center"><div class="dash-stat">${users.length}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
+      <div class="dash-card" style="text-align:center"><div class="dash-stat">${adminUsersCache.length}</div><div style="font-size:.72em;color:var(--gray)">المستخدمون</div></div>
     </div>
 
-    <div class="section-label">⭐ طلبات التمييز (${reqs.length})</div>
-    ${reqs.length ? reqs.map(r => `
-      <div class="my-ad-row">
-        <div class="my-ad-info">
-          <div class="my-ad-title">${r.adTitle || ''}</div>
-          <div class="my-ad-status">${r.plan || ''} · ${r.userEmail || ''}</div>
-        </div>
-        <div class="my-ad-actions">
-          <button class="icon-btn edit" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
-          <button class="icon-btn del" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
-        </div>
-      </div>`).join('')
-      : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>'}
+    <details open style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">⭐ طلبات التمييز (${adminReqsCache.length})</summary>
+      <div style="padding-top:6px">${renderReqsHtml()}</div>
+    </details>
 
-    <div class="section-label">🚩 بلاغات معلقة (${reports.length})</div>
-    ${reports.length ? reports.map(r => `
-      <div class="my-ad-row">
-        <div class="my-ad-info">
-          <div class="my-ad-title">${r.adTitle || ''}</div>
-          <div class="my-ad-status">${r.reason || ''}</div>
-        </div>
-        <div class="my-ad-actions">
-          <button class="icon-btn del" title="حذف الإعلان" onclick="resolveReportDeleteAd('${r.id}','${r.adId}')"><i class="fa fa-trash"></i></button>
-          <button class="icon-btn edit" title="تجاهل البلاغ" onclick="dismissReport('${r.id}')"><i class="fa fa-check"></i></button>
-        </div>
-      </div>`).join('')
-      : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد بلاغات معلقة</p>'}
+    <details style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">🚩 بلاغات معلقة (${adminReportsCache.length})</summary>
+      <div style="padding-top:6px">${renderReportsHtml()}</div>
+    </details>
 
-    <div class="section-label">📋 إدارة الإعلانات</div>
-    ${allAds.slice(0, 20).map(ad => `
-      <div class="my-ad-row">
-        <div class="my-ad-img">${ad.imageUrl ? `<img src="${ad.imageUrl}">` : '<i class="fa fa-image"></i>'}</div>
-        <div class="my-ad-info">
-          <div class="my-ad-title">${ad.title || ''}</div>
-          <div class="my-ad-status">${ad.userEmail || ''}</div>
-        </div>
-        <div class="my-ad-actions">
-          <button class="icon-btn edit" title="${ad.featured ? 'إلغاء تمييز' : 'تمييز'}" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? '★' : '☆'}</button>
-          <button class="icon-btn del" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i></button>
-        </div>
-      </div>`).join('')}
+    <details id="adminAdsDetails" style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">📋 إدارة الإعلانات (<span id="adminAdsCount">${allAds.length}</span>)</summary>
+      <div style="padding-top:8px">
+        <input type="text" id="adminAdsSearch" placeholder="بحث بعنوان الإعلان أو بريد صاحبه..." oninput="renderAdminAdsList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:.85em;font-family:'Tajawal',sans-serif;margin-bottom:8px">
+        <div id="adminAdsFilterChip"></div>
+        <div id="adminAdsListContainer"></div>
+      </div>
+    </details>
 
-    <div class="section-label">👥 إدارة المستخدمين (${users.length})</div>
-    ${users.length ? users.map(u => {
-      const adsCount = allAds.filter(a => a.userId === u.id).length;
-      const banned = !!u.banned;
-      return `
-      <div class="my-ad-row">
-        <div class="my-ad-img"><i class="fa fa-user"></i></div>
-        <div class="my-ad-info">
-          <div class="my-ad-title">${u.name || 'مستخدم'} ${banned ? '<span style="color:var(--red);font-size:.8em">(محظور)</span>' : ''}</div>
-          <div class="my-ad-status">${u.phone || ''} ${u.email ? '· ' + u.email : ''} · ${adsCount} إعلان</div>
-        </div>
-        <div class="my-ad-actions">
-          <button class="icon-btn" style="background:var(--gold-light);color:#7a5000" title="إرسال إنذار" onclick="sendWarningToUser('${u.id}')"><i class="fa fa-bell"></i></button>
-          <button class="icon-btn ${banned ? 'edit' : 'del'}" title="${banned ? 'رفع الحظر' : 'حظر'}" onclick="toggleBanUser('${u.id}',${banned})"><i class="fa ${banned ? 'fa-unlock' : 'fa-ban'}"></i></button>
-        </div>
-      </div>`;
-    }).join('') : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا يوجد مستخدمون</p>'}
+    <details style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">👥 إدارة المستخدمين (${adminUsersCache.length})</summary>
+      <div style="padding-top:8px">
+        <input type="text" id="adminUsersSearch" placeholder="بحث بالاسم أو الهاتف أو البريد..." oninput="renderAdminUsersList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:.85em;font-family:'Tajawal',sans-serif;margin-bottom:8px">
+        <div id="adminUsersListContainer"></div>
+      </div>
+    </details>
 
-    <div class="section-label">📰 الشريط الإخباري</div>
-    <div class="fg"><label>النصوص (كل سطر نص مستقل)</label><textarea id="newsTextarea" rows="4" placeholder="نص 1&#10;نص 2&#10;نص 3"></textarea></div>
-    <button class="btn btn-blue btn-sm" onclick="saveNews()"><i class="fa fa-save"></i> حفظ الأخبار</button>
+    <details>
+      <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">📰 الشريط الإخباري</summary>
+      <div style="padding-top:8px">
+        <div class="fg"><label>النصوص (كل سطر نص مستقل)</label><textarea id="newsTextarea" rows="4" placeholder="نص 1&#10;نص 2&#10;نص 3"></textarea></div>
+        <button class="btn btn-blue btn-sm" onclick="saveNews()"><i class="fa fa-save"></i> حفظ الأخبار</button>
+      </div>
+    </details>
   `;
+
+  renderAdminAdsList();
+  renderAdminUsersList();
 
   db.collection('settings').doc('news').get().then(doc => {
     if (doc.exists && doc.data().items) {
       document.getElementById('newsTextarea').value = doc.data().items.join('\n');
     }
   }).catch(() => {});
+}
 
-  document.getElementById('adminContent').innerHTML = html;
+function renderReqsHtml() {
+  if (!adminReqsCache.length) return '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد طلبات معلقة</p>';
+  return adminReqsCache.map(r => `
+    <div class="my-ad-row">
+      <div class="my-ad-info">
+        <div class="my-ad-title">${r.adTitle || ''}</div>
+        <div class="my-ad-status">${r.plan || ''} · ${r.userEmail || ''}</div>
+      </div>
+      <div class="my-ad-actions">
+        <button class="icon-btn edit" onclick="approveFeature('${r.id}','${r.adId}')"><i class="fa fa-check"></i></button>
+        <button class="icon-btn del" onclick="rejectFeature('${r.id}')"><i class="fa fa-times"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function renderReportsHtml() {
+  if (!adminReportsCache.length) return '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد بلاغات معلقة</p>';
+  return adminReportsCache.map(r => `
+    <div class="my-ad-row">
+      <div class="my-ad-info">
+        <div class="my-ad-title">${r.adTitle || ''}</div>
+        <div class="my-ad-status">${r.reason || ''}</div>
+      </div>
+      <div class="my-ad-actions">
+        <button class="icon-btn del" title="حذف الإعلان" onclick="resolveReportDeleteAd('${r.id}','${r.adId}')"><i class="fa fa-trash"></i></button>
+        <button class="icon-btn edit" title="تجاهل البلاغ" onclick="dismissReport('${r.id}')"><i class="fa fa-check"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function renderAdminAdsList() {
+  const searchEl = document.getElementById('adminAdsSearch');
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  let list = [...allAds];
+  if (adminUserFilter) list = list.filter(a => a.userId === adminUserFilter);
+  if (q) list = list.filter(a => (a.title || '').toLowerCase().includes(q) || (a.userEmail || '').toLowerCase().includes(q));
+
+  const chipEl = document.getElementById('adminAdsFilterChip');
+  if (chipEl) {
+    chipEl.innerHTML = adminUserFilter
+      ? `<div style="display:flex;align-items:center;gap:8px;background:var(--blue-light);color:var(--blue);border-radius:20px;padding:5px 12px;font-size:.78em;font-weight:700;margin-bottom:8px;width:fit-content">
+           <span>يعرض إعلانات: ${adminUserFilterName}</span>
+           <button onclick="clearAdsUserFilter()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:800">✕</button>
+         </div>`
+      : '';
+  }
+
+  const countEl = document.getElementById('adminAdsCount');
+  if (countEl) countEl.textContent = list.length;
+
+  document.getElementById('adminAdsListContainer').innerHTML = list.length ? list.slice(0, 100).map(ad => `
+    <div class="my-ad-row">
+      <div class="my-ad-img">${ad.imageUrl ? `<img src="${ad.imageUrl}">` : '<i class="fa fa-image"></i>'}</div>
+      <div class="my-ad-info">
+        <div class="my-ad-title">${ad.title || ''}</div>
+        <div class="my-ad-status">${ad.userEmail || ''}</div>
+      </div>
+      <div class="my-ad-actions">
+        <button class="icon-btn edit" title="${ad.featured ? 'إلغاء تمييز' : 'تمييز'}" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? '★' : '☆'}</button>
+        <button class="icon-btn del" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i></button>
+      </div>
+    </div>`).join('') : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا توجد إعلانات مطابقة</p>';
+}
+
+function renderAdminUsersList() {
+  const searchEl = document.getElementById('adminUsersSearch');
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  let list = adminUsersCache;
+  if (q) list = list.filter(u =>
+    (u.name || '').toLowerCase().includes(q) ||
+    (u.phone || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q)
+  );
+
+  document.getElementById('adminUsersListContainer').innerHTML = list.length ? list.map(u => {
+    const adsCount = allAds.filter(a => a.userId === u.id).length;
+    const banned = !!u.banned;
+    const safeName = (u.name || 'مستخدم').replace(/'/g, '');
+    return `
+    <div class="my-ad-row">
+      <div class="my-ad-img"><i class="fa fa-user"></i></div>
+      <div class="my-ad-info">
+        <div class="my-ad-title">${u.name || 'مستخدم'} ${banned ? '<span style="color:var(--red);font-size:.8em">(محظور)</span>' : ''}</div>
+        <div class="my-ad-status">${u.phone || ''} ${u.email ? '· ' + u.email : ''} · ${adsCount} إعلان</div>
+      </div>
+      <div class="my-ad-actions">
+        <button class="icon-btn" style="background:var(--blue-light);color:var(--blue)" title="عرض إعلاناته" onclick="filterAdsByUser('${u.id}','${safeName}')"><i class="fa fa-list"></i></button>
+        <button class="icon-btn" style="background:var(--gold-light);color:#7a5000" title="إرسال إنذار" onclick="sendWarningToUser('${u.id}')"><i class="fa fa-bell"></i></button>
+        <button class="icon-btn ${banned ? 'edit' : 'del'}" title="${banned ? 'رفع الحظر' : 'حظر'}" onclick="toggleBanUser('${u.id}',${banned})"><i class="fa ${banned ? 'fa-unlock' : 'fa-ban'}"></i></button>
+      </div>
+    </div>`;
+  }).join('') : '<p style="font-size:.85em;color:var(--gray);padding:10px 0">لا يوجد مستخدمون مطابقون</p>';
+}
+
+/* "View this user's account" in practice: jump to the ads section
+   pre-filtered to just their listings, with full admin controls
+   (edit/feature/delete) already available on each row. A literal
+   sign-in-as-user isn't something we can do safely without a paid
+   backend (Firebase Admin SDK) — see chat for the full explanation. */
+function filterAdsByUser(uid, name) {
+  adminUserFilter = uid;
+  adminUserFilterName = name;
+  const details = document.getElementById('adminAdsDetails');
+  if (details) details.open = true;
+  renderAdminAdsList();
+  if (details) details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearAdsUserFilter() {
+  adminUserFilter = null;
+  adminUserFilterName = '';
+  renderAdminAdsList();
 }
 
 async function approveFeature(reqId, adId) {
