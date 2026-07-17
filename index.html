@@ -578,12 +578,16 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
    BEFORE every other src/js/*.js file.
    ============================================================ */
 
-/* ---- Third-party / project config ---- */
-const ADMIN_EMAIL = 'admin@souq-aldeir.com'; // غيّر هذا لبريدك
-const ADMIN_PHONE = '+963 9XX XXX XXX';      // غيّر هذا لرقم هاتف الإدارة (للعرض فقط)
+/* ---- Third-party / project config ----
+   These are now DEFAULTS ONLY: the admin panel's "⚙️ إعدادات التواصل"
+   section lets the site owner change email/phone/WhatsApp any time
+   without touching code, saved to Firestore (settings/contact) and
+   read at boot into `contactSettings` (see below + ads.js/admin.js). */
+const ADMIN_EMAIL = 'hg78@live.com';
+const ADMIN_PHONE = '+90 552 274 09 10';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
-const WHATSAPP_NUMBER = '963XXXXXXXXX'; // غيّر لرقمك
+const WHATSAPP_NUMBER = '905522740910'; // نفس رقم الهاتف أعلاه، بصيغة دولية بدون + أو مسافات
 
 /* ---- Firebase init ---- */
 firebase.initializeApp({
@@ -613,6 +617,10 @@ let slideIdx = 0;
 let slideTimer = null;
 let featuredAds = [];
 let myWarnings = []; // unread admin warnings for the signed-in user
+
+/* Editable contact info: admin can change these from the panel without
+   touching code (see admin.js saveContactSettings / loadContactSettings). */
+let contactSettings = { email: ADMIN_EMAIL, phone: ADMIN_PHONE, whatsapp: WHATSAPP_NUMBER };
 
 
 /* ============================================================
@@ -899,9 +907,30 @@ function openDetail(id) {
     ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="startChat('${ad.id}','${ad.userId}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-flag"></i> إبلاغ</button></div>` : ''}
     ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>` : ''}
     ${canAdmin && !isOwner ? `<div class="action-btns" style="margin-top:6px"><button class="btn btn-red btn-sm" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i> حذف (مدير)</button><button class="btn btn-outline btn-sm" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? 'إلغاء التمييز' : '⭐ تمييز'}</button></div>` : ''}
+    ${renderSellerOtherAdsHtml(ad)}
   `;
   openModal('detailModal');
   db.collection('ads').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
+}
+
+/* Surfaces a seller's other active listings — helps buyers browse
+   more from a seller they already trust/like, the way OpenSooq does. */
+function renderSellerOtherAdsHtml(ad) {
+  if (!ad.userId) return '';
+  const others = allAds.filter(a => a.userId === ad.userId && a.id !== ad.id).slice(0, 6);
+  if (!others.length) return '';
+  return `
+    <div class="section-label">📦 إعلانات أخرى لنفس البائع</div>
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
+      ${others.map(o => {
+        const cover = (o.images && o.images.length) ? o.images[0] : o.imageUrl;
+        return `<div onclick="openDetail('${o.id}')" style="flex-shrink:0;width:110px;cursor:pointer">
+          ${cover ? `<img src="${cover}" style="width:110px;height:90px;object-fit:cover;border-radius:10px">` : `<div style="width:110px;height:90px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:#aab"><i class="fa fa-image"></i></div>`}
+          <div style="font-size:.72em;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.title || ''}</div>
+          <div style="font-size:.7em;color:var(--green);font-weight:700">${formatPrice(o)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 /* Shareable per-ad link: ?ad=ID auto-opens that ad's detail on load (see app.js) */
@@ -965,7 +994,7 @@ async function doAddAd() {
       fd.append('file', f); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads');
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
       const data = await res.json();
-      if (!data.secure_url) throw new Error('فشل رفع إحدى الصور');
+      if (!data.secure_url) throw new Error(data.error?.message ? `فشل رفع صورة: ${data.error.message}` : 'فشل رفع إحدى الصور');
       images.push(data.secure_url);
     }
 
@@ -974,9 +1003,9 @@ async function doAddAd() {
     if (videoFile) {
       const fd = new FormData();
       fd.append('file', videoFile); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads_video');
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`, { method: 'POST', body: fd });
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: fd });
       const data = await res.json();
-      if (!data.secure_url) throw new Error('فشل رفع الفيديو');
+      if (!data.secure_url) throw new Error(data.error?.message ? `فشل رفع الفيديو: ${data.error.message}` : 'فشل رفع الفيديو');
       videoUrl = data.secure_url;
     }
 
@@ -1073,7 +1102,7 @@ async function requestFeatured() {
     status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
   }).catch(() => {});
   const msg = `طلب تمييز إعلان%0Aالإعلان: ${ad ? ad.title : ''}%0Aالخطة: ${selectedPlan}%0Aالبريد: ${currentUser.email || ''}`;
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+  window.open(`https://wa.me/${contactSettings.whatsapp}?text=${msg}`, '_blank');
   closeModal('featuredModal');
   showToast('تم إرسال طلبك! سيتم التواصل قريباً ✅', 'ok');
 }
@@ -1095,10 +1124,16 @@ async function reportAd(adId, adTitle) {
 }
 
 /* ============ ABOUT / CONTACT ADMIN (site stats) ============ */
+function loadContactSettings() {
+  db.collection('settings').doc('contact').get().then(doc => {
+    if (doc.exists) contactSettings = { ...contactSettings, ...doc.data() };
+  }).catch(() => {});
+}
+
 async function openAboutModal() {
-  document.getElementById('aboutEmail').textContent = ADMIN_EMAIL;
-  document.getElementById('aboutPhone').textContent = ADMIN_PHONE;
-  document.getElementById('aboutWhatsapp').href = `https://wa.me/${WHATSAPP_NUMBER}`;
+  document.getElementById('aboutEmail').textContent = contactSettings.email;
+  document.getElementById('aboutPhone').textContent = contactSettings.phone;
+  document.getElementById('aboutWhatsapp').href = `https://wa.me/${contactSettings.whatsapp}`;
   document.getElementById('statAds').textContent = allAds.length;
   openModal('aboutModal');
 
@@ -1245,7 +1280,7 @@ async function doResetStep1() {
       // Be honest about it instead of showing a fake "sent" success message.
       const msg = `طلب إعادة تعيين كلمة المرور%0Aرقم الهاتف: ${phone}%0Aالاسم: ${userData.name || ''}`;
       sucEl.innerHTML = 'هذا الحساب مسجّل برقم هاتف فقط بدون بريد إلكتروني، فلا يمكن إرسال رابط تلقائي. تواصل مع الإدارة عبر واتساب وسيتم إعادة تعيين كلمة المرور يدوياً.<br><br>' +
-        `<a href="https://wa.me/${WHATSAPP_NUMBER}?text=${msg}" target="_blank" class="btn btn-green btn-sm" style="display:inline-flex;margin-top:6px"><i class="fa fa-comment"></i> تواصل عبر واتساب</a>`;
+        `<a href="https://wa.me/${contactSettings.whatsapp}?text=${msg}" target="_blank" class="btn btn-green btn-sm" style="display:inline-flex;margin-top:6px"><i class="fa fa-comment"></i> تواصل عبر واتساب</a>`;
       sucEl.className = 'suc show';
       return;
     }
@@ -1302,6 +1337,14 @@ async function openDashboard() {
         </div>
         <button class="btn btn-red btn-sm" style="margin-top:8px" onclick="ackWarning('${w.id}')">فهمت</button>
       </div>`).join('') : ''}
+    ${!userDoc.email ? `
+      <div style="background:var(--gold-light);border:1.5px solid #ffe082;border-radius:12px;padding:10px 12px;margin-bottom:14px">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <i class="fa fa-triangle-exclamation" style="color:#7a5000;margin-top:2px"></i>
+          <div style="flex:1;font-size:.83em;color:#5c4400;line-height:1.6">حسابك بدون بريد إلكتروني حقيقي. إذا نسيت كلمة المرور لاحقاً لن نتمكن من إرسال رابط استعادة تلقائي إلا إذا أضفت بريدك الآن.</div>
+        </div>
+        <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="addRecoveryEmail()"><i class="fa fa-envelope"></i> إضافة بريد إلكتروني الآن</button>
+      </div>` : ''}
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <div style="width:52px;height:52px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4em;font-weight:800">${(userDoc.name || 'U').charAt(0).toUpperCase()}</div>
       <div>
@@ -1338,6 +1381,34 @@ async function openDashboard() {
     ${isAdmin ? `<button class="btn btn-blue" style="margin-top:8px;background:#1a237e" onclick="closeModal('dashModal');openAdminPanel()"><i class="fa fa-shield-alt"></i> لوحة تحكم المدير 🛡️</button>` : ''}
     <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:16px" onclick="secretAdminTap()">v2.0</p>
   `;
+}
+
+/* Lets an already-signed-in user add a real email to their account.
+   This is the actual fix for "how do I reset a phone-only user's
+   password?" — Firebase gives no free/serverless way for an admin
+   to reset another user's password directly; the only automatic
+   path is an emailed reset link, which only works if a real email
+   was added *while still signed in*. Encourage this proactively. */
+async function addRecoveryEmail() {
+  if (!currentUser) return;
+  const newEmail = prompt('أدخل بريدك الإلكتروني الحقيقي (سيُستخدم فقط لاستعادة كلمة المرور):');
+  if (!newEmail || !newEmail.trim()) return;
+  const email = newEmail.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('صيغة البريد الإلكتروني غير صحيحة', 'bad'); return; }
+  try {
+    await currentUser.updateEmail(email);
+    await db.collection('users').doc(currentUser.uid).update({ email });
+    showToast('تم إضافة بريدك بنجاح ✅', 'ok');
+    openDashboard();
+  } catch (e) {
+    if (e.code === 'auth/requires-recent-login') {
+      showToast('لأسباب أمنية، سجّل خروج ثم دخول مجدداً وأعد المحاولة', 'bad');
+    } else if (e.code === 'auth/email-already-in-use') {
+      showToast('هذا البريد مستخدم في حساب آخر', 'bad');
+    } else {
+      showToast('تعذر إضافة البريد', 'bad');
+    }
+  }
 }
 
 function doLogout() {
@@ -1613,7 +1684,18 @@ async function openAdminPanel() {
       </div>
     </details>
 
-    <details>
+    <details style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">⚙️ إعدادات التواصل</summary>
+      <div style="padding-top:8px">
+        <p style="font-size:.78em;color:var(--gray);margin-bottom:10px">هذه البيانات تظهر للمستخدمين في "عن السوق والتواصل"، وتُستخدم في روابط واتساب بالموقع. عدّلها هنا مباشرة، بدون الحاجة لتعديل الكود.</p>
+        <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="settingsEmail" value="${contactSettings.email}"></div>
+        <div class="fg"><label>رقم الهاتف (للعرض فقط)</label><input type="text" id="settingsPhone" value="${contactSettings.phone}"></div>
+        <div class="fg"><label>رقم واتساب (بصيغة دولية بدون + أو مسافات، مثال 905522740910)</label><input type="text" id="settingsWhatsapp" value="${contactSettings.whatsapp}"></div>
+        <button class="btn btn-blue btn-sm" onclick="saveContactSettings()"><i class="fa fa-save"></i> حفظ بيانات التواصل</button>
+      </div>
+    </details>
+
+    <details style="margin-bottom:10px">
       <summary style="cursor:pointer;font-weight:800;font-size:.85em;color:var(--dark);padding:8px 0;border-bottom:1px solid var(--border)">📰 الشريط الإخباري</summary>
       <div style="padding-top:8px">
         <div class="fg"><label>النصوص (كل سطر نص مستقل)</label><textarea id="newsTextarea" rows="4" placeholder="نص 1&#10;نص 2&#10;نص 3"></textarea></div>
@@ -1768,6 +1850,16 @@ async function adminToggleFeatured(id, current) {
   showToast(current ? 'تم إلغاء التمييز' : 'تم التمييز ⭐', 'ok'); loadAds(); openAdminPanel();
 }
 
+async function saveContactSettings() {
+  const email = document.getElementById('settingsEmail').value.trim();
+  const phone = document.getElementById('settingsPhone').value.trim();
+  const whatsapp = document.getElementById('settingsWhatsapp').value.trim().replace(/[^0-9]/g, '');
+  if (!whatsapp) { showToast('رقم الواتساب غير صالح', 'bad'); return; }
+  await db.collection('settings').doc('contact').set({ email, phone, whatsapp }).catch(() => { showToast('تعذر الحفظ', 'bad'); return; });
+  contactSettings = { email, phone, whatsapp };
+  showToast('تم حفظ بيانات التواصل ✅', 'ok');
+}
+
 async function saveNews() {
   const lines = document.getElementById('newsTextarea').value.split('\n').map(s => s.trim()).filter(Boolean);
   await db.collection('settings').doc('news').set({ items: lines }).catch(() => {});
@@ -1829,6 +1921,7 @@ function initSearch() {
 function initApp() {
   renderCats();
   loadNews();
+  loadContactSettings();
   initModals();
   initAddAdForm();
   initSearch();
