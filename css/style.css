@@ -210,10 +210,109 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 /* ADMIN-ONLY PAGE HELPERS (admin.html) */
 .admin-guard{display:flex;align-items:center;justify-content:center;min-height:70vh;text-align:center;padding:24px;color:var(--gray);}
 
-/* Collapsible admin panel sections */
-#adminContent details{border-radius:10px;}
-#adminContent summary{list-style:none;display:flex;align-items:center;justify-content:space-between;}
-#adminContent summary::-webkit-details-marker{display:none;}
-#adminContent summary::after{content:'\f107';font-family:'Font Awesome 6 Free';font-weight:900;color:var(--gray);transition:transform .2s;}
-#adminContent details[open] summary::after{transform:rotate(180deg);}
+/* ═══════════════════════════════════════════════
+   ADMIN PANEL v2  –  tab-based, card layout
+═══════════════════════════════════════════════ */
+
+/* Stats row */
+.adm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.adm-stat-card{background:var(--white);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:var(--shadow);}
+.adm-stat-card.adm-alert{border:1.5px solid var(--red);}
+.adm-stat-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:.95em;}
+.adm-stat-val{font-size:1.35em;font-weight:800;color:var(--dark);}
+.adm-stat-lbl{font-size:.65em;color:var(--gray);margin-top:1px;}
+
+/* Tab bar */
+.adm-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid var(--border);padding-bottom:0;margin-bottom:0;}
+.adm-tabs::-webkit-scrollbar{display:none;}
+.adm-tab{flex-shrink:0;padding:8px 13px;border:none;background:none;font-family:'Tajawal',sans-serif;font-size:.8em;font-weight:700;color:var(--gray);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+.adm-tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.adm-tab-badge{background:var(--red);color:#fff;font-size:.65em;font-weight:800;min-width:16px;height:16px;border-radius:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;}
+
+/* Search field */
+.adm-search{width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:50px;font-size:.85em;font-family:'Tajawal',sans-serif;color:var(--dark);outline:none;background:var(--bg);margin-bottom:10px;}
+.adm-search:focus{border-color:var(--blue);background:#fff;}
+
+/* Featured-request cards */
+.adm-req-card{background:var(--bg);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center;}
+.adm-req-body{flex:1;min-width:0;}
+.adm-req-title{font-size:.88em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.adm-req-sub{font-size:.72em;color:var(--gray);margin:2px 0 4px;}
+.adm-req-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.plan-tag{display:inline-block;background:var(--gold-light);color:#7a5000;font-size:.68em;font-weight:800;padding:2px 8px;border-radius:20px;}
+
+/* Filter chip */
+.filter-chip{display:inline-flex;align-items:center;gap:8px;background:var(--blue-light);color:var(--blue);border-radius:20px;padding:5px 12px;font-size:.78em;font-weight:700;margin-bottom:8px;}
+.chip-x{background:none;border:none;color:var(--blue);cursor:pointer;font-weight:800;font-size:1em;line-height:1;}
+
+/* Featured mini tag (in ads list) */
+.featured-mini-tag{font-size:.68em;font-weight:800;color:var(--gold);display:block;margin-top:2px;}
+
+/* ── User cards (OpenSooq style) ── */
+.user-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--white);box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:8px;}
+.user-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.25em;font-weight:800;flex-shrink:0;}
+.user-card-info{flex:1;min-width:0;}
+.user-card-name{font-size:.9em;font-weight:800;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.user-card-meta{font-size:.73em;color:var(--gray);margin-top:2px;display:flex;align-items:center;gap:4px;}
+.user-card-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.role-tag{font-size:.62em;font-weight:800;padding:2px 7px;border-radius:20px;}
+.admin-tag{background:#e8eaf6;color:#1a237e;}
+.banned-tag{background:var(--red-light);color:var(--red);}
+
+/* ── Inline overlay (confirm / input) ── */
+.admin-overlay{position:fixed;inset:0;background:rgba(10,20,50,.55);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);}
+.admin-dialog{background:var(--white);border-radius:18px;padding:22px 20px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+.admin-dialog-msg{font-size:.95em;color:var(--dark);line-height:1.65;margin-bottom:4px;}
+.admin-dialog-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;}
+
+/* ═══════════════════════════════════════════════
+   DASHBOARD v2  –  profile header + stats strip
+═══════════════════════════════════════════════ */
+
+/* Warning card */
+.warn-card{background:var(--red-light);border:1.5px solid #ef9a9a;border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+
+/* Profile header */
+.dash-profile{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:14px;background:var(--white);border-radius:16px;box-shadow:var(--shadow);}
+.dash-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.55em;font-weight:800;flex-shrink:0;}
+.dash-profile-info{flex:1;min-width:0;}
+.dash-profile-name{font-size:1.05em;font-weight:800;color:var(--dark);}
+.dash-profile-sub{font-size:.75em;color:var(--gray);margin-top:2px;}
+
+/* Stats strip */
+.dash-stats-strip{display:flex;align-items:center;background:var(--white);border-radius:14px;box-shadow:var(--shadow);padding:14px 8px;margin-bottom:16px;}
+.dash-strip-item{flex:1;text-align:center;}
+.dash-strip-val{display:block;font-size:1.5em;font-weight:800;color:var(--blue);}
+.dash-strip-lbl{display:block;font-size:.68em;color:var(--gray);margin-top:1px;}
+.dash-strip-divider{width:1px;height:36px;background:var(--border);}
+
+/* ═══════════════════════════════════════════════
+   FEATURED SLIDER v2  –  OpenSooq-style hero
+═══════════════════════════════════════════════ */
+
+/* Override old slider dimensions */
+.slider-wrap{min-height:190px !important;}
+.slide{min-width:100%;display:flex;align-items:stretch;cursor:pointer;position:relative;overflow:hidden;min-height:190px;}
+
+/* Text side (right in RTL) */
+.slide-text-side{flex:1;padding:20px 18px;display:flex;flex-direction:column;justify-content:center;gap:5px;z-index:1;}
+.slide-badge{background:var(--gold);color:#7a5000;font-size:.68em;font-weight:800;padding:3px 10px;border-radius:20px;display:inline-block;width:fit-content;}
+.slide-title{font-size:1.08em;font-weight:800;color:#fff;line-height:1.35;max-width:200px;}
+.slide-price{font-size:1em;color:#ffd54f;font-weight:800;}
+.slide-loc{font-size:.78em;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:4px;}
+.slide-cta-label{font-size:.75em;color:rgba(255,255,255,.6);margin-top:3px;font-weight:700;}
+
+/* Image side */
+.slide-img-side{width:145px;flex-shrink:0;position:relative;overflow:hidden;}
+.slide-hero-img{width:100%;height:100%;object-fit:cover;display:block;}
+.slide-no-img{width:145px;height:100%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:2.5em;}
+
+/* CTA-only slide (no featured ads) */
+.promo-cta-slide{background:linear-gradient(135deg,#1a237e,#1565c0) !important;}
+.slide-icon-side{width:120px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2);font-size:4em;}
+
+/* Larger dots */
+.slider-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:5;}
+.sdot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);cursor:pointer;transition:all .25s;}
+.sdot.active{background:#fff;width:20px;border-radius:10px;}
 
