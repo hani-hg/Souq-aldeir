@@ -7,7 +7,8 @@
 /* ============ CATEGORIES ============ */
 const CATS = [
   { n: 'الكل', i: 'fa-th-large' }, { n: 'سيارات', i: 'fa-car' }, { n: 'عقارات', i: 'fa-home' },
-  { n: 'إلكترونيات', i: 'fa-mobile-alt' }, { n: 'أدوات كهربائية', i: 'fa-plug' }, { n: 'ملابس', i: 'fa-tshirt' }, { n: 'أثاث', i: 'fa-couch' },
+  { n: 'إلكترونيات', i: 'fa-mobile-alt' }, { n: 'أدوات كهربائية', i: 'fa-plug' }, { n: 'ملابس', i: 'fa-tshirt' },
+  { n: 'إكسسوارات', i: 'fa-gem' }, { n: 'أثاث', i: 'fa-couch' },
   { n: 'وظائف', i: 'fa-briefcase' }, { n: 'خدمات', i: 'fa-tools' }, { n: 'حيوانات', i: 'fa-paw' },
   { n: 'رياضة', i: 'fa-futbol' }, { n: 'طعام', i: 'fa-utensils' }, { n: 'أخرى', i: 'fa-box' }
 ];
@@ -49,6 +50,22 @@ function loadAds() {
   db.collection('ads').orderBy('createdAt', 'desc').limit(150).get()
     .then(snap => {
       allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // auto-expire: remove featured flag for past-due ads
+      const now = Date.now();
+      const expiredIds = allAds
+        .filter(a => a.featured && a.featuredUntil && a.featuredUntil.toMillis && a.featuredUntil.toMillis() < now)
+        .map(a => a.id);
+      expiredIds.forEach(id => {
+        db.collection('ads').doc(id).update({ featured: false }).catch(() => {});
+        const ad = allAds.find(a => a.id === id);
+        if (ad) ad.featured = false;
+      });
+      // hide expired regular ads
+      allAds = allAds.filter(a => {
+        if (!a.expiresAt) return true;
+        const ms = a.expiresAt.toMillis ? a.expiresAt.toMillis() : (a.expiresAt.seconds * 1000);
+        return ms > now;
+      });
       const fAds = allAds.filter(a => a.featured);
       buildSlider(fAds);
       applyFilter();
@@ -263,12 +280,16 @@ async function doAddAd() {
       videoUrl = data.secure_url;
     }
 
+    const durationDays = parseInt(document.getElementById('adDuration')?.value || '60');
+    const expiresAt = new Date(Date.now() + durationDays * 86400000);
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
       images, imageUrl: images[0] || null, videoUrl, featured: false, views: 0,
       userId: currentUser.uid, userEmail: currentUser.email,
       userName: currentUser.displayName || 'مستخدم',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      durationDays
     });
     closeModal('addModal');
     ['adTitle', 'adDesc', 'adPrice', 'adPhone', 'adAreaOther'].forEach(id => document.getElementById(id).value = '');

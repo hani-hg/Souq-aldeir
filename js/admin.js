@@ -243,7 +243,7 @@ function renderReportsHtml() {
     </div>`).join('');
 }
 
-/* ── Ads list (admin) ── */
+/* ── Ads list (admin) — grouped by user with accordion ── */
 function renderAdminAdsList() {
   const q = (document.getElementById('adminAdsSearch')?.value || '').trim().toLowerCase();
   let list = [...allAds];
@@ -260,30 +260,83 @@ function renderAdminAdsList() {
 
   const cover = ad => (ad.images && ad.images[0]) || ad.imageUrl || '';
 
-  document.getElementById('adminAdsListContainer').innerHTML = list.length
-    ? list.slice(0, 100).map(ad => `
-      <div class="my-ad-row">
-        <div class="my-ad-img">
-          ${cover(ad) ? `<img src="${cover(ad)}" loading="lazy" onerror="this.style.display='none'">` : '<i class="fa fa-image"></i>'}
+  if (!list.length) {
+    document.getElementById('adminAdsListContainer').innerHTML =
+      '<div class="empty-state" style="padding:24px 0"><i class="fa fa-search"></i><p>لا توجد إعلانات مطابقة</p></div>';
+    return;
+  }
+
+  // إذا كان فلتر مستخدم محدد، اعرض عادياً
+  if (adminUserFilter) {
+    document.getElementById('adminAdsListContainer').innerHTML = list.slice(0,100).map(ad => adRowHtml(ad, cover)).join('');
+    return;
+  }
+
+  // تجميع حسب المستخدم
+  const byUser = {};
+  list.slice(0, 200).forEach(ad => {
+    const key = ad.userId || 'unknown';
+    if (!byUser[key]) byUser[key] = { name: ad.userName || ad.userEmail || 'مستخدم', ads: [] };
+    byUser[key].ads.push(ad);
+  });
+
+  document.getElementById('adminAdsListContainer').innerHTML = Object.entries(byUser).map(([uid, g]) => {
+    const u = adminUsersCache.find(x => x.id === uid);
+    const color = getAvatarColor(g.name);
+    const initial = g.name.charAt(0);
+    return `
+    <div class="adm-accordion">
+      <div class="adm-accordion-head" onclick="toggleAccordion(this)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:${color};color:#fff;
+            font-size:.9em;font-weight:800;display:flex;align-items:center;justify-content:center;
+            flex-shrink:0">${initial}</div>
+          <div>
+            <div style="font-size:.88em;font-weight:800;color:var(--dark)">${g.name}</div>
+            <div style="font-size:.72em;color:var(--gray)">${g.ads.length} إعلان</div>
+          </div>
         </div>
-        <div class="my-ad-info">
-          <div class="my-ad-title">${ad.title || ''}</div>
-          <div class="my-ad-status">${ad.userEmail || ''}</div>
-          ${ad.featured ? '<span class="featured-mini-tag">⭐ مميز</span>' : ''}
-        </div>
-        <div class="my-ad-actions">
-          <button class="icon-btn ${ad.featured ? '' : 'edit'}"
-            style="${ad.featured ? 'background:var(--gold-light);color:#7a5000' : ''}"
-            title="${ad.featured ? 'إلغاء التمييز' : 'تمييز'}"
-            onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">
-            ${ad.featured ? '★' : '☆'}
-          </button>
-          <button class="icon-btn del" onclick="adminDeleteAdConfirm('${ad.id}')">
-            <i class="fa fa-trash"></i>
-          </button>
-        </div>
-      </div>`).join('')
-    : '<div class="empty-state" style="padding:24px 0"><i class="fa fa-search"></i><p>لا توجد إعلانات مطابقة</p></div>';
+        <i class="fa fa-chevron-down adm-acc-icon" style="color:var(--gray);transition:transform .2s"></i>
+      </div>
+      <div class="adm-accordion-body" style="display:none">
+        ${g.ads.map(ad => adRowHtml(ad, cover)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adRowHtml(ad, cover) {
+  return `
+    <div class="my-ad-row">
+      <div class="my-ad-img">
+        ${cover(ad) ? `<img src="${cover(ad)}" loading="lazy" onerror="this.style.display='none'">` : '<i class="fa fa-image"></i>'}
+      </div>
+      <div class="my-ad-info">
+        <div class="my-ad-title">${ad.title || ''}</div>
+        <div class="my-ad-status">${ad.userEmail || ''}</div>
+        ${ad.featured ? '<span class="featured-mini-tag">⭐ مميز</span>' : ''}
+        ${ad.durationDays ? `<span style="font-size:.65em;color:var(--gray)">مدة: ${ad.durationDays} يوم</span>` : ''}
+      </div>
+      <div class="my-ad-actions">
+        <button class="icon-btn ${ad.featured ? '' : 'edit'}"
+          style="${ad.featured ? 'background:var(--gold-light);color:#7a5000' : ''}"
+          title="${ad.featured ? 'إلغاء التمييز' : 'تمييز'}"
+          onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">
+          ${ad.featured ? '★' : '☆'}
+        </button>
+        <button class="icon-btn del" onclick="adminDeleteAdConfirm('${ad.id}')">
+          <i class="fa fa-trash"></i>
+        </button>
+      </div>
+    </div>`;
+}
+
+function toggleAccordion(head) {
+  const body = head.nextElementSibling;
+  const icon = head.querySelector('.adm-acc-icon');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
 }
 
 /* ── Users list (OpenSooq-style cards) ── */
@@ -302,11 +355,11 @@ function renderAdminUsersList() {
         const isAdminU  = u.role === 'admin';
         const initial   = (u.name || 'م').charAt(0);
         const color     = getAvatarColor(u.name || '');
-        const safeName  = (u.name || 'مستخدم').replace(/'/g, '&#39;');
         return `
         <div class="user-card">
-          <div class="user-avatar" style="background:${color}">${initial}</div>
-          <div class="user-card-info">
+          <div class="user-avatar" style="background:${color};cursor:pointer"
+            onclick="showUserProfile('${u.id}')">${initial}</div>
+          <div class="user-card-info" style="cursor:pointer" onclick="showUserProfile('${u.id}')">
             <div class="user-card-name">
               ${u.name || 'مستخدم'}
               ${isAdminU ? '<span class="role-tag admin-tag">مدير</span>' : ''}
@@ -316,14 +369,8 @@ function renderAdminUsersList() {
             <div class="user-card-meta"><i class="fa fa-bullhorn" style="color:var(--green);font-size:.75em"></i> ${adsCount} إعلان</div>
           </div>
           <div class="user-card-actions">
-            <button class="icon-btn" style="background:var(--blue-light);color:var(--blue)"
-              title="عرض إعلاناته"
-              onclick="filterAdsByUser('${u.id}','${safeName}');switchAdminTab('ads')">
-              <i class="fa fa-list"></i>
-            </button>
             <button class="icon-btn" style="background:var(--gold-light);color:#7a5000"
-              title="إرسال إنذار"
-              onclick="sendWarningToUser('${u.id}')">
+              title="إرسال إنذار" onclick="sendWarningToUser('${u.id}')">
               <i class="fa fa-bell"></i>
             </button>
             <button class="icon-btn ${banned ? 'edit' : 'del'}"
@@ -349,11 +396,57 @@ function clearAdsUserFilter() {
   renderAdminAdsList();
 }
 
+/* ── User profile overlay (click on user name) ── */
+function showUserProfile(uid) {
+  const u = adminUsersCache.find(x => x.id === uid);
+  if (!u) return;
+  const adsCount   = allAds.filter(a => a.userId === uid).length;
+  const color      = getAvatarColor(u.name || '');
+  const initial    = (u.name || 'م').charAt(0);
+  const joinDate   = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString('ar-EG') : '—';
+  const el = document.createElement('div');
+  el.className = 'admin-overlay';
+  el.innerHTML = `
+    <div class="admin-dialog" style="max-width:380px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="width:64px;height:64px;border-radius:50%;background:${color};color:#fff;
+          font-size:1.8em;font-weight:800;display:flex;align-items:center;justify-content:center;
+          margin:0 auto 10px">${initial}</div>
+        <div style="font-size:1.05em;font-weight:800;color:var(--dark)">${u.name || 'مستخدم'}</div>
+        ${u.role==='admin' ? '<span class="role-tag admin-tag">مدير النظام</span>' : ''}
+        ${u.banned ? '<span class="role-tag banned-tag">محظور</span>' : ''}
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:12px">
+        <div class="info-row"><i class="fa fa-phone" style="color:var(--blue)"></i><span>${u.phone || '—'}</span></div>
+        <div class="info-row"><i class="fa fa-envelope" style="color:var(--blue)"></i><span>${u.email || '—'}</span></div>
+        <div class="info-row"><i class="fa fa-calendar" style="color:var(--blue)"></i><span>انضم: ${joinDate}</span></div>
+        <div class="info-row" style="border-bottom:none">
+          <i class="fa fa-bullhorn" style="color:var(--green)"></i>
+          <span>${adsCount} إعلان منشور</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="this.closest('.admin-overlay').remove()">إغلاق</button>
+        <button class="btn btn-blue btn-sm" style="flex:1"
+          onclick="this.closest('.admin-overlay').remove();filterAdsByUser('${uid}','${(u.name||'').replace(/'/g,"\\'")}');switchAdminTab('ads')">
+          <i class="fa fa-list"></i> عرض إعلاناته
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+}
+
 /* ── Featured request actions ── */
+const PLAN_DAYS = { '3 أيام': 3, '7 أيام': 7, '30 يوماً': 30, '3 days': 3, '7 days': 7, '30 days': 30 };
 async function approveFeature(reqId, adId) {
-  await db.collection('ads').doc(adId).update({ featured: true }).catch(() => {});
+  const req = adminReqsCache.find(r => r.id === reqId);
+  const plan = req ? req.plan : '';
+  const days = PLAN_DAYS[plan] || 7;
+  const featuredUntil = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + days * 86400000));
+  await db.collection('ads').doc(adId).update({ featured: true, featuredUntil }).catch(() => {});
   await db.collection('featuredRequests').doc(reqId).update({ status: 'approved' }).catch(() => {});
-  showToast('تم تمييز الإعلان ⭐', 'ok');
+  showToast(`تم التمييز لمدة ${days} أيام ⭐`, 'ok');
   checkAdminNotifs(); loadAds(); openAdminPanel();
 }
 async function rejectFeature(reqId) {
