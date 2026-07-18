@@ -372,5 +372,54 @@
 <script src="js/chat.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/app.js"></script>
+
+<!-- PWA: Service Worker + Install Banner -->
+<div id="pwaBar" style="display:none;position:fixed;bottom:70px;left:12px;right:12px;z-index:9000;
+  background:#1565c0;color:#fff;border-radius:16px;padding:12px 16px;
+  display:none;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)">
+  <img src="icons/icon-192.png" style="width:42px;height:42px;border-radius:10px;flex-shrink:0">
+  <div style="flex:1;min-width:0">
+    <div style="font-size:.88em;font-weight:800">أضف سوق دير الزور</div>
+    <div style="font-size:.72em;opacity:.85">ثبّت التطبيق على شاشتك الرئيسية</div>
+  </div>
+  <button id="pwaInstallBtn" style="background:#ffd54f;color:#7a5000;border:none;border-radius:10px;
+    padding:7px 14px;font-weight:800;font-size:.82em;cursor:pointer;white-space:nowrap;font-family:inherit">
+    تثبيت
+  </button>
+  <button onclick="document.getElementById('pwaBar').style.display='none'" style="background:none;border:none;
+    color:rgba(255,255,255,.7);font-size:1.2em;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+</div>
+
+<script>
+// ── Service Worker ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(e => console.warn('SW:', e));
+  });
+}
+
+// ── PWA Install Banner ──
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  const bar = document.getElementById('pwaBar');
+  if (bar) { bar.style.display = 'flex'; }
+});
+
+document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+  if (!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  const { outcome } = await _pwaPrompt.userChoice;
+  _pwaPrompt = null;
+  document.getElementById('pwaBar').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaBar').style.display = 'none';
+  _pwaPrompt = null;
+});
+</script>
 </body>
 </html>
