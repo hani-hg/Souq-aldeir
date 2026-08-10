@@ -35,7 +35,6 @@ let isAdmin = false;
 let allAds = [];
 let favorites = new Set();
 let activeCat = null;
-let selectedPlan = '3 أيام - 1$';
 let chatUnsub = null;        // unsubscribes the currently open chat's messages listener
 let chatsListUnsub = null;   // unsubscribes the live "all my chats" listener (list + badge)
 let chatsCache = [];         // latest snapshot of the user's chats, sorted client-side (no composite index needed)
