@@ -257,14 +257,13 @@ async function openDashboard() {
 
     <!-- ── Action buttons ── -->
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-gold" onclick="openModal('featuredModal')">
-        <i class="fa fa-star"></i> إبراز إعلان مميز</button>
+      <div style="text-align:center;font-size:.78em;color:var(--gold);background:var(--gold-light);padding:8px 10px;border-radius:12px;font-weight:700">🎉 إعلاناتك تُنشر مميزة تلقائياً ومجاناً بالكامل</div>
       <button class="btn btn-outline" onclick="showChangePasswordForm()">
         <i class="fa fa-lock"></i> تغيير كلمة المرور</button>
       <button class="btn btn-outline" onclick="openAboutModal()">
         <i class="fa fa-circle-info"></i> عن السوق والتواصل</button>
       ${isAdmin ? `
-      <button class="btn btn-blue" style="background:#1a237e" onclick="closeModal('dashModal');openAdminPanel()">
+      <button class="btn btn-blue" style="background:var(--blue)" onclick="closeModal('dashModal');openAdminPanel()">
         <i class="fa fa-shield-alt"></i> لوحة تحكم المدير 🛡️</button>` : ''}
       <button class="btn btn-red" onclick="doLogout()">
         <i class="fa fa-sign-out-alt"></i> تسجيل الخروج</button>
