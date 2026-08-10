@@ -1064,3 +1064,4 @@ function clearAdsUserFilter() {
   adminUserFilterName = '';
   applyAdsFilter();
 }
+
