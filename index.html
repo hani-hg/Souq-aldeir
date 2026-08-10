@@ -33,6 +33,7 @@
   </div>
   <div class="nav-btns">
     <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
+    <button class="nav-btn" onclick="openModal('qrModal')" title="مسح الرمز"><i class="fa fa-qrcode"></i></button>
     <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i><span class="badge" id="msgBadge" style="display:none">!</span></button>
     <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i><span class="badge" id="userBadge" style="display:none">!</span></button>
   </div>
@@ -309,27 +310,6 @@
   </div>
 </div>
 
-<!-- MODAL: FEATURED -->
-<div class="modal" id="featuredModal">
-  <div class="sheet">
-    <div class="handle"></div>
-    <div class="sheet-head">
-      <span class="sheet-title">⭐ إعلانات مميزة</span>
-      <button class="x-btn" onclick="closeModal('featuredModal')">✕</button>
-    </div>
-    <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;">أبرز إعلانك في أعلى الصفحة أمام آلاف المشترين</p>
-    <div class="promo-plans">
-      <div class="plan-card selected" onclick="selectPlan(this,'3 أيام - 1$')"><div class="plan-name">3 أيام</div><div class="plan-price">1$</div><div class="plan-desc">للإعلانات السريعة</div></div>
-      <div class="plan-card" onclick="selectPlan(this,'7 أيام - 2$')"><div class="plan-name">7 أيام</div><div class="plan-price">2$</div><div class="plan-desc">الأكثر شعبية ✨</div></div>
-      <div class="plan-card" onclick="selectPlan(this,'15 يوم - 3$')"><div class="plan-name">15 يوم</div><div class="plan-price">3$</div><div class="plan-desc">للبضائع التي تحتاج وقتاً</div></div>
-      <div class="plan-card" onclick="selectPlan(this,'30 يوم - 5$')"><div class="plan-name">30 يوم</div><div class="plan-price">5$</div><div class="plan-desc">للمتاجر والتجار</div></div>
-    </div>
-    <div class="fg"><label>اختر إعلانك</label><select id="featuredAdSel"><option value="">-- اختر إعلانك --</option></select></div>
-    <button class="btn btn-gold" onclick="requestFeatured()"><i class="fa fa-star"></i> طلب التمييز</button>
-    <p style="font-size:.73em;color:var(--gray);text-align:center;margin-top:8px;">سيتم التواصل معك عبر واتساب لإتمام الدفع</p>
-  </div>
-</div>
-
 <!-- MODAL: FAVORITES -->
 <div class="modal" id="favModal">
   <div class="sheet">
@@ -339,6 +319,20 @@
       <button class="x-btn" onclick="closeModal('favModal')">✕</button>
     </div>
     <div id="favContent"></div>
+  </div>
+</div>
+
+<!-- MODAL: QR -->
+<div class="modal" id="qrModal">
+  <div class="sheet" style="text-align:center">
+    <div class="handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">📱 مشاركة السوق</span>
+      <button class="x-btn" onclick="closeModal('qrModal')">✕</button>
+    </div>
+    <p style="font-size:.85em;color:var(--gray);margin-bottom:14px">امسح الرمز بكاميرا الجوال لفتح سوق دير الزور مباشرة</p>
+    <img id="qrCodeImg" src="" alt="QR Code" style="width:200px;height:200px;border-radius:14px;background:#fff;padding:10px;margin:0 auto 14px;display:block">
+    <button class="btn btn-gold" onclick="copySiteLink()"><i class="fa fa-link"></i> نسخ رابط الموقع</button>
   </div>
 </div>
 
