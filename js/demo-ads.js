@@ -40,3 +40,4 @@ async function seedDemoAds() {
     showToast('حدث خطأ أثناء إضافة الإعلانات التجريبية', 'bad');
   }
 }
+
