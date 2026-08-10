@@ -11,11 +11,11 @@ function buildSlider(ads) {
 
   if (!ads.length) {
     document.getElementById('sliderInner').innerHTML = `
-      <div class="slide slide-promo" onclick="openFeaturedModal()" style="cursor:pointer">
+      <div class="slide slide-promo">
         <div class="slide-promo-content">
-          <div class="slide-promo-icon"><i class="fa fa-star"></i></div>
-          <div class="slide-promo-title">أبرز إعلانك أمام آلاف المشترين</div>
-          <div class="slide-promo-sub">ابدأ بـ 1$ فقط · اضغط لطلب التمييز</div>
+          <div class="slide-promo-icon"><i class="fa fa-bullhorn"></i></div>
+          <div class="slide-promo-title">السوق مجاني بالكامل</div>
+          <div class="slide-promo-sub">انشر إعلانك الآن مجاناً وسيظهر هنا تلقائياً</div>
         </div>
       </div>`;
     document.getElementById('sliderDots').innerHTML = '';
