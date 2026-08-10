@@ -14,6 +14,22 @@ function initSearch() {
   document.getElementById('searchInput').addEventListener('input', applyFilter);
 }
 
+/* ============ QR SHARE ============ */
+function initQrCode() {
+  const img = document.getElementById('qrCodeImg');
+  if (!img) return;
+  const url = location.origin + location.pathname;
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
+}
+
+function copySiteLink() {
+  const url = location.origin + location.pathname;
+  navigator.clipboard.writeText(url).then(
+    () => showToast('تم نسخ الرابط ✅', 'ok'),
+    () => showToast('تعذر نسخ الرابط', 'bad')
+  );
+}
+
 /* ============ BOOT ============ */
 function initApp() {
   renderCats();
@@ -22,6 +38,7 @@ function initApp() {
   initModals();
   initAddAdForm();
   initSearch();
+  initQrCode();
   loadChatSeenMap();
   initAuthListener();  // also triggers the first loadAds() and initChatsListener()
   loadFavorites();
