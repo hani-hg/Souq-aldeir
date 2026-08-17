@@ -271,6 +271,8 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 .adm-status-tag.feat{background:var(--gold-light);color:#7a5000;}
 .adm-status-tag.active{background:var(--green-light);color:var(--green);}
 .adm-status-tag.expired{background:var(--red-light);color:var(--red);}
+.adm-status-tag.pending{background:#fff8e1;color:#8a6100;}
+.adm-status-tag.rejected{background:var(--red-light);color:var(--red);}
 
 /* Reports cards */
 .adm-report-card{display:flex;gap:10px;align-items:flex-start;padding:12px;
@@ -310,6 +312,25 @@ body{background:var(--bg);color:var(--dark);padding-bottom:72px;}
 /* Tab bar */
 .adm-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid var(--border);padding-bottom:0;margin-bottom:0;}
 .adm-tabs::-webkit-scrollbar{display:none;}
+
+/* ── مراجعة الإعلانات الجديدة ── */
+.adm-pending-ad{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--border);}
+.adm-pending-ad:first-of-type{border-top:0;}
+.adm-pending-images{display:flex;gap:6px;width:190px;flex:0 0 190px;overflow-x:auto;align-self:flex-start;}
+.adm-pending-images img{width:86px;height:86px;object-fit:cover;border-radius:10px;flex:0 0 86px;background:var(--bg);}
+.adm-pending-body{min-width:0;flex:1;}
+.adm-pending-title{font-size:1em;font-weight:800;color:var(--dark);line-height:1.4;}
+.adm-pending-price{font-size:.9em;font-weight:800;color:var(--green);margin:3px 0 6px;}
+.adm-pending-description{font-size:.8em;color:var(--dark);line-height:1.65;max-height:4.9em;overflow:auto;background:var(--bg);border-radius:8px;padding:7px 9px;margin-bottom:8px;}
+.adm-pending-meta{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:.72em;color:var(--gray);line-height:1.5;}
+.adm-pending-meta i{color:var(--blue);margin-left:3px;}
+.adm-pending-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+
+@media (max-width:600px){
+  .adm-pending-ad{display:block;}
+  .adm-pending-images{width:100%;margin-bottom:10px;}
+  .adm-pending-images img{width:94px;height:94px;flex-basis:94px;}
+}
 .adm-tab{flex-shrink:0;padding:8px 13px;border:none;background:none;font-family:'Tajawal',sans-serif;font-size:.8em;font-weight:700;color:var(--gray);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
 .adm-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
 .adm-tab-badge{background:var(--red);color:#fff;font-size:.65em;font-weight:800;min-width:16px;height:16px;border-radius:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;}

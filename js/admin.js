@@ -3,13 +3,15 @@
    Tabs: Dashboard | Ads | Users | Reports | Settings
    ============================================================ */
 
-let adminUsersCache   = [];
-let adminReqsCache    = [];
-let adminReportsCache = [];
-let adminAdsAllCache  = [];
-let adminUserFilter   = null;
-let adminUserFilterName = '';
-let currentAdminTab   = 'dashboard';
+let adminUsersCache      = [];
+let adminReqsCache       = [];
+let adminReportsCache    = [];
+let adminAdsAllCache     = [];
+let adminPendingAdsCache = [];   /* إعلانات قيد المراجعة */
+let adminUserFilter      = null;
+let adminUserFilterName  = '';
+let currentAdminTab      = 'dashboard';
+let adminPendingListener = null;
 
 /* ── وقت آخر نشاط ── */
 function lastActive(ts) {
@@ -77,13 +79,29 @@ function adminInput(title, placeholder, onSubmit) {
 
 /* ── شارة الإشعارات ── */
 async function checkAdminNotifs() {
-  const [rSnap, pSnap] = await Promise.all([
+  const [rSnap, pSnap, adPendSnap] = await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null),
-    db.collection('reports').where('status','==','pending').get().catch(()=>null)
+    db.collection('reports').where('status','==','pending').get().catch(()=>null),
+    db.collection('ads').where('status','==','pending').get().catch(()=>null)
   ]);
-  const count = (rSnap ? rSnap.size : 0) + (pSnap ? pSnap.size : 0);
+  const count = (rSnap ? rSnap.size : 0) + (pSnap ? pSnap.size : 0) + (adPendSnap ? adPendSnap.size : 0);
   const badge = document.getElementById('adminBadge');
   if (badge) { badge.style.display = count > 0 ? 'flex' : 'none'; badge.textContent = count > 9 ? '9+' : count; }
+}
+
+/* تحديث فوري لشارة المدير عند وصول إعلان جديد */
+function startAdminPendingListener() {
+  if (!isAdmin || adminPendingListener) return;
+  adminPendingListener = db.collection('ads').where('status','==','pending').onSnapshot(() => {
+    checkAdminNotifs();
+  }, () => {
+    adminPendingListener = null;
+  });
+}
+
+function stopAdminPendingListener() {
+  if (adminPendingListener) adminPendingListener();
+  adminPendingListener = null;
 }
 
 /* ══════════════════════════════════════════
@@ -106,13 +124,17 @@ async function openAdminPanel() {
   adminUsersCache   = uSnap.docs.map(d=>({id:d.id,...d.data()}));
   adminReportsCache = pSnap.docs.map(d=>({id:d.id,...d.data()}));
   adminAdsAllCache  = adsSnap.docs.map(d=>({id:d.id,...d.data()}));
+  adminPendingAdsCache = adminAdsAllCache.filter(a => a.status === 'pending');
 
-  const pendingAll = adminReqsCache.length + adminReportsCache.length;
+  const pendingAll = adminReqsCache.length + adminReportsCache.length + adminPendingAdsCache.length;
 
   document.getElementById('adminContent').innerHTML = `
     <!-- ── شريط التبويبات ── -->
     <div class="adm-tabs" id="admTabsBar">
       <button class="adm-tab" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 نظرة عامة</button>
+      <button class="adm-tab" data-tab="pendingAds" onclick="switchAdminTab('pendingAds')">
+        ⏳ طلبات النشر ${adminPendingAdsCache.length ? `<span class="adm-tab-badge">${adminPendingAdsCache.length}</span>` : ''}
+      </button>
       <button class="adm-tab" data-tab="ads"       onclick="switchAdminTab('ads')">📋 الإعلانات</button>
       <button class="adm-tab" data-tab="users"     onclick="switchAdminTab('users')">👥 المستخدمون</button>
       <button class="adm-tab" data-tab="reports"   onclick="switchAdminTab('reports')">
@@ -134,11 +156,78 @@ function switchAdminTab(tab) {
   if (!ct) return;
   switch (tab) {
     case 'dashboard': renderDashboard(ct); break;
+    case 'pendingAds': renderPendingAdsTab(ct); break;
     case 'ads':       renderAdsTab(ct);    break;
     case 'users':     renderUsersTab(ct);  break;
     case 'reports':   renderReportsTab(ct);break;
     case 'settings':  renderSettingsTab(ct);break;
   }
+}
+
+/* ══════════════════════════════════════════
+   تبويب طلبات النشر — المراجعة اليدوية للإعلانات
+══════════════════════════════════════════ */
+function renderPendingAdsTab(ct) {
+  const list = adminPendingAdsCache.slice().sort((a, b) => {
+    const av = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0) * 1000;
+    const bv = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds || 0) * 1000;
+    return bv - av;
+  });
+
+  if (!list.length) {
+    ct.innerHTML = `
+      <div class="adm-section-card">
+        <div class="empty-state">
+          <i class="fa fa-check-circle" style="color:var(--green)"></i>
+          <p>لا توجد إعلانات بانتظار المراجعة</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  ct.innerHTML = `
+    <div class="adm-section-card" style="border-color:#f9a825">
+      <div class="adm-section-head">
+        <i class="fa fa-hourglass-half" style="color:#f9a825"></i>
+        ${list.length} إعلان بانتظار موافقة الإدارة
+      </div>
+      <p style="font-size:.78em;color:var(--gray);margin:0 0 12px">
+        لن تظهر هذه الإعلانات للزوار حتى تتم الموافقة عليها.
+      </p>
+      ${list.map(ad => {
+        const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
+        const created = ad.createdAt
+          ? new Date((ad.createdAt.toMillis ? ad.createdAt.toMillis() : (ad.createdAt.seconds || 0) * 1000)).toLocaleString('ar-EG')
+          : 'الآن';
+        return `
+          <article class="adm-pending-ad">
+            ${images.length ? `
+              <div class="adm-pending-images">
+                ${images.map(url => `<img src="${url}" loading="lazy" alt="${ad.title || 'صورة الإعلان'}">`).join('')}
+              </div>` : ''}
+            <div class="adm-pending-body">
+              <div class="adm-pending-title">${ad.title || 'إعلان بدون عنوان'}</div>
+              <div class="adm-pending-price">${ad.price ? `${Number(ad.price).toLocaleString('ar-EG')} ${ad.currency || '$'}` : 'السعر غير محدد'}</div>
+              <div class="adm-pending-description">${(ad.description || 'لا يوجد وصف').replace(/\n/g, '<br>')}</div>
+              <div class="adm-pending-meta">
+                <span><i class="fa fa-user"></i> ${ad.userName || 'مستخدم'}${ad.userEmail ? ` · ${ad.userEmail}` : ''}</span>
+                <span><i class="fa fa-phone"></i> ${ad.phone || '—'}</span>
+                <span><i class="fa fa-tag"></i> ${ad.category || '—'}</span>
+                <span><i class="fa fa-map-marker-alt"></i> ${ad.area || 'دير الزور'}</span>
+                <span><i class="fa fa-clock"></i> ${created}</span>
+              </div>
+              <div class="adm-pending-actions">
+                <button class="btn btn-green btn-sm" onclick="approvePendingAd('${ad.id}')">
+                  <i class="fa fa-check"></i> موافقة ونشر
+                </button>
+                <button class="btn btn-red btn-sm" onclick="rejectPendingAd('${ad.id}')">
+                  <i class="fa fa-times"></i> رفض مع السبب
+                </button>
+              </div>
+            </div>
+          </article>`;
+      }).join('')}
+    </div>`;
 }
 
 /* ══════════════════════════════════════════
@@ -155,7 +244,7 @@ function renderDashboard(ct) {
     const ms = a.createdAt.toMillis ? a.createdAt.toMillis() : (a.createdAt.seconds||0)*1000;
     return ms >= today;
   }).length;
-  const pendingAds  = adminReqsCache.length + adminReportsCache.length;
+  const pendingAds  = adminPendingAdsCache.length;
   const featuredAdsCount = adminAdsAllCache.filter(a=>a.featured).length;
   const bannedCount = adminUsersCache.filter(u=>u.banned).length;
 
@@ -201,10 +290,10 @@ function renderDashboard(ct) {
         <div class="adm-kpi-val">${todayAds}</div>
         <div class="adm-kpi-lbl">إعلانات اليوم</div>
       </div>
-      <div class="adm-kpi ${pendingAds?'adm-kpi-alert':''}" style="--kc:#c62828">
-        <i class="fa fa-bell"></i>
+      <div class="adm-kpi ${pendingAds?'adm-kpi-alert':''}" style="--kc:#c62828;cursor:pointer" onclick="switchAdminTab('pendingAds')">
+        <i class="fa fa-hourglass-half"></i>
         <div class="adm-kpi-val">${pendingAds}</div>
-        <div class="adm-kpi-lbl">قيد المراجعة</div>
+        <div class="adm-kpi-lbl">إعلانات قيد المراجعة</div>
       </div>
       <div class="adm-kpi" style="--kc:#f57c00">
         <i class="fa fa-star"></i>
@@ -320,6 +409,9 @@ function renderAdsTab(ct) {
         placeholder="🔍 بحث بالعنوان أو الهاتف..." oninput="applyAdsFilter()">
       <select id="adsFilterStatus" class="adm-filter-sel" onchange="applyAdsFilter()">
         <option value="">الحالة: الكل</option>
+        <option value="pending">قيد المراجعة</option>
+        <option value="approved">مقبول / منشور</option>
+        <option value="rejected">مرفوض</option>
         <option value="featured">مميز ⭐</option>
         <option value="active">نشط</option>
         <option value="expired">منتهي</option>
@@ -359,6 +451,9 @@ function applyAdsFilter() {
     (a.phone||'').toLowerCase().includes(q) ||
     (a.userEmail||'').toLowerCase().includes(q));
   if (status==='featured') list = list.filter(a=>a.featured);
+  if (status==='pending')  list = list.filter(a=>a.status==='pending');
+  if (status==='approved') list = list.filter(a=>!a.status || a.status==='approved');
+  if (status==='rejected') list = list.filter(a=>a.status==='rejected');
   if (status==='expired')  list = list.filter(a=>
     a.expiresAt && (a.expiresAt.toMillis?a.expiresAt.toMillis():(a.expiresAt.seconds||0)*1000) < now);
   if (status==='active')   list = list.filter(a=>!a.featured &&
@@ -416,7 +511,9 @@ function applyAdsFilter() {
               <td style="font-size:.78em">${ad.city||ad.location||'—'}</td>
               <td style="font-size:.72em;color:var(--gray)">${date}</td>
               <td>
-                ${ad.featured ? '<span class="adm-status-tag feat">⭐ مميز</span>' :
+                ${ad.status === 'pending' ? '<span class="adm-status-tag pending">⏳ قيد المراجعة</span>' :
+                  ad.status === 'rejected' ? '<span class="adm-status-tag rejected">مرفوض</span>' :
+                  ad.featured ? '<span class="adm-status-tag feat">⭐ مميز</span>' :
                   expired     ? '<span class="adm-status-tag expired">منتهي</span>' :
                                 '<span class="adm-status-tag active">نشط</span>'}
               </td>
@@ -922,6 +1019,81 @@ async function adminToggleFeatured(id, current) {
   if (ad) ad.featured = !current;
   showToast(current?'تم إلغاء التمييز':'تم التمييز ⭐','ok');
   loadAds(); applyAdsFilter();
+}
+
+/* ══════════════════════════════════════════
+   مراجعة إعلانات المستخدمين
+══════════════════════════════════════════ */
+async function approvePendingAd(adId) {
+  const ad = adminPendingAdsCache.find(a => a.id === adId);
+  if (!ad) return;
+  await db.collection('ads').doc(adId).update({
+    status: 'approved',
+    reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    reviewedBy: currentUser?.uid || 'admin'
+  }).catch(() => {
+    showToast('تعذر حفظ قرار الموافقة', 'bad');
+  });
+
+  if (ad.userId) {
+    await db.collection('users').doc(ad.userId).collection('warnings').add({
+      message: `تمت الموافقة على إعلانك "${ad.title || ''}" وأصبح منشوراً الآن.`,
+      read: false,
+      type: 'ad_approved',
+      adId,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
+  }
+
+  adminPendingAdsCache = adminPendingAdsCache.filter(a => a.id !== adId);
+  const cached = adminAdsAllCache.find(a => a.id === adId);
+  if (cached) cached.status = 'approved';
+  showToast('تمت الموافقة ونشر الإعلان ✅', 'ok');
+  checkAdminNotifs();
+  loadAds();
+  openAdminPanel();
+}
+
+function rejectPendingAd(adId) {
+  const ad = adminPendingAdsCache.find(a => a.id === adId);
+  if (!ad) return;
+  adminInput(
+    `سبب رفض الإعلان: ${ad.title || 'إعلان'}`,
+    'اكتب السبب الذي سيظهر للمستخدم...',
+    reason => finishRejectPendingAd(ad, reason)
+  );
+}
+
+async function finishRejectPendingAd(ad, reason) {
+  await db.collection('ads').doc(ad.id).update({
+    status: 'rejected',
+    rejectionReason: reason,
+    reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    reviewedBy: currentUser?.uid || 'admin'
+  }).catch(() => {
+    showToast('تعذر حفظ قرار الرفض', 'bad');
+  });
+
+  if (ad.userId) {
+    await db.collection('users').doc(ad.userId).collection('warnings').add({
+      message: `تم رفض إعلانك "${ad.title || ''}". السبب: ${reason}`,
+      read: false,
+      type: 'ad_rejected',
+      adId: ad.id,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
+  }
+
+  adminPendingAdsCache = adminPendingAdsCache.filter(a => a.id !== ad.id);
+  const cached = adminAdsAllCache.find(a => a.id === ad.id);
+  if (cached) {
+    cached.status = 'rejected';
+    cached.rejectionReason = reason;
+  }
+  showToast('تم رفض الإعلان وإشعار المستخدم', 'ok');
+  checkAdminNotifs();
+  loadAds();
+  openAdminPanel();
 }
 
 /* ══════════════════════════════════════════

@@ -61,8 +61,9 @@ function loadAds() {
         const ad = allAds.find(a => a.id === id);
         if (ad) ad.featured = false;
       });
-      // hide expired regular ads
+      // hide expired regular ads + hide pending/rejected ads from public feed
       allAds = allAds.filter(a => {
+        if (a.status && a.status !== 'approved') return false;
         if (!a.expiresAt) return true;
         const ms = a.expiresAt.toMillis ? a.expiresAt.toMillis() : (a.expiresAt.seconds * 1000);
         return ms > now;
@@ -283,15 +284,27 @@ async function doAddAd() {
 
     const durationDays = parseInt(document.getElementById('adDuration')?.value || '60');
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
-    await db.collection('ads').add({
+    const adRef = await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
       images, imageUrl: images[0] || null, videoUrl, featured: true, views: 0,
       userId: currentUser.uid, userEmail: currentUser.email,
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-      durationDays
+      durationDays,
+      status: 'pending'
     });
+    /* إشعار المدير بإعلان جديد */
+    db.collection('adminNotifications').add({
+      type: 'new_ad',
+      adId: adRef.id,
+      adTitle: title,
+      userName: currentUser.displayName || 'مستخدم',
+      userId: currentUser.uid,
+      userEmail: currentUser.email,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      read: false
+    }).catch(()=>{});
     closeModal('addModal');
     ['adTitle', 'adDesc', 'adPrice', 'adPhone', 'adAreaOther'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('adCat').value = '';
@@ -301,7 +314,7 @@ async function doAddAd() {
     document.getElementById('videoPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
     document.getElementById('adVideo').value = '';
-    showToast('تم نشر إعلانك بنجاح! 🎉', 'ok');
+    showToast('تم إرسال إعلانك وهو قيد المراجعة ⏳ سيظهر بعد موافقة الإدارة', 'ok');
     loadAds();
   } catch (ex) {
     errEl.textContent = ex.message || 'حدث خطأ أثناء النشر';
