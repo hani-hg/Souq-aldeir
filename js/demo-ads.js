@@ -20,7 +20,7 @@ async function seedDemoAds() {
   if (!confirm('سيتم إضافة ' + DEMO_ADS.length + ' إعلان تجريبي إلى الموقع. متابعة؟')) return;
   try {
     const batchPromises = DEMO_ADS.map(ad => {
-      const durationDays = 60;
+      const durationDays = 30;
       const expiresAt = new Date(Date.now() + durationDays * 86400000);
       return db.collection('ads').add({
         title: ad.title, description: ad.description, price: ad.price, currency: 'ل.س',
@@ -30,7 +30,7 @@ async function seedDemoAds() {
         userId: currentUser.uid, userEmail: currentUser.email, userName: 'سوق دير الزور',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-        durationDays
+        durationDays, status: 'approved'
       });
     });
     await Promise.all(batchPromises);

@@ -189,13 +189,8 @@
       <input type="text" id="adAreaOther" placeholder="اكتب اسم القرية أو المنطقة" style="display:none;margin-top:8px">
     </div>
     <div class="fg"><label>مدة الإعلان</label>
-      <select id="adDuration">
-        <option value="30">30 يوماً</option>
-        <option value="60" selected>60 يوماً</option>
-        <option value="90">90 يوماً</option>
-        <option value="180">6 أشهر</option>
-        <option value="365">سنة كاملة</option>
-      </select>
+      <div class="fixed-field"><i class="fa fa-calendar-check"></i><span>شهر واحد (30 يوماً)</span></div>
+      <input type="hidden" id="adDuration" value="30">
     </div>
     <div class="fg"><label>صور الإعلان (حتى 5 صور، اختياري)</label><input type="file" id="adImg" accept="image/*" multiple><div id="imgPreview" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
     <div class="fg"><label>فيديو للإعلان (اختياري، حتى 30 ثانية يُفضّل)</label><input type="file" id="adVideo" accept="video/*"><div id="videoPreview"></div></div>
