@@ -3,6 +3,11 @@
 .gemini
 .opencode
 
+# Runtime data
+backend/data/
+backend/uploads/
+frontend/dist/
+
 # IDE and Editors
 **/.idea/
 **/.vscode/
