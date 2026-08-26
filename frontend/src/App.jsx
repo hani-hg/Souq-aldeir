@@ -33,7 +33,7 @@ export default function App() {
     const onHash = () => {
       const h = window.location.hash.replace(/^#\/?/, '');
       if (!h) { setRoute('home'); return; }
-      if (h.startsWith('ad/')) { setRoute('ad'); setAdId(Number(h.split('/')[1])); }
+      if (h.startsWith('ad/')) { setRoute('ad'); setAdId(decodeURIComponent(h.split('/')[1])); }
       else if (h.startsWith('new')) setRoute('new');
       else if (h.startsWith('account')) setRoute('account');
       else if (h.startsWith('messages')) setRoute('messages');

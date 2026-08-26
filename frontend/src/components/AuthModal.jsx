@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import { toast } from '../components/Toast.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { api } from '../api.js';
 
 export default function AuthModal({ onClose }) {
   const { login, register, settings } = useAuth();
@@ -53,15 +54,10 @@ export default function AuthModal({ onClose }) {
     if (!form.phone.trim()) return toast('أدخل رقم الهاتف', 'error');
     setLoading(true);
     try {
-      const d = await fetch('/api/auth/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.phone.trim() })
-      }).then((r) => r.json());
-      if (d.error) return toast(d.error, 'error');
+      const d = await api.post('/api/auth/reset', { phone: form.phone.trim() });
       setResetInfo(d);
     } catch (e) {
-      toast('حدث خطأ', 'error');
+      toast(e.message, 'error');
     }
     setLoading(false);
   }
