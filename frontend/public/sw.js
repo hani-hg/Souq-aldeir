@@ -1,43 +1,32 @@
-const CACHE = 'souq-aldeir-v2';
-const STATIC = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/favicon.svg',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+/* تطبيق PWA سوق الحي الواثق: واجهة محلية قابلة للعودة دون اتصال، مع عدم تخزين بيانات السوق الحية مؤقتاً. */
+const CACHE_NAME = 'souq-aldeir-shell-v3';
+const CORE_ASSETS = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/assets/souq-aldeir-symbol.png', '/assets/souq-aldeir-riverfront-hero.jpg'];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(STATIC).catch(() => {})).then(() => self.skipWaiting())
-  );
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+self.addEventListener('activate', (event) => {
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  if (e.request.method !== 'GET') return;
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/uploads')) return;
-
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const network = fetch(e.request)
-        .then((res) => {
-          if (res && res.status === 200 && res.type !== 'opaque') {
-            caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
+      return response;
+    }).catch(() => caches.match('/')));
+    return;
+  }
+  event.respondWith(caches.match(request).then((cached) => {
+    const network = fetch(request).then((response) => {
+      if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+      return response;
+    });
+    return cached || network;
+  }));
 });

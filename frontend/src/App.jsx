@@ -9,6 +9,7 @@ import Messages, { useUnread } from './pages/Messages.jsx';
 import { ToastHost, toast } from './components/Toast.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { api } from './api.js';
+import InstallPrompt from './components/InstallPrompt.jsx';
 
 const AdDetail = lazy(() => import('./pages/AdDetail.jsx'));
 const AdForm = lazy(() => import('./pages/AdForm.jsx'));
@@ -85,6 +86,7 @@ export default function App() {
       </main>
       <button className="fab" onClick={() => navigate('new')} title="أضف إعلاناً" aria-label="أضف إعلاناً"><i className="fas fa-plus" /></button>
       <BottomNav route={route} navigate={navigate} unread={unread} />
+      <InstallPrompt />
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {contactTarget && <ContactModal ad={contactTarget} onClose={() => setContactTarget(null)} />}
       {showShare && <Modal title="مشاركة السوق" onClose={() => setShowShare(false)}><div className="modal-note"><i className="fas fa-share-nodes" /><p>شارك رابط السوق ليصل إلى الباحثين عن البيع والشراء في منطقتك.</p><button className="btn btn-primary btn-block" onClick={copyLink}><i className="fas fa-link" /> نسخ رابط السوق</button></div></Modal>}

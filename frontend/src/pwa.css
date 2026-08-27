@@ -1,0 +1,14 @@
+/* تصميم سوق الحي الواثق: دعوة تثبيت صغيرة ومتينة توضع فوق التنقل السفلي الآمن على الهواتف. */
+.install-prompt { position:fixed; z-index:120; inset-inline:12px; bottom:calc(78px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:9px; max-width:440px; margin-inline:auto; padding:10px 9px 10px 11px; color:#f8f5ed; background:#093d63; border:1px solid rgba(224,239,246,.22); border-radius:15px; box-shadow:0 14px 38px rgba(3,38,61,.28); animation:prompt-in .24s cubic-bezier(.23,1,.32,1); }
+.install-prompt img { flex:0 0 37px; width:37px; height:37px; object-fit:contain; }
+.install-prompt div { display:grid; gap:2px; min-width:0; flex:1; }
+.install-prompt strong { font-family:'Noto Kufi Arabic',sans-serif; font-size:.68rem; font-weight:700; }
+.install-prompt span { color:#d6e7ef; font-size:.63rem; line-height:1.7; }
+.install-action { flex:0 0 auto; padding:7px 10px; color:white; font-family:'Noto Kufi Arabic',sans-serif; font-size:.62rem; font-weight:700; background:#075AA8; border:1px solid rgba(255,255,255,.3); border-radius:9px; }
+.install-action:active { transform:scale(.97); }
+.install-dismiss { flex:0 0 24px; width:24px; height:24px; padding:0; color:#d9e8ef; background:transparent; border:0; border-radius:50%; }
+.offline-notice { position:fixed; z-index:121; inset-inline:0; bottom:calc(61px + env(safe-area-inset-bottom)); padding:7px 12px; color:#563d05; background:#f1d48d; font-family:'Noto Kufi Arabic',sans-serif; font-size:.62rem; text-align:center; box-shadow:0 -3px 11px rgba(77,59,16,.12); }
+@keyframes prompt-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@media (min-width:701px) { .install-prompt { bottom:22px; } .offline-notice { bottom:0; } }
+@media (display-mode:standalone) { .install-prompt { display:none; } }
+@media (prefers-reduced-motion:reduce) { .install-prompt { animation:none; } }

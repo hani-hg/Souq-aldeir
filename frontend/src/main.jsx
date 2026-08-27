@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import './styles.css';
 import './market-refinement.css';
+import './pwa.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
