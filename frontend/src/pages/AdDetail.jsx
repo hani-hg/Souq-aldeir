@@ -1,3 +1,4 @@
+/** تصميم سوق الحي الواثق: تفاصيل صريحة تحمي دقة بيانات البائع والسعر قبل أي تواصل. */
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { formatPrice, timeAgo, formatDate, daysLeft } from '../utils.js';
@@ -34,6 +35,7 @@ export default function AdDetail({ id, onBack, onEdit, onContact, onAuth }) {
 
   const isOwner = user && user.id === ad.seller.id;
   const days = daysLeft(ad.expiresAt);
+  const sellerSince = ad.seller.createdAt > 946684800000 ? `عضو منذ ${formatDate(ad.seller.createdAt)}` : 'عضو في سوق دير الزور';
 
   async function toggleFav() {
     if (!user) return onAuth();
@@ -130,7 +132,7 @@ export default function AdDetail({ id, onBack, onEdit, onContact, onAuth }) {
               <i className="fas fa-heart" />
             </button>
           </div>
-          <div className="detail-price">{formatPrice(ad.price, ad.currency)}</div>
+          <div className="detail-price">{Number(ad.price) > 0 ? formatPrice(ad.price, ad.currency) : 'السعر عند التواصل'}</div>
           {ad.status === 'sold' && <span className="pill sold">مُباع</span>}
           {ad.status === 'expired' && <span className="pill expired">منتهي — يحتاج تجديد</span>}
           <div className="detail-meta">
@@ -152,7 +154,7 @@ export default function AdDetail({ id, onBack, onEdit, onContact, onAuth }) {
         <div className="ava">{ad.seller.name.slice(0, 1)}</div>
         <div className="info">
           <b>{ad.seller.name}</b>
-          <span>عضو منذ {formatDate(ad.seller.createdAt)}</span>
+          <span>{sellerSince}</span>
         </div>
         {!isOwner && (
           <button className="btn btn-primary btn-sm" onClick={() => onContact(ad)}>

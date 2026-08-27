@@ -1,4 +1,7 @@
+/** تصميم سوق الحي الواثق: رأس عربي واضح وهوية محلية عملية بأزرق الفرات. */
 import { useAuth } from '../contexts/AuthContext.jsx';
+
+const BRAND_SYMBOL = '/assets/souq-aldeir-symbol.png';
 
 const CAT_ICONS = {
   'سيارات ومركبات': 'fa-car',
@@ -23,26 +26,26 @@ export function catIcon(cat) {
   return CAT_ICONS[cat] || 'fa-tag';
 }
 
-export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAccount, onShare, onAbout, unread, route, navigate }) {
-  const { user, settings } = useAuth();
+export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAccount, onShare, onAbout, unread }) {
+  const { user } = useAuth();
 
   return (
     <header className="topbar">
       <div className="topbar-row">
-        <div className="brand">
-          <div className="logo"><i className="fas fa-basket-shopping" /></div>
-          <span>سوق دير الزور</span>
-        </div>
+        <button className="brand" onClick={() => { window.location.hash = ''; }} aria-label="العودة إلى الرئيسية">
+          <span className="brand-mark"><img src={BRAND_SYMBOL} alt="" /></span>
+          <span className="brand-copy"><strong>سوق دير الزور</strong><small>إعلانات قريبة منك</small></span>
+        </button>
         <div className="topbar-actions">
           {user && user.role === 'admin' && (
             <button className="icon-btn" onClick={onAdmin} title="لوحة المدير">
               <i className="fas fa-shield-halved" />
             </button>
           )}
-          <button className="icon-btn" onClick={onShare} title="مشاركة">
-            <i className="fas fa-qrcode" />
+          <button className="icon-btn optional-action" onClick={onShare} title="مشاركة السوق" aria-label="مشاركة السوق">
+            <i className="fas fa-arrow-up-from-bracket" />
           </button>
-          <button className="icon-btn" onClick={onAbout} title="عن السوق">
+          <button className="icon-btn optional-action" onClick={onAbout} title="عن السوق" aria-label="عن السوق">
             <i className="fas fa-circle-info" />
           </button>
           <button className="icon-btn" onClick={onFavorites} title="المفضلة">
@@ -50,12 +53,12 @@ export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAcc
           </button>
           <button className="icon-btn" onClick={onMessages} title="الرسائل">
             <i className="fas fa-comment-dots" />
-            {unread > 0 && <span className="badge">{unread}</span>}
+            {unread > 0 && <span className="badge">{unread > 99 ? '99+' : unread}</span>}
           </button>
           {user ? (
             <button className="user-chip" onClick={onAccount}>
               <span className="ava">{user.name.slice(0, 1)}</span>
-              <span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="user-name">
                 {user.name}
               </span>
               <i className="fas fa-chevron-down" />

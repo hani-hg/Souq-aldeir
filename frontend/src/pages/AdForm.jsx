@@ -1,3 +1,4 @@
+/** تصميم سوق الحي الواثق: نموذج نشر مباشر يمنع الأسعار غير المقصودة ويشرح الحقول بوضوح. */
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { toast } from '../components/Toast.jsx';
@@ -92,7 +93,7 @@ export default function AdForm({ editAd, onDone, onRequireAuth, onCancel }) {
     if (!user) return onRequireAuth();
     if (!form.title.trim()) return toast('عنوان الإعلان مطلوب', 'error');
     if (!form.description.trim()) return toast('وصف الإعلان مطلوب', 'error');
-    if (form.price === '' || isNaN(Number(form.price)) || Number(form.price) < 0)
+    if (form.price === '' || isNaN(Number(form.price)) || Number(form.price) <= 0)
       return toast('أدخل سعراً صحيحاً', 'error');
     if (!form.phone.trim()) return toast('رقم الهاتف مطلوب', 'error');
     if (!validatePhone(form.phone)) return toast('رقم الهاتف غير صحيح', 'error');
@@ -146,7 +147,7 @@ export default function AdForm({ editAd, onDone, onRequireAuth, onCancel }) {
       <div className="form-row">
         <div className="form-group">
           <label>السعر <span className="req">*</span></label>
-          <input type="number" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="0" />
+          <input type="number" min="1" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="مثال: 2500000" />
         </div>
         <div className="form-group">
           <label>العملة</label>

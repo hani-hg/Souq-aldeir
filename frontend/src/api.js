@@ -165,6 +165,10 @@ function serializeAd(snapOrDoc, opts = {}) {
   };
 }
 
+function isPublicActiveAd(ad) {
+  return !!ad && ad.status === 'active';
+}
+
 async function uploadFile(file, isVideo) {
   const fd = new FormData();
   fd.append('file', file);
@@ -371,7 +375,7 @@ async function handleStats() {
   let ads = 0;
   try {
     const s = await db.collection('ads').limit(1000).get();
-    ads = s.docs.filter((d) => d.data().status !== 'deleted').length;
+    ads = s.docs.map((d) => serializeAd(d, { noFav: true })).filter(isPublicActiveAd).length;
   } catch (e) {}
   let visits = 0;
   try {
@@ -418,7 +422,7 @@ async function handleAdsList(params) {
 
   if (onlyFav) ads = ads.filter((a) => favIds.has(a.id));
   if (userId) ads = ads.filter((a) => a.seller.id === userId);
-  ads = ads.filter((a) => a.status !== 'deleted' && a.status !== 'hidden' && a.status !== 'expired');
+  ads = ads.filter(isPublicActiveAd);
 
   if (search) {
     const s = search.toLowerCase();
@@ -447,7 +451,7 @@ async function handleAdsFeatured() {
   const snap = await db.collection('ads').limit(300).get();
   const ads = snap.docs
     .map((d) => serializeAd(d))
-    .filter((a) => a.featured && a.status !== 'deleted' && a.status !== 'hidden' && a.status !== 'expired')
+    .filter((a) => a.featured && isPublicActiveAd(a))
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 8);
   return { ads };
@@ -498,7 +502,7 @@ async function handleAdsCreate(formData) {
 
   if (!title) throw httpError(400, 'عنوان الإعلان مطلوب');
   if (!description) throw httpError(400, 'وصف الإعلان مطلوب');
-  if (isNaN(priceNum) || priceNum < 0) throw httpError(400, 'السعر غير صالح');
+  if (isNaN(priceNum) || priceNum <= 0) throw httpError(400, 'أدخل سعراً أكبر من الصفر');
   if (!phone) throw httpError(400, 'رقم الهاتف مطلوب');
   if (!category) throw httpError(400, 'الفئة مطلوبة');
   if (!area) throw httpError(400, 'المنطقة مطلوبة');

@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({ email: '', phone: '', whatsapp: '' });
 
   useEffect(() => {
@@ -23,10 +23,14 @@ export function AuthProvider({ children }) {
           setToken(null);
         }
       }
-      setLoading(false);
     }
     boot();
-    api.post('/api/visit').catch(() => {});
+    const today = new Date().toISOString().slice(0, 10);
+    const visitKey = `souq-visited-${today}`;
+    if (!sessionStorage.getItem(visitKey)) {
+      sessionStorage.setItem(visitKey, '1');
+      api.post('/api/visit').catch(() => {});
+    }
   }, []);
 
   useEffect(() => {

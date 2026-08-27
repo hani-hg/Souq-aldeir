@@ -6,6 +6,7 @@ export function formatPrice(price, currency) {
 }
 
 export function timeAgo(ts) {
+  if (!ts || ts > Date.now()) return 'حديثاً';
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'الآن';

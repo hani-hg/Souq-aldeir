@@ -1,20 +1,21 @@
+/** تصميم سوق الحي الواثق: بطاقة معلوماتية ذات تسلسل واضح وصورة صادقة أو بديل فئوي. */
+import { useState } from 'react';
 import { formatPrice, timeAgo } from '../utils.js';
 import { catIcon } from './Header.jsx';
 
 export default function AdCard({ ad, onOpen, onFav, favBtn }) {
-  const img = ad.images && ad.images.length > 0 ? ad.images[0] : null;
+  const [imageFailed, setImageFailed] = useState(false);
+  const img = ad.images && ad.images.length > 0 && !imageFailed ? ad.images[0] : null;
   const tag =
-    ad.status === 'sold' ? { cls: 'sold', label: 'مُباع' }
-    : ad.status === 'expired' ? { cls: 'expired', label: 'منتهي' }
-    : ad.featured ? { cls: 'featured', label: 'مميز' }
+    ad.featured ? { cls: 'featured', label: 'مميز' }
     : null;
 
   return (
-    <div className="ad-card" onClick={() => onOpen(ad.id)} style={{ cursor: 'pointer' }}>
+    <article className="ad-card" onClick={() => onOpen(ad.id)} role="button" tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && onOpen(ad.id)}>
       {img ? (
-        <img className="img" src={img} alt={ad.title} loading="lazy" />
+        <img className="img" src={img} alt={ad.title} loading="lazy" onError={() => setImageFailed(true)} />
       ) : (
-        <div className="img"><i className={`fas ${catIcon(ad.category)}`} /></div>
+        <div className="img ad-image-fallback"><i className={`fas ${catIcon(ad.category)}`} /><span>لا توجد صورة</span></div>
       )}
       {tag && <span className={`tag ${tag.cls}`}>{tag.label}</span>}
       {favBtn && (
@@ -24,19 +25,20 @@ export default function AdCard({ ad, onOpen, onFav, favBtn }) {
             e.stopPropagation();
             onFav(ad);
           }}
-          aria-label="مفضلة"
+          aria-label={ad.isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
         >
-          <i className={`fas ${ad.isFavorite ? 'fa-heart' : 'fa-heart'}`} style={{ color: ad.isFavorite ? 'inherit' : '' }} />
+          <i className="fas fa-heart" />
         </button>
       )}
       <div className="body">
-        <div className="title">{ad.title}</div>
-        <div className="price">{formatPrice(ad.price, ad.currency)}</div>
+        <div className="category-cue"><i className={`fas ${catIcon(ad.category)}`} /> {ad.category || 'إعلان محلي'}</div>
+        <h3 className="title">{ad.title || 'إعلان بلا عنوان'}</h3>
+        <div className={`price ${Number(ad.price) > 0 ? '' : 'price-unspecified'}`}>{Number(ad.price) > 0 ? formatPrice(ad.price, ad.currency) : 'السعر عند التواصل'}</div>
         <div className="meta">
-          <span><i className="fas fa-location-dot" /> {ad.customArea || ad.area}</span>
-          <span>{timeAgo(ad.createdAt)}</span>
+          <span><i className="fas fa-location-dot" /> {ad.customArea || ad.area || 'دير الزور'}</span>
+          <span><i className="fas fa-clock" /> {timeAgo(ad.createdAt)}</span>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
