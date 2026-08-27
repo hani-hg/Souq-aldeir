@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { api, getToken, setToken } from '../api';
+import { api, getToken, setToken, hasActiveSession } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
         setSettings(s.settings || {});
       } catch (e) {}
       const token = getToken();
-      if (token) {
+      if (hasActiveSession()) {
         try {
           const data = await api.get('/api/auth/me');
           setUser(data.user);
@@ -27,6 +27,24 @@ export function AuthProvider({ children }) {
     }
     boot();
     api.post('/api/visit').catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    async function onAuthState() {
+      if (hasActiveSession()) {
+        try {
+          const data = await api.get('/api/auth/me');
+          setUser(data.user);
+        } catch (e) {
+          setToken(null);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    }
+    window.addEventListener('souq-auth', onAuthState);
+    return () => window.removeEventListener('souq-auth', onAuthState);
   }, []);
 
   async function login(identifier, password) {

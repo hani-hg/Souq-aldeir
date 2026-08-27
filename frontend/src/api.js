@@ -13,6 +13,10 @@ export function setToken(token) {
   else localStorage.removeItem(TOKEN_KEY);
 }
 
+export function hasActiveSession() {
+  return !!(getToken() || (auth.currentUser && auth.currentUser.uid));
+}
+
 function favsKey(uid) {
   return `${FAV_KEY}_${uid}`;
 }
@@ -74,6 +78,12 @@ function httpError(status, message) {
 
 function getCurrentUid() {
   return getToken() || (auth.currentUser && auth.currentUser.uid) || null;
+}
+
+if (typeof window !== 'undefined') {
+  auth.onAuthStateChanged((u) => {
+    window.dispatchEvent(new CustomEvent('souq-auth', { detail: { uid: u ? u.uid : null } }));
+  });
 }
 
 function publicUser(doc, uid) {
@@ -296,6 +306,7 @@ async function handleAuthMe() {
     setToken(null);
     throw httpError(403, 'تم حظر حسابك، تواصل مع الإدارة');
   }
+  setToken(uid);
   return { user: publicUser(snap, uid) };
 }
 
