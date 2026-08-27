@@ -7,7 +7,8 @@ export default function AdCard({ ad, onOpen, onFav, favBtn }) {
   const [imageFailed, setImageFailed] = useState(false);
   const img = ad.images && ad.images.length > 0 && !imageFailed ? ad.images[0] : null;
   const tag =
-    ad.featured ? { cls: 'featured', label: 'مميز' }
+    ad.isDemo ? { cls: 'demo', label: 'نموذج عرض' }
+    : ad.featured ? { cls: 'featured', label: 'مميز' }
     : null;
 
   return (
@@ -38,6 +39,7 @@ export default function AdCard({ ad, onOpen, onFav, favBtn }) {
           <span><i className="fas fa-location-dot" /> {ad.customArea || ad.area || 'دير الزور'}</span>
           <span><i className="fas fa-clock" /> {timeAgo(ad.createdAt)}</span>
         </div>
+        <button className="quick-offer" disabled={ad.isDemo} onClick={(e) => { e.stopPropagation(); if (!ad.isDemo) onOpen(ad.id); }}><i className="fas fa-comment-dots" /> {ad.isDemo ? 'نموذج للعرض فقط' : 'طلب عرض سعر'}</button>
       </div>
     </article>
   );

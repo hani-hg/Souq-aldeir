@@ -3,6 +3,7 @@ import firebase, { auth, db, ADMIN_EMAIL, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, C
 const TOKEN_KEY = 'souq_token';
 const FAV_KEY = 'souq_favs';
 const SEEN_KEY = 'souq_chat_seen';
+const DEFAULT_MARKET_SETTINGS = { tickerEnabled: true, tickerText: 'أهلاً بكم في سوق دير الزور — تصفح الإعلانات المحلية وتواصل مباشرة مع البائعين.', tickerLink: '', featuredInterval: 3 };
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -364,6 +365,15 @@ async function handleGetSettings() {
     if (doc.exists) settings = { ...settings, ...doc.data() };
   } catch (e) {}
   return { settings };
+}
+
+async function handleGetMarketSettings() {
+  try {
+    const doc = await db.collection('settings').doc('market').get();
+    return { settings: doc.exists ? { ...DEFAULT_MARKET_SETTINGS, ...doc.data() } : DEFAULT_MARKET_SETTINGS };
+  } catch (e) {
+    return { settings: DEFAULT_MARKET_SETTINGS };
+  }
 }
 
 async function handleStats() {
@@ -942,6 +952,27 @@ async function handleAdminSettingsPut(body) {
   return { settings: next };
 }
 
+async function handleAdminMarketSettingsGet() {
+  await requireAdmin();
+  return handleGetMarketSettings();
+}
+
+async function handleAdminMarketSettingsPut(body) {
+  await requireAdmin();
+  const current = (await handleGetMarketSettings()).settings;
+  const rawLink = String((body && body.tickerLink) ?? current.tickerLink ?? '').trim();
+  const tickerLink = /^https:\/\//i.test(rawLink) ? rawLink : '';
+  const featuredInterval = Math.min(10, Math.max(3, Number((body && body.featuredInterval) ?? current.featuredInterval) || 3));
+  const next = {
+    tickerEnabled: body && body.tickerEnabled !== undefined ? Boolean(body.tickerEnabled) : current.tickerEnabled,
+    tickerText: String((body && body.tickerText) ?? current.tickerText ?? '').trim().slice(0, 180),
+    tickerLink,
+    featuredInterval
+  };
+  await db.collection('settings').doc('market').set(next, { merge: true });
+  return { settings: next };
+}
+
 /* ---------- router ---------- */
 
 function parseUrl(url) {
@@ -969,6 +1000,10 @@ async function route(method, url, body) {
 
     if (seg[0] === 'settings' && seg.length === 1 && method === 'GET') {
       return await handleGetSettings();
+    }
+
+    if (seg[0] === 'market-settings' && seg.length === 1 && method === 'GET') {
+      return await handleGetMarketSettings();
     }
 
     if (seg[0] === 'stats' && seg.length === 1 && method === 'GET') {
@@ -1038,6 +1073,8 @@ async function route(method, url, body) {
       if (seg[1] === 'reports' && seg.length === 3 && method === 'DELETE') return await handleAdminReportDelete(seg[2]);
       if (seg[1] === 'settings' && seg.length === 2 && method === 'GET') return await handleAdminSettingsGet();
       if (seg[1] === 'settings' && seg.length === 2 && method === 'PUT') return await handleAdminSettingsPut(body);
+      if (seg[1] === 'market-settings' && seg.length === 2 && method === 'GET') return await handleAdminMarketSettingsGet();
+      if (seg[1] === 'market-settings' && seg.length === 2 && method === 'PUT') return await handleAdminMarketSettingsPut(body);
     }
 
     throw httpError(404, 'المسار غير موجود');

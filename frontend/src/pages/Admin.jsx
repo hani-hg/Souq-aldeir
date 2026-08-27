@@ -14,10 +14,12 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [adSearch, setAdSearch] = useState('');
   const [contact, setContact] = useState({ email: '', phone: '', whatsapp: '' });
+  const [marketSettings, setMarketSettings] = useState({ tickerEnabled: true, tickerText: '', tickerLink: '', featuredInterval: 3 });
 
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
     setContact({ email: settings.email, phone: settings.phone, whatsapp: settings.whatsapp });
+    loadMarketSettings();
     loadStats();
   }, [user]);
 
@@ -57,12 +59,19 @@ export default function Admin() {
     setLoading(false);
   }
 
+  async function loadMarketSettings() {
+    try {
+      const data = await api.get('/api/admin/market-settings');
+      setMarketSettings(data.settings);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
   function switchTab(t) {
     setTab(t);
     if (t === 'ads') loadAds();
     if (t === 'users') loadUsers();
     if (t === 'reports') loadReports();
-    if (t === 'settings') setContact({ email: settings.email, phone: settings.phone, whatsapp: settings.whatsapp });
+    if (t === 'settings') { setContact({ email: settings.email, phone: settings.phone, whatsapp: settings.whatsapp }); loadMarketSettings(); }
   }
 
   async function toggleAd(ad) {
@@ -114,6 +123,14 @@ export default function Admin() {
     } catch (e) { toast(e.message, 'error'); }
   }
 
+  async function saveMarketSettings() {
+    try {
+      const data = await api.put('/api/admin/market-settings', marketSettings);
+      setMarketSettings(data.settings);
+      toast('تم حفظ إعدادات واجهة السوق', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="empty">
@@ -130,7 +147,7 @@ export default function Admin() {
       </div>
 
       <div className="auth-tabs" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-        {[['stats', 'الإحصائيات'], ['ads', 'الإعلانات'], ['users', 'المستخدمون'], ['reports', 'البلاغات'], ['settings', 'إعدادات التواصل']].map(([id, lbl]) => (
+        {[['stats', 'الإحصائيات'], ['ads', 'الإعلانات'], ['users', 'المستخدمون'], ['reports', 'البلاغات'], ['settings', 'إعدادات السوق']].map(([id, lbl]) => (
           <button key={id} className={tab === id ? 'active' : ''} onClick={() => switchTab(id)} style={{ minWidth: 110 }}>
             {lbl}
           </button>
@@ -273,6 +290,27 @@ export default function Admin() {
 
       {tab === 'settings' && (
         <div className="form-card" style={{ marginTop: 12 }}>
+          <h2 style={{ fontSize: '1rem', marginBottom: 16 }}>الشريط الإخباري والسلايدر</h2>
+          <div className="form-group check-row">
+            <input id="ticker-enabled" type="checkbox" checked={marketSettings.tickerEnabled} onChange={(e) => setMarketSettings({ ...marketSettings, tickerEnabled: e.target.checked })} />
+            <label htmlFor="ticker-enabled">إظهار الشريط الإخباري أعلى السوق</label>
+          </div>
+          <div className="form-group">
+            <label>نص الشريط الإخباري</label>
+            <textarea maxLength={180} value={marketSettings.tickerText} onChange={(e) => setMarketSettings({ ...marketSettings, tickerText: e.target.value })} placeholder="مثال: تخفيضات نهاية الأسبوع متاحة لدى الإعلانات المميزة" />
+          </div>
+          <div className="form-group">
+            <label>رابط اختياري للشريط الإخباري</label>
+            <input dir="ltr" value={marketSettings.tickerLink} onChange={(e) => setMarketSettings({ ...marketSettings, tickerLink: e.target.value })} placeholder="https://..." />
+          </div>
+          <div className="form-group">
+            <label>مدة عرض الإعلان المميز بالثواني</label>
+            <input type="number" min="3" max="10" value={marketSettings.featuredInterval} onChange={(e) => setMarketSettings({ ...marketSettings, featuredInterval: e.target.value })} />
+            <small style={{ color: 'var(--muted)' }}>من 3 إلى 10 ثوانٍ. اختر الإعلان المميز أو ألغِ تمييزه من تبويب «الإعلانات».</small>
+          </div>
+          <button className="btn btn-accent" onClick={saveMarketSettings}><i className="fas fa-display" /> حفظ إعدادات الواجهة</button>
+          <div className="divider" />
+          <h2 style={{ fontSize: '1rem', marginBottom: 16 }}>بيانات التواصل</h2>
           <div className="form-group">
             <label>بريد الإدارة</label>
             <input dir="ltr" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />

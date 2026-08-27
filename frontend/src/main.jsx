@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext.jsx';
 import './styles.css';
 import './market-refinement.css';
 import './pwa.css';
+import './luxury-market.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

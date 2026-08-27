@@ -1,5 +1,7 @@
-/** تصميم سوق الحي الواثق: رأس عربي واضح وهوية محلية عملية بأزرق الفرات. */
+/** تصميم مرجع الأثاث العصري: رأس داكن فاخر وشريط خبري قصير يربط السوق بأهل المنطقة. */
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { api } from '../api.js';
 
 const BRAND_SYMBOL = '/assets/souq-aldeir-symbol.png';
 
@@ -28,9 +30,14 @@ export function catIcon(cat) {
 
 export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAccount, onShare, onAbout, unread }) {
   const { user } = useAuth();
+  const [market, setMarket] = useState(null);
+
+  useEffect(() => { api.get('/api/market-settings').then((data) => setMarket(data.settings)).catch(() => {}); }, []);
+  const tickerText = market?.tickerText;
 
   return (
     <header className="topbar">
+      {market?.tickerEnabled && tickerText && <div className="news-ticker" role="status"><div className="news-ticker-inner"><span className="news-label"><i className="fas fa-bullhorn" /> أخبار السوق</span>{market.tickerLink ? <a href={market.tickerLink} target="_blank" rel="noreferrer" className="ticker-text">{tickerText}</a> : <span className="ticker-text">{tickerText}</span>}</div></div>}
       <div className="topbar-row">
         <button className="brand" onClick={() => { window.location.hash = ''; }} aria-label="العودة إلى الرئيسية">
           <span className="brand-mark"><img src={BRAND_SYMBOL} alt="" /></span>
