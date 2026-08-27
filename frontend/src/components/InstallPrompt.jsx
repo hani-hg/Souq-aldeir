@@ -51,7 +51,7 @@ export default function InstallPrompt() {
   if (!visible) return null;
 
   return <aside className="install-prompt" aria-label="تثبيت تطبيق سوق دير الزور">
-    <img src="/assets/souq-aldeir-symbol.png" alt="" />
+    <img src="/assets/market-icon-192.png" alt="" />
     <div><strong>افتح السوق كتطبيق</strong><span>{ios && !installEvent ? 'من زر المشاركة اختر «إضافة إلى الشاشة الرئيسية».' : 'تصفّح أسرع، وعودة سهلة إلى السوق من الشاشة الرئيسية.'}</span></div>
     {installEvent && <button className="install-action" onClick={install}>تثبيت</button>}
     <button className="install-dismiss" onClick={dismiss} aria-label="إغلاق دعوة التثبيت"><i className="fas fa-xmark" /></button>

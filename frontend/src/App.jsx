@@ -5,24 +5,26 @@ import BottomNav from './components/BottomNav.jsx';
 import Modal from './components/Modal.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import Home from './pages/Home.jsx';
-import Messages, { useUnread } from './pages/Messages.jsx';
 import { ToastHost, toast } from './components/Toast.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { api } from './api.js';
 import InstallPrompt from './components/InstallPrompt.jsx';
+import InstallQr from './components/InstallQr.jsx';
+import MarketFooter from './components/MarketFooter.jsx';
 
 const AdDetail = lazy(() => import('./pages/AdDetail.jsx'));
 const AdForm = lazy(() => import('./pages/AdForm.jsx'));
 const Account = lazy(() => import('./pages/Account.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
+const Messages = lazy(() => import('./pages/Messages.jsx'));
 
 function shareUrl() {
   return `${window.location.origin}${window.location.pathname}`;
 }
 
 export default function App() {
-  const { user } = useAuth();
-  const { unread } = useUnread();
+  const { user, settings } = useAuth();
+  const [unread, setUnread] = useState(0);
   const [route, setRoute] = useState('home');
   const [adId, setAdId] = useState(null);
   const [editAd, setEditAd] = useState(null);
@@ -30,6 +32,17 @@ export default function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [contactTarget, setContactTarget] = useState(null);
+  const [showInstallQr, setShowInstallQr] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setUnread(0); return undefined; }
+    const syncUnread = () => api.get('/api/chats').then((data) => setUnread(data.totalUnread || 0)).catch(() => {});
+    const receiveUnread = (event) => setUnread(event.detail?.totalUnread || 0);
+    syncUnread();
+    const timer = window.setInterval(syncUnread, 30000);
+    window.addEventListener('chats-update', receiveUnread);
+    return () => { window.clearInterval(timer); window.removeEventListener('chats-update', receiveUnread); };
+  }, [user]);
 
   useEffect(() => {
     const syncRoute = () => {
@@ -84,9 +97,11 @@ export default function App() {
           {route === 'admin' && <Admin />}
         </Suspense>
       </main>
-      <button className="fab" onClick={() => navigate('new')} title="أضف إعلاناً" aria-label="أضف إعلاناً"><i className="fas fa-plus" /></button>
+      <MarketFooter settings={settings} />
+      <div className="floating-actions"><button className="qr-fab" onClick={() => setShowInstallQr(true)} title="رمز إضافة التطبيق" aria-label="رمز QR لإضافة التطبيق"><i className="fas fa-qrcode" /></button><button className="fab" onClick={() => navigate('new')} title="أضف إعلاناً" aria-label="أضف إعلاناً"><i className="fas fa-plus" /></button></div>
       <BottomNav route={route} navigate={navigate} unread={unread} />
       <InstallPrompt />
+      {showInstallQr && <InstallQr onClose={() => setShowInstallQr(false)} />}
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {contactTarget && <ContactModal ad={contactTarget} onClose={() => setContactTarget(null)} />}
       {showShare && <Modal title="مشاركة السوق" onClose={() => setShowShare(false)}><div className="modal-note"><i className="fas fa-share-nodes" /><p>شارك رابط السوق ليصل إلى الباحثين عن البيع والشراء في منطقتك.</p><button className="btn btn-primary btn-block" onClick={copyLink}><i className="fas fa-link" /> نسخ رابط السوق</button></div></Modal>}
@@ -113,5 +128,5 @@ function AboutModal({ onClose, onOpenShare }) {
   const { settings } = useAuth();
   const [stats, setStats] = useState(null);
   useEffect(() => { api.get('/api/stats').then(setStats).catch(() => {}); }, []);
-  return <Modal title="عن السوق والتواصل مع الإدارة" onClose={onClose}><div className="about-copy"><p>سوق دير الزور منصة إعلانات محلية مجانية تتيح للبائعين والمشترين التواصل مباشرة. الموقع وسيط عرض فقط ولا يملك ولا يبيع السلع المعروضة.</p></div>{stats && <div className="landing-stats modal-stats"><div className="s"><b>{stats.ads}</b><span>إعلان منشور</span></div><div className="s"><b>{stats.users}</b><span>مستخدم مسجّل</span></div><div className="s"><b>{stats.visits}</b><span>زيارة</span></div></div>}<div className="contact-actions">{settings.whatsapp && <a className="btn btn-whatsapp btn-sm" href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noopener noreferrer"><i className="fab fa-whatsapp" /> تواصل مع الإدارة</a>}{settings.email && <a className="btn btn-ghost btn-sm" href={`mailto:${settings.email}`}><i className="fas fa-envelope" /> البريد</a>}<button className="btn btn-ghost btn-sm" onClick={onOpenShare}><i className="fas fa-share-nodes" /> مشاركة السوق</button></div><button className="btn btn-primary btn-block" onClick={onClose}>إغلاق</button></Modal>;
+  return <Modal title="عن السوق والتواصل مع الإدارة" onClose={onClose}><div className="about-copy"><p>سوق دير الزور منصة إعلانات محلية مجانية تتيح للبائعين والمشترين التواصل مباشرة. الموقع وسيط عرض فقط ولا يملك ولا يبيع السلع المعروضة.</p></div>{stats && <div className="landing-stats modal-stats"><div className="s"><b>{stats.ads}</b><span>إعلان منشور</span></div><div className="s"><b>{stats.users}</b><span>مستخدم مسجّل</span></div><div className="s"><b>{stats.visits}</b><span>زيارة</span></div></div>}<div className="contact-actions"><a className="btn btn-whatsapp btn-sm" href="https://wa.me/12087630327" target="_blank" rel="noopener noreferrer"><i className="fab fa-whatsapp" /> تواصل مع الإدارة</a>{settings.email && <a className="btn btn-ghost btn-sm" href={`mailto:${settings.email}`}><i className="fas fa-envelope" /> البريد</a>}<button className="btn btn-ghost btn-sm" onClick={onOpenShare}><i className="fas fa-share-nodes" /> مشاركة السوق</button></div><button className="btn btn-primary btn-block" onClick={onClose}>إغلاق</button></Modal>;
 }

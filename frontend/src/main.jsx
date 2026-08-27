@@ -7,10 +7,18 @@ import './market-refinement.css';
 import './pwa.css';
 import './luxury-market.css';
 import './reference-match.css';
+import './blue-classified.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    let refreshed = false;
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
+      registration.update();
+      if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }).catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshed) { refreshed = true; window.location.reload(); }
+    });
   });
 }
 

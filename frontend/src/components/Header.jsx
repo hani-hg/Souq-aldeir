@@ -1,9 +1,9 @@
-/** تصميم مرجع الأثاث العصري: رأس داكن فاخر وشريط خبري قصير يربط السوق بأهل المنطقة. */
+/** مرجع السوق الأزرق: رأس أبيض/أزرق وشريط أخبار أحمر ظاهر دائماً داخل المتصفح والتطبيق المثبّت. */
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { api } from '../api.js';
 
-const BRAND_SYMBOL = '/assets/souq-aldeir-symbol.png';
+const BRAND_SYMBOL = '/assets/market-icon-512.png';
 const DEFAULT_MARKET = { tickerEnabled: true, tickerText: 'أهلاً بكم في سوق دير الزور — تصفح الإعلانات المحلية وتواصل مباشرة مع البائعين.', tickerLink: '' };
 
 const CAT_ICONS = {
@@ -38,7 +38,6 @@ export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAcc
 
   return (
     <header className="topbar">
-      {market.tickerEnabled !== false && <div className="news-ticker" role="status" aria-label="أخبار السوق"><div className="news-ticker-inner"><span className="news-label"><i className="fas fa-bullhorn" /> أخبار السوق</span>{market.tickerLink ? <a href={market.tickerLink} target="_blank" rel="noreferrer" className="ticker-text">{tickerText}</a> : <span className="ticker-text">{tickerText}</span>}</div></div>}
       <div className="topbar-row">
         <button className="brand" onClick={() => { window.location.hash = ''; }} aria-label="العودة إلى الرئيسية">
           <span className="brand-mark"><img src={BRAND_SYMBOL} alt="" /></span>
@@ -79,6 +78,7 @@ export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAcc
           )}
         </div>
       </div>
+      {market.tickerEnabled !== false && <div className="news-ticker" role="status" aria-label="أخبار السوق"><div className="news-ticker-inner"><span className="news-label"><i className="fas fa-bullhorn" /> أخبار السوق</span>{market.tickerLink ? <a href={market.tickerLink} target="_blank" rel="noreferrer" className="ticker-text">{tickerText}</a> : <span className="ticker-text">{tickerText}</span>}</div></div>}
     </header>
   );
 }

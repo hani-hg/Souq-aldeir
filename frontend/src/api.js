@@ -4,6 +4,7 @@ const TOKEN_KEY = 'souq_token';
 const FAV_KEY = 'souq_favs';
 const SEEN_KEY = 'souq_chat_seen';
 const DEFAULT_MARKET_SETTINGS = { tickerEnabled: true, tickerText: 'أهلاً بكم في سوق دير الزور — تصفح الإعلانات المحلية وتواصل مباشرة مع البائعين.', tickerLink: '', featuredInterval: 3 };
+const DEFAULT_CONTACT_SETTINGS = { email: '', phone: '', whatsapp: '12087630327' };
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -359,7 +360,7 @@ async function handleAuthPassword(body) {
 }
 
 async function handleGetSettings() {
-  let settings = { email: '', phone: '', whatsapp: '' };
+  let settings = { ...DEFAULT_CONTACT_SETTINGS };
   try {
     const doc = await db.collection('settings').doc('contact').get();
     if (doc.exists) settings = { ...settings, ...doc.data() };
@@ -928,7 +929,7 @@ async function handleAdminUserBan(id) {
 
 async function handleAdminSettingsGet() {
   await requireAdmin();
-  let settings = { email: '', phone: '', whatsapp: '' };
+  let settings = { ...DEFAULT_CONTACT_SETTINGS };
   try {
     const doc = await db.collection('settings').doc('contact').get();
     if (doc.exists) settings = { ...settings, ...doc.data() };
@@ -938,7 +939,7 @@ async function handleAdminSettingsGet() {
 
 async function handleAdminSettingsPut(body) {
   await requireAdmin();
-  let cur = { email: '', phone: '', whatsapp: '' };
+  let cur = { ...DEFAULT_CONTACT_SETTINGS };
   try {
     const doc = await db.collection('settings').doc('contact').get();
     if (doc.exists) cur = { ...cur, ...doc.data() };

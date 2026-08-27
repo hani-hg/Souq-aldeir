@@ -1,9 +1,13 @@
 /* تطبيق PWA سوق الحي الواثق: واجهة محلية قابلة للعودة دون اتصال، مع عدم تخزين بيانات السوق الحية مؤقتاً. */
-const CACHE_NAME = 'souq-aldeir-shell-v3';
-const CORE_ASSETS = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/assets/souq-aldeir-symbol.png', '/assets/souq-aldeir-riverfront-hero.jpg'];
+const CACHE_NAME = 'souq-aldeir-shell-v5';
+const CORE_ASSETS = ['/', '/manifest.webmanifest', '/assets/market-icon-192.png', '/assets/market-icon-512.png', '/assets/deir-ezzor-riverfront.webp'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

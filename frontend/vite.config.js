@@ -7,5 +7,16 @@ export default defineConfig({
     port: 5173,
     host: true,
     allowedHosts: ['.monkeycode-ai.live', '.manus.computer']
+  },
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/compat/app', 'firebase/compat/auth', 'firebase/compat/firestore'],
+          react: ['react', 'react-dom']
+        }
+      }
+    }
   }
 });

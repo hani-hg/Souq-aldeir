@@ -39,7 +39,7 @@ export default function AdCard({ ad, onOpen, onFav, favBtn }) {
           <span><i className="fas fa-location-dot" /> {ad.customArea || ad.area || 'دير الزور'}</span>
           <span><i className="fas fa-clock" /> {timeAgo(ad.createdAt)}</span>
         </div>
-        <button className="quick-offer" disabled={ad.isDemo} onClick={(e) => { e.stopPropagation(); if (!ad.isDemo) onOpen(ad.id); }}><i className="fas fa-comment-dots" /> {ad.isDemo ? 'نموذج للعرض فقط' : 'طلب عرض سعر'}</button>
+        <button className="quick-offer" disabled={ad.isDemo} onClick={(e) => { e.stopPropagation(); if (!ad.isDemo) onOpen(ad.id); }}><i className="fas fa-comment-dots" /> {ad.isDemo ? 'نموذج للعرض فقط' : 'التواصل مع البائع'}</button>
       </div>
     </article>
   );

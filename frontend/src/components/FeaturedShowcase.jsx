@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { formatPrice } from '../utils.js';
 
-const FALLBACK_IMAGE = '/assets/souq-aldeir-marketplace-lifestyle.jpg';
+const FALLBACK_IMAGE = '/assets/marketplace-lifestyle.webp';
 
 export default function FeaturedShowcase({ ads, onOpen, interval = 3 }) {
   const [active, setActive] = useState(0);
