@@ -300,7 +300,7 @@ async function doAddAd() {
       videoUrl = data.secure_url;
     }
 
-    const durationDays = parseInt(document.getElementById('adDuration')?.value || '60');
+    const durationDays = 20;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
@@ -309,7 +309,7 @@ async function doAddAd() {
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-      durationDays
+      durationDays: 20
     });
     closeModal('addModal');
     ['adTitle', 'adDesc', 'adPrice', 'adPhone', 'adAreaOther'].forEach(id => document.getElementById(id).value = '');

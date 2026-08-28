@@ -116,20 +116,23 @@ function openChat(chatId, otherId, otherName, adTitle) {
   document.getElementById('msgTitle').textContent = otherName;
   const content = document.getElementById('msgContent');
   content.innerHTML = `
-    <div style="font-size:.75em;color:var(--gray);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:8px"><i class="fa fa-tag"></i> ${escapeHtml(adTitle)}</div>
+    <button class="btn btn-outline btn-sm chat-back-btn" onclick="if(chatUnsub){chatUnsub();chatUnsub=null;}document.getElementById('msgTitle').textContent='الرسائل';renderChatList()"><i class="fa fa-arrow-right"></i> كل المحادثات</button>
+    <div style="font-size:.75em;color:var(--gray);margin:8px 0 10px;padding:6px 10px;background:var(--bg);border-radius:8px"><i class="fa fa-tag"></i> ${escapeHtml(adTitle)}</div>
     <div class="chat-window">
       <div class="chat-msgs" id="chatMsgs"><div style="text-align:center;color:var(--gray);padding:20px"><i class="fa fa-spinner fa-spin"></i></div></div>
       <div class="chat-input-bar">
-        <input type="text" id="chatInput" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter')sendMsg('${chatId}','${otherId}')">
-        <button class="send-btn" onclick="sendMsg('${chatId}','${otherId}')"><i class="fa fa-paper-plane"></i></button>
+        <input type="text" id="chatInput" maxlength="1000" autocomplete="off" aria-label="نص الرسالة" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter')sendMsg('${chatId}','${otherId}')">
+        <button class="send-btn" id="chatSendBtn" onclick="sendMsg('${chatId}','${otherId}')" aria-label="إرسال الرسالة"><i class="fa fa-paper-plane"></i></button>
       </div>
     </div>`;
   const chatRef = db.collection('chats').doc(chatId);
-  chatRef.set({
-    participants: [currentUser.uid, otherId],
-    participantNames: { [currentUser.uid]: currentUser.displayName || currentUser.email || 'مستخدم', [otherId]: otherName },
-    adTitle: adTitle, lastMessage: '', lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
+  chatRef.get().then(doc => {
+    if (!doc.exists) return chatRef.set({
+      participants: [currentUser.uid, otherId],
+      participantNames: { [currentUser.uid]: currentUser.displayName || currentUser.email || 'مستخدم', [otherId]: otherName },
+      adTitle: adTitle, lastMessage: '', lastMessageAt: null
+    });
+  }).catch(() => showToast('تعذر فتح المحادثة', 'bad'));
   if (chatUnsub) chatUnsub();
   chatUnsub = chatRef.collection('messages').orderBy('createdAt').onSnapshot(snap => {
     const el = document.getElementById('chatMsgs'); if (!el) return;
@@ -144,14 +147,22 @@ function openChat(chatId, otherId, otherName, adTitle) {
 }
 
 async function sendMsg(chatId, otherId) {
+  if (!currentUser || !otherId) return;
   const input = document.getElementById('chatInput');
-  const text = (input.value || '').trim(); if (!text) return;
-  input.value = '';
-  const chatRef = db.collection('chats').doc(chatId);
+  const btn = document.getElementById('chatSendBtn');
+  const text = (input?.value || '').trim();
+  if (!text) return;
+  if (text.length > 1000) { showToast('الرسالة طويلة جدًا (الحد 1000 حرف)', 'bad'); return; }
+  input.disabled = true; if (btn) btn.disabled = true;
   try {
+    const chatRef = db.collection('chats').doc(chatId);
+    const chatDoc = await chatRef.get();
+    if (!chatDoc.exists || !(chatDoc.data().participants || []).includes(currentUser.uid)) throw new Error('not-participant');
     await chatRef.collection('messages').add({ text, senderId: currentUser.uid, senderName: currentUser.displayName || 'مستخدم', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    await chatRef.update({ lastMessage: text, lastSenderId: currentUser.uid, lastMessageAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await chatRef.update({ lastMessage: text.slice(0, 180), lastSenderId: currentUser.uid, lastMessageAt: firebase.firestore.FieldValue.serverTimestamp() });
+    input.value = '';
   } catch (e) { showToast('خطأ في إرسال الرسالة', 'bad'); }
+  finally { input.disabled = false; if (btn) btn.disabled = false; input.focus(); }
 }
 
 

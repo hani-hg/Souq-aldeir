@@ -605,6 +605,9 @@ function applyUsersFilter() {
           onclick="adminShowUserAds('${u.id}','${(u.name||'').replace(/'/g,"\\'")}')">
           <i class="fa fa-list"></i>
         </button>
+        <button class="icon-btn del" title="حذف وإيقاف الحساب" onclick="deleteUserAccount('${u.id}')">
+          <i class="fa fa-user-xmark"></i>
+        </button>
       </div>
     </div>`;
   }).join('');
@@ -1075,6 +1078,9 @@ function showUserProfile(uid) {
           onclick="this.closest('.admin-overlay').remove();toggleBanUser('${uid}',${!!u.banned})">
           <i class="fa ${u.banned?'fa-unlock':'fa-ban'}"></i> ${u.banned?'رفع الحظر':'حظر'}
         </button>
+        <button class="btn btn-red btn-sm" style="flex:1" onclick="this.closest('.admin-overlay').remove();deleteUserAccount('${uid}')">
+          <i class="fa fa-user-xmark"></i> حذف الحساب
+        </button>
       </div>
     </div>`;
   document.body.appendChild(el);
@@ -1164,6 +1170,46 @@ async function dismissReport(reportId) {
 /* ══════════════════════════════════════════
    إدارة المستخدمين
 ══════════════════════════════════════════ */
+async function deleteUserAccount(uid) {
+  if (!isAdmin || !uid || (currentUser && currentUser.uid === uid)) {
+    showToast('لا يمكنك حذف حساب المدير الحالي', 'bad'); return;
+  }
+  const user = adminUsersCache.find(u => u.id === uid);
+  if (!user) return;
+  adminConfirm(`سيؤدي ذلك إلى إيقاف الحساب وحذف ملفه الشخصي وإعلاناته ومحادثاته. لا يمكن التراجع عن هذا الإجراء. هل تريد المتابعة؟`, async () => {
+    try {
+      const [adsSnap, chatsSnap] = await Promise.all([
+        db.collection('ads').where('userId', '==', uid).get(),
+        db.collection('chats').where('participants', 'array-contains', uid).get()
+      ]);
+      const refs = adsSnap.docs.map(d => d.ref);
+      const chatDocs = chatsSnap.docs;
+      const messageSnaps = await Promise.all(chatDocs.map(chat => chat.ref.collection('messages').get().catch(() => ({ docs: [] }))));
+      chatDocs.forEach((chat, i) => {
+        messageSnaps[i].docs.forEach(message => refs.push(message.ref));
+        refs.push(chat.ref);
+      });
+      if (user.phoneNormalized) refs.push(db.collection('phoneIndex').doc(user.phoneNormalized));
+      for (let i = 0; i < refs.length; i += 450) {
+        const batch = db.batch();
+        refs.slice(i, i + 450).forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
+      await db.collection('users').doc(uid).update({
+        name: 'حساب محذوف', email: '', phone: '', phoneNormalized: '',
+        banned: true, deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      adminUsersCache = adminUsersCache.filter(u => u.id !== uid);
+      adminAdsAllCache = adminAdsAllCache.filter(a => a.userId !== uid);
+      adminRecoveryCache = adminRecoveryCache.filter(r => r.userId !== uid);
+      showToast('تم حذف وإيقاف حساب المستخدم وبياناته', 'ok');
+      checkAdminNotifs(); applyUsersFilter();
+    } catch (error) {
+      showToast('تعذر حذف الحساب بالكامل، تحقق من الصلاحيات', 'bad');
+    }
+  });
+}
+
 async function toggleBanUser(uid, currentlyBanned) {
   adminConfirm(
     currentlyBanned ? 'هل تريد رفع الحظر عن هذا المستخدم؟'

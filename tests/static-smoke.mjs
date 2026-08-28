@@ -10,6 +10,7 @@ const requiredFiles = [
   'js/ads.js',
   'js/auth.js',
   'js/chat.js',
+  'js/share.js',
   'js/admin.js',
   'js/app.js',
   'manifest.json',
@@ -24,7 +25,7 @@ for (const file of requiredFiles) {
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]);
-const order = ['js/firebase-config.js', 'js/utils.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/admin.js', 'js/app.js'];
+const order = ['js/firebase-config.js', 'js/utils.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/share.js', 'js/admin.js', 'js/app.js'];
 const positions = order.map(file => scripts.indexOf(file));
 if (positions.some(position => position < 0)) throw new Error('A required script is not loaded by index.html');
 if (!positions.every((position, index) => index === 0 || position > positions[index - 1])) {
@@ -32,6 +33,8 @@ if (!positions.every((position, index) => index === 0 || position > positions[in
 }
 if (!html.includes('lang="ar"') || !html.includes('dir="rtl"')) throw new Error('Arabic RTL document metadata is missing');
 if (!html.includes('serviceWorker.register')) throw new Error('PWA service worker registration is missing');
+if (!html.includes('id="siteShareBtn"') || !html.includes('qrcode.min.js')) throw new Error('QR sharing UI is missing');
+if (html.includes('id="adDuration"')) throw new Error('Ad duration selector should be removed');
 
 const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
 if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
@@ -49,6 +52,12 @@ if (!auth.includes('reauthenticateWithCredential')) {
 if (!auth.includes('phoneIndex')) {
   throw new Error('Phone uniqueness index is missing');
 }
+const ads = readFileSync(join(root, 'js/ads.js'), 'utf8');
+const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
+const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
+if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
+if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
+if (!chat.includes('maxlength="1000"')) throw new Error('Chat message length guard is missing');
 
 const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
 const sw = readFileSync(join(root, 'sw.js'), 'utf8');
@@ -56,7 +65,8 @@ if (!rules.includes("allow write: if isAdmin();")) throw new Error('Admin-only s
 if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v3")) throw new Error('Service worker cache version was not bumped');
+if (!sw.includes("souq-aldeir-v4") || !sw.includes("/js/share.js")) throw new Error('Service worker share asset cache is missing');
+if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
 

@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://res.cloudinary.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=4">
 
 </head>
 <body>
@@ -33,6 +33,7 @@
   </div>
   <div class="nav-btns">
     <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
+    <button class="nav-btn" id="siteShareBtn" onclick="openSiteShare()" title="مشاركة الموقع" aria-label="مشاركة الموقع"><i class="fa fa-qrcode"></i></button>
     <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i><span class="badge" id="msgBadge" style="display:none">!</span></button>
     <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i><span class="badge" id="userBadge" style="display:none">!</span></button>
   </div>
@@ -187,15 +188,7 @@
       </select>
       <input type="text" id="adAreaOther" placeholder="اكتب اسم القرية أو المنطقة" style="display:none;margin-top:8px">
     </div>
-    <div class="fg"><label>مدة الإعلان</label>
-      <select id="adDuration">
-        <option value="30">30 يوماً</option>
-        <option value="60" selected>60 يوماً</option>
-        <option value="90">90 يوماً</option>
-        <option value="180">6 أشهر</option>
-        <option value="365">سنة كاملة</option>
-      </select>
-    </div>
+    <div class="ad-duration-fixed"><i class="fa fa-calendar-check"></i><span><strong>مدة الإعلان ثابتة: 20 يومًا</strong><small>ينتهي الإعلان تلقائيًا بعد 20 يومًا من النشر.</small></span></div>
     <div class="fg"><label for="adImg">صور الإعلان (حتى 5 صور، بحد أقصى 5MB للصورة)</label><input type="file" id="adImg" accept="image/jpeg,image/png,image/webp" multiple aria-describedby="imgHelp"><small id="imgHelp" class="field-help">يفضل استخدام صور واضحة بحجم صغير لتسريع النشر.</small><div id="imgPreview" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
     <div class="fg"><label for="adVideo">فيديو للإعلان (اختياري، بحد أقصى 25MB)</label><input type="file" id="adVideo" accept="video/mp4,video/webm,video/quicktime" aria-describedby="videoHelp"><small id="videoHelp" class="field-help">اجعل الفيديو قصيراً لتقليل وقت الرفع.</small><div id="videoPreview"></div></div>
     <div class="fg" style="display:flex;align-items:flex-start;gap:8px">
@@ -358,6 +351,7 @@
 
 <!-- Chart.js للرسوم البيانية في لوحة التحكم -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <!-- Firebase SDK v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -373,6 +367,7 @@
 <script src="js/ads.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/chat.js"></script>
+<script src="js/share.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/app.js"></script>
 
