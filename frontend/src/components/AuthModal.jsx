@@ -127,11 +127,6 @@ export default function AuthModal({ onClose }) {
                       <i className="fas fa-envelope" /> الإدارة
                     </a>
                   )}
-                  {resetInfo.contact.whatsapp && (
-                    <a className="btn btn-sm btn-whatsapp" href={`https://wa.me/${resetInfo.contact.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                      <i className="fab fa-whatsapp" /> واتساب
-                    </a>
-                  )}
                 </div>
               )}
             </div>

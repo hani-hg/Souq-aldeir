@@ -13,12 +13,12 @@ export default function Admin() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [adSearch, setAdSearch] = useState('');
-  const [contact, setContact] = useState({ email: '', phone: '', whatsapp: '' });
+  const [contact, setContact] = useState({ email: '', phone: '' });
   const [marketSettings, setMarketSettings] = useState({ tickerEnabled: true, tickerText: '', tickerLink: '', featuredInterval: 3 });
 
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
-    setContact({ email: settings.email, phone: settings.phone, whatsapp: settings.whatsapp });
+    setContact({ email: settings.email, phone: settings.phone });
     loadMarketSettings();
     loadStats();
   }, [user]);
@@ -318,10 +318,6 @@ export default function Admin() {
           <div className="form-group">
             <label>رقم هاتف الإدارة</label>
             <input dir="ltr" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
-          </div>
-          <div className="form-group">
-            <label>رقم واتساب (بالصيغة الدولية بدون +)</label>
-            <input dir="ltr" value={contact.whatsapp} onChange={(e) => setContact({ ...contact, whatsapp: e.target.value })} />
           </div>
           <button className="btn btn-primary" onClick={saveSettings}><i className="fas fa-save" /> حفظ</button>
         </div>

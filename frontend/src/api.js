@@ -4,7 +4,7 @@ const TOKEN_KEY = 'souq_token';
 const FAV_KEY = 'souq_favs';
 const SEEN_KEY = 'souq_chat_seen';
 const DEFAULT_MARKET_SETTINGS = { tickerEnabled: true, tickerText: 'أهلاً بكم في سوق دير الزور — تصفح الإعلانات المحلية وتواصل مباشرة مع البائعين.', tickerLink: '', featuredInterval: 3 };
-const DEFAULT_CONTACT_SETTINGS = { email: '', phone: '', whatsapp: '12087630327' };
+const DEFAULT_CONTACT_SETTINGS = { email: '', phone: '' };
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -946,8 +946,7 @@ async function handleAdminSettingsPut(body) {
   } catch (e) {}
   const next = {
     email: (body && body.email) || cur.email,
-    phone: (body && body.phone) || cur.phone,
-    whatsapp: (body && body.whatsapp) || cur.whatsapp
+    phone: (body && body.phone) || cur.phone
   };
   await db.collection('settings').doc('contact').set(next, { merge: true });
   return { settings: next };

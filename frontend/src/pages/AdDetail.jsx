@@ -90,8 +90,6 @@ export default function AdDetail({ id, onBack, onEdit, onContact, onAuth }) {
     }
   }
 
-  const waLink = settings.whatsapp ? `https://wa.me/${settings.whatsapp}` : '#';
-
   return (
     <div className="detail-page">
       <button className="btn btn-ghost btn-sm" onClick={onBack} style={{ marginBottom: 10 }}>
@@ -165,9 +163,6 @@ export default function AdDetail({ id, onBack, onEdit, onContact, onAuth }) {
 
       {!isOwner ? (
         <div className="contact-actions">
-          <a className="btn btn-whatsapp" href={`https://wa.me/${String(ad.phone).replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer">
-            <i className="fab fa-whatsapp" /> واتساب
-          </a>
           <a className="btn btn-success" href={`tel:${ad.phone}`}>
             <i className="fas fa-phone" /> اتصل: {ad.phone}
           </a>
