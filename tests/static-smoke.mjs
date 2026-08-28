@@ -51,9 +51,12 @@ if (!auth.includes('phoneIndex')) {
 }
 
 const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
+const sw = readFileSync(join(root, 'sw.js'), 'utf8');
 if (!rules.includes("allow write: if isAdmin();")) throw new Error('Admin-only settings rule is missing');
 if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
+if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
+if (!sw.includes("souq-aldeir-v3")) throw new Error('Service worker cache version was not bumped');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
 

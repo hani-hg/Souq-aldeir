@@ -6,6 +6,7 @@
 let adminUsersCache   = [];
 let adminReqsCache    = [];
 let adminReportsCache = [];
+let adminRecoveryCache = [];
 let adminAdsAllCache  = [];
 let adminUserFilter   = null;
 let adminUserFilterName = '';
@@ -77,11 +78,12 @@ function adminInput(title, placeholder, onSubmit) {
 
 /* ── شارة الإشعارات ── */
 async function checkAdminNotifs() {
-  const [rSnap, pSnap] = await Promise.all([
+  const [rSnap, pSnap, recoverySnap] = await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null),
-    db.collection('reports').where('status','==','pending').get().catch(()=>null)
+    db.collection('reports').where('status','==','pending').get().catch(()=>null),
+    db.collection('recoveryRequests').where('status','==','pending').get().catch(()=>null)
   ]);
-  const count = (rSnap ? rSnap.size : 0) + (pSnap ? pSnap.size : 0);
+  const count = (rSnap ? rSnap.size : 0) + (pSnap ? pSnap.size : 0) + (recoverySnap ? recoverySnap.size : 0);
   const badge = document.getElementById('adminBadge');
   if (badge) { badge.style.display = count > 0 ? 'flex' : 'none'; badge.textContent = count > 9 ? '9+' : count; }
 }
@@ -95,19 +97,21 @@ async function openAdminPanel() {
     '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
   openModal('adminModal');
 
-  const [rSnap, uSnap, pSnap, adsSnap] = await Promise.all([
+  const [rSnap, uSnap, pSnap, recoverySnap, adsSnap] = await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>({docs:[]})),
     db.collection('users').get().catch(()=>({docs:[]})),
     db.collection('reports').where('status','==','pending').get().catch(()=>({docs:[]})),
+    db.collection('recoveryRequests').where('status','==','pending').get().catch(()=>({docs:[]})),
     db.collection('ads').orderBy('createdAt','desc').get().catch(()=>({docs:[]}))
   ]);
 
   adminReqsCache    = rSnap.docs.map(d=>({id:d.id,...d.data()}));
   adminUsersCache   = uSnap.docs.map(d=>({id:d.id,...d.data()}));
   adminReportsCache = pSnap.docs.map(d=>({id:d.id,...d.data()}));
+  adminRecoveryCache = recoverySnap.docs.map(d=>({id:d.id,...d.data()}));
   adminAdsAllCache  = adsSnap.docs.map(d=>({id:d.id,...d.data()}));
 
-  const pendingAll = adminReqsCache.length + adminReportsCache.length;
+  const pendingAll = adminReqsCache.length + adminReportsCache.length + adminRecoveryCache.length;
 
   document.getElementById('adminContent').innerHTML = `
     <!-- ── شريط التبويبات ── -->
@@ -115,6 +119,7 @@ async function openAdminPanel() {
       <button class="adm-tab" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 نظرة عامة</button>
       <button class="adm-tab" data-tab="ads"       onclick="switchAdminTab('ads')">📋 الإعلانات</button>
       <button class="adm-tab" data-tab="users"     onclick="switchAdminTab('users')">👥 المستخدمون</button>
+      <button class="adm-tab" data-tab="recovery"  onclick="switchAdminTab('recovery')">🔐 استعادة الحساب ${adminRecoveryCache.length ? `<span class="adm-tab-badge">${adminRecoveryCache.length}</span>` : ''}</button>
       <button class="adm-tab" data-tab="reports"   onclick="switchAdminTab('reports')">
         🚩 البلاغات ${pendingAll ? `<span class="adm-tab-badge">${pendingAll}</span>` : ''}
       </button>
@@ -136,6 +141,7 @@ function switchAdminTab(tab) {
     case 'dashboard': renderDashboard(ct); break;
     case 'ads':       renderAdsTab(ct);    break;
     case 'users':     renderUsersTab(ct);  break;
+    case 'recovery':  renderRecoveryTab(ct); break;
     case 'reports':   renderReportsTab(ct);break;
     case 'settings':  renderSettingsTab(ct);break;
   }
@@ -158,6 +164,8 @@ function renderDashboard(ct) {
   const pendingAds  = adminReqsCache.length + adminReportsCache.length;
   const featuredAdsCount = adminAdsAllCache.filter(a=>a.featured).length;
   const bannedCount = adminUsersCache.filter(u=>u.banned).length;
+  const recoveryReady = adminUsersCache.filter(u => u.email && !String(u.email).includes('@souq-aldeir.local')).length;
+  const phoneOnlyCount = Math.max(0, totalUsers - recoveryReady);
 
   /* إعلانات آخر 6 شهور */
   const months6 = [];
@@ -184,6 +192,22 @@ function renderDashboard(ct) {
   const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
   ct.innerHTML = `
+    <section class="admin-hero">
+      <div>
+        <div class="admin-eyebrow">مركز إدارة سوق دير الزور</div>
+        <h2>مرحبًا بك في لوحة التحكم</h2>
+        <p>تابع المستخدمين والإعلانات وطلبات الدعم من مكان واحد.</p>
+      </div>
+      <div class="admin-hero-actions">
+        <button class="btn btn-light btn-sm" onclick="switchAdminTab('users')"><i class="fa fa-users"></i> المستخدمون</button>
+        <button class="btn btn-gold btn-sm" onclick="switchAdminTab('recovery')"><i class="fa fa-key"></i> طلبات الاستعادة${adminRecoveryCache.length ? ` (${adminRecoveryCache.length})` : ''}</button>
+      </div>
+    </section>
+    <div class="admin-insight-strip">
+      <div><span class="insight-dot green"></span><strong>${recoveryReady}</strong> حسابًا لديه بريد استرداد</div>
+      <div><span class="insight-dot orange"></span><strong>${phoneOnlyCount}</strong> حسابًا يحتاج إضافة بريد</div>
+      <div><span class="insight-dot red"></span><strong>${adminRecoveryCache.length}</strong> طلب استعادة معلق</div>
+    </div>
     <!-- إحصائيات سريعة -->
     <div class="adm-kpi-grid">
       <div class="adm-kpi" style="--kc:#1565c0">
@@ -215,6 +239,11 @@ function renderDashboard(ct) {
         <i class="fa fa-ban"></i>
         <div class="adm-kpi-val">${bannedCount}</div>
         <div class="adm-kpi-lbl">محظورون</div>
+      </div>
+      <div class="adm-kpi ${adminRecoveryCache.length ? 'adm-kpi-alert' : ''}" style="--kc:#00897b">
+        <i class="fa fa-key"></i>
+        <div class="adm-kpi-val">${adminRecoveryCache.length}</div>
+        <div class="adm-kpi-lbl">طلبات استعادة</div>
       </div>
     </div>
 
@@ -463,7 +492,21 @@ function exportAdsCSV() {
    تبويب 3: إدارة المستخدمين
 ══════════════════════════════════════════ */
 function renderUsersTab(ct) {
+  const total = adminUsersCache.length;
+  const active = adminUsersCache.filter(u => !u.banned).length;
+  const banned = adminUsersCache.filter(u => u.banned).length;
+  const noRecovery = adminUsersCache.filter(u => !u.email || String(u.email).includes('@souq-aldeir.local')).length;
   ct.innerHTML = `
+    <div class="admin-section-heading">
+      <div><div class="admin-eyebrow">إدارة الحسابات</div><h3>المستخدمون</h3></div>
+      <button class="btn btn-blue btn-sm" onclick="openRecoveryRequestForUser()"><i class="fa fa-plus"></i> طلب استعادة يدوي</button>
+    </div>
+    <div class="user-summary-grid">
+      <button class="user-summary-card" onclick="filterUsersByStatus('')"><strong>${total}</strong><span>كل الحسابات</span></button>
+      <button class="user-summary-card green" onclick="filterUsersByStatus('active')"><strong>${active}</strong><span>نشطون</span></button>
+      <button class="user-summary-card red" onclick="filterUsersByStatus('banned')"><strong>${banned}</strong><span>محظورون</span></button>
+      <button class="user-summary-card orange" onclick="filterUsersWithoutRecovery()"><strong>${noRecovery}</strong><span>بلا بريد استرداد</span></button>
+    </div>
     <div class="adm-filters-bar">
       <input type="text" id="usersSearch" class="adm-search" style="margin:0;flex:1;min-width:140px"
         placeholder="🔍 بحث بالاسم أو الهاتف أو البريد..." oninput="applyUsersFilter()">
@@ -471,9 +514,24 @@ function renderUsersTab(ct) {
         <option value="">الكل</option>
         <option value="active">نشطون</option>
         <option value="banned">محظورون</option>
+        <option value="no-recovery">بلا بريد استرداد</option>
       </select>
     </div>
     <div id="usersTableWrap"></div>`;
+  applyUsersFilter();
+}
+
+function filterUsersByStatus(status) {
+  const select = document.getElementById('usersFilterStatus');
+  if (select) select.value = status;
+  const search = document.getElementById('usersSearch');
+  if (search) search.value = '';
+  applyUsersFilter();
+}
+
+function filterUsersWithoutRecovery() {
+  const select = document.getElementById('usersFilterStatus');
+  if (select) select.value = 'no-recovery';
   applyUsersFilter();
 }
 
@@ -485,6 +543,7 @@ function applyUsersFilter() {
   if (q)            list = list.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.phone||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q));
   if (status==='active') list = list.filter(u=>!u.banned);
   if (status==='banned') list = list.filter(u=>!!u.banned);
+  if (status==='no-recovery') list = list.filter(u=>!u.email || String(u.email).includes('@souq-aldeir.local'));
 
   const wrap = document.getElementById('usersTableWrap');
   if (!wrap) return;
@@ -507,19 +566,21 @@ function applyUsersFilter() {
       return latest ? new Date(latest).toLocaleDateString('ar-EG') : '—';
     })();
     const color   = getAvatarColor(u.name||'');
-    const initial = (u.name||'م').charAt(0);
+    const initial = escapeHtml((u.name||'م').charAt(0));
+    const safeName = escapeHtml(u.name || 'مستخدم');
+    const safePhone = escapeHtml(u.phone || '—');
     const banned  = !!u.banned;
     const isAdminU= u.role==='admin';
     return `
     <div class="user-card">
-      <div class="user-avatar" style="background:${color};cursor:pointer" onclick="showUserProfile('${u.id}')">${initial}</div>
+        <div class="user-avatar" style="background:${color};cursor:pointer" onclick="showUserProfile('${u.id}')">${initial}</div>
       <div class="user-card-info" style="cursor:pointer;flex:1;min-width:0" onclick="showUserProfile('${u.id}')">
         <div class="user-card-name">
-          ${u.name||'مستخدم'}
+          ${safeName}
           ${isAdminU?'<span class="role-tag admin-tag">مدير</span>':''}
           ${banned  ?'<span class="role-tag banned-tag">محظور</span>':''}
         </div>
-        <div class="user-card-meta"><i class="fa fa-phone" style="color:var(--blue)"></i>${u.phone||'—'}</div>
+        <div class="user-card-meta"><i class="fa fa-phone" style="color:var(--blue)"></i>${safePhone}</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <div class="user-card-meta"><i class="fa fa-bullhorn" style="color:var(--green)"></i>${adsCount} إعلان</div>
           <div class="user-card-meta"><i class="fa fa-calendar" style="color:var(--gray)"></i>انضم: ${joinDate}</div>
@@ -527,6 +588,10 @@ function applyUsersFilter() {
         </div>
       </div>
       <div class="user-card-actions">
+        <button class="icon-btn" style="background:#e0f2f1;color:#00796b"
+          title="إدارة استعادة الحساب" onclick="openRecoveryRequestForUser('${u.id}')">
+          <i class="fa fa-key"></i>
+        </button>
         <button class="icon-btn" style="background:var(--gold-light);color:#7a5000"
           title="إرسال إنذار" onclick="sendWarningToUser('${u.id}')">
           <i class="fa fa-bell"></i>
@@ -549,6 +614,125 @@ function adminShowUserAds(uid, name) {
   adminUserFilter     = uid;
   adminUserFilterName = name;
   switchAdminTab('ads');
+}
+
+/* ══════════════════════════════════════════
+   تبويب استعادة الحساب
+══════════════════════════════════════════ */
+function recoveryEmailForUser(user) {
+  const email = String(user?.email || '').trim();
+  return email && !email.includes('@souq-aldeir.local') ? email : '';
+}
+
+function recoveryDate(ts) {
+  if (!ts) return 'الآن';
+  const ms = ts.toMillis ? ts.toMillis() : (ts.seconds || 0) * 1000;
+  return new Date(ms).toLocaleString('ar-EG');
+}
+
+function renderRecoveryTab(ct) {
+  const pending = adminRecoveryCache.filter(r => r.status === 'pending');
+  ct.innerHTML = `
+    <div class="admin-section-heading">
+      <div><div class="admin-eyebrow">مركز الدعم</div><h3>استعادة الحساب</h3></div>
+      <button class="btn btn-outline btn-sm" onclick="openRecoveryRequestForUser()"><i class="fa fa-plus"></i> إنشاء طلب</button>
+    </div>
+    <div class="recovery-explainer">
+      <i class="fa fa-circle-info"></i>
+      <div><strong>كيف نتعامل مع الطلب؟</strong><p>الحساب الذي لديه بريد حقيقي يستلم رابط Firebase مباشرة. الحساب المسجل برقم الهاتف فقط لا يمكن إرسال رابط بريد إليه؛ نرسل له تعليمات إضافة بريد استرداد أو نتواصل معه يدويًا.</p></div>
+    </div>
+    <div class="recovery-toolbar"><span><strong>${pending.length}</strong> طلبات معلقة</span><span class="recovery-free-badge"><i class="fa fa-wallet"></i> بدون SMS أو خدمة مدفوعة</span></div>
+    <div id="recoveryRequestsList">
+      ${pending.length ? pending.map(renderRecoveryCard).join('') : '<div class="empty-state"><i class="fa fa-check-circle"></i><p>لا توجد طلبات استعادة معلقة</p></div>'}
+    </div>`;
+}
+
+function renderRecoveryCard(request) {
+  const user = adminUsersCache.find(u => u.id === request.userId) || request;
+  const email = recoveryEmailForUser(user) || recoveryEmailForUser(request);
+  const hasEmail = !!email;
+  return `<article class="recovery-card ${hasEmail ? 'has-email' : 'phone-only'}">
+    <div class="recovery-icon"><i class="fa ${hasEmail ? 'fa-envelope' : 'fa-mobile-screen-button'}"></i></div>
+    <div class="recovery-body">
+      <div class="recovery-title">${escapeHtml(user.name || request.userName || 'مستخدم')}</div>
+      <div class="recovery-meta"><i class="fa fa-phone"></i> ${escapeHtml(user.phone || request.phone || '—')}</div>
+      <div class="recovery-meta"><i class="fa fa-envelope"></i> ${hasEmail ? escapeHtml(email) : 'لا يوجد بريد استرداد'}</div>
+      <div class="recovery-meta muted">طلب في ${recoveryDate(request.createdAt)}</div>
+    </div>
+    <div class="recovery-actions">
+      ${hasEmail ? `<button class="btn btn-green btn-sm" onclick="sendResetLinkForRequest('${request.id}','${request.userId}')"><i class="fa fa-paper-plane"></i> إرسال الرابط</button>` : `<button class="btn btn-gold btn-sm" onclick="sendPhoneRecoveryGuidance('${request.id}','${request.userId}')"><i class="fa fa-message"></i> إرسال التعليمات</button>`}
+      <button class="btn btn-outline btn-sm" onclick="closeRecoveryRequest('${request.id}')"><i class="fa fa-check"></i> إغلاق</button>
+    </div>
+  </article>`;
+}
+
+async function sendResetLinkForRequest(requestId, uid) {
+  const user = adminUsersCache.find(u => u.id === uid);
+  const request = adminRecoveryCache.find(r => r.id === requestId);
+  const email = recoveryEmailForUser(user) || recoveryEmailForUser(request);
+  if (!email) return;
+  adminConfirm(`سيتم إرسال رابط تغيير كلمة المرور إلى ${escapeHtml(email)}. هل تريد المتابعة؟`, async () => {
+    try {
+      await auth.sendPasswordResetEmail(email);
+      await db.collection('recoveryRequests').doc(requestId).update({ status: 'resolved', method: 'email', handledAt: firebase.firestore.FieldValue.serverTimestamp() });
+      adminRecoveryCache = adminRecoveryCache.filter(r => r.id !== requestId);
+      showToast('تم إرسال رابط تغيير كلمة المرور', 'ok');
+      checkAdminNotifs(); switchAdminTab('recovery');
+    } catch (error) {
+      showToast(error.code === 'auth/user-not-found' ? 'البريد غير مرتبط بحساب Firebase' : 'تعذر إرسال الرابط', 'bad');
+    }
+  }, false);
+}
+
+async function sendPhoneRecoveryGuidance(requestId, uid) {
+  const user = adminUsersCache.find(u => u.id === uid);
+  if (!user) return;
+  adminConfirm('سيصل المستخدم تنبيه يطلب منه إضافة بريد استرداد من صفحة حسابه. هل تريد الإرسال؟', async () => {
+    try {
+      await db.collection('users').doc(uid).collection('warnings').add({
+        message: 'لا يمكن إرسال رابط تغيير كلمة المرور إلى رقم الهاتف مباشرة. افتح حسابك، اختر «إضافة بريد الآن»، ثم أدخل بريدًا حقيقيًا مع كلمة المرور الحالية. بعد ذلك ستتمكن من استعادة كلمة المرور عبر البريد.',
+        read: false, type: 'recovery_guidance', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection('recoveryRequests').doc(requestId).update({ status: 'waiting_user', method: 'add_recovery_email', handledAt: firebase.firestore.FieldValue.serverTimestamp() });
+      adminRecoveryCache = adminRecoveryCache.filter(r => r.id !== requestId);
+      showToast('تم إرسال التعليمات للمستخدم', 'ok');
+      checkAdminNotifs(); switchAdminTab('recovery');
+    } catch (error) { showToast('تعذر إرسال التعليمات', 'bad'); }
+  }, false);
+}
+
+async function closeRecoveryRequest(requestId) {
+  await db.collection('recoveryRequests').doc(requestId).update({ status: 'closed', handledAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+  adminRecoveryCache = adminRecoveryCache.filter(r => r.id !== requestId);
+  showToast('تم إغلاق الطلب', 'ok'); checkAdminNotifs(); switchAdminTab('recovery');
+}
+
+function openRecoveryRequestForUser(uid) {
+  if (uid) {
+    const user = adminUsersCache.find(u => u.id === uid);
+    if (!user) return;
+    adminConfirm(`إنشاء طلب استعادة للحساب «${escapeHtml(user.name || 'مستخدم')}»؟`, async () => {
+      const existing = adminRecoveryCache.some(r => r.userId === uid && r.status === 'pending');
+      if (existing) { showToast('يوجد طلب معلق لهذا الحساب', 'bad'); return; }
+      await db.collection('recoveryRequests').add({ userId: uid, userName: user.name || '', phone: user.phone || '', currentEmail: user.email || '', status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      showToast('تم إنشاء الطلب', 'ok'); openAdminPanel();
+    }, false);
+    return;
+  }
+  showRecoveryUserPicker();
+}
+
+function showRecoveryUserPicker() {
+  const el = document.createElement('div'); el.className = 'admin-overlay';
+  el.innerHTML = `<div class="admin-dialog recovery-picker"><div class="admin-section-heading"><div><div class="admin-eyebrow">اختيار الحساب</div><h3>إنشاء طلب استعادة</h3></div><button class="icon-btn" onclick="this.closest('.admin-overlay').remove()">✕</button></div><input class="adm-search" id="recoveryPickerSearch" placeholder="ابحث بالاسم أو الهاتف أو البريد"><div id="recoveryPickerList"></div></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  const render = () => {
+    const q = (el.querySelector('#recoveryPickerSearch').value || '').toLowerCase();
+    const list = adminUsersCache.filter(u => `${u.name || ''} ${u.phone || ''} ${u.email || ''}`.toLowerCase().includes(q)).slice(0, 30);
+    el.querySelector('#recoveryPickerList').innerHTML = list.map(u => `<button class="recovery-picker-row" onclick="this.closest('.admin-overlay').remove();openRecoveryRequestForUser('${u.id}')"><span class="user-avatar" style="background:${getAvatarColor(u.name || '')}">${escapeHtml((u.name || 'م').charAt(0))}</span><span><strong>${escapeHtml(u.name || 'مستخدم')}</strong><small>${escapeHtml(u.phone || u.email || '—')}</small></span><i class="fa fa-chevron-left"></i></button>`).join('') || '<div class="empty-state"><p>لا توجد نتائج</p></div>';
+  };
+  el.querySelector('#recoveryPickerSearch').addEventListener('input', render); render();
 }
 
 /* ══════════════════════════════════════════
@@ -856,7 +1040,10 @@ function showUserProfile(uid) {
   if (!u) return;
   const adsCount = adminAdsAllCache.filter(a=>a.userId===uid).length;
   const color    = getAvatarColor(u.name||'');
-  const initial  = (u.name||'م').charAt(0);
+  const initial  = escapeHtml((u.name||'م').charAt(0));
+  const safeName = escapeHtml(u.name || 'مستخدم');
+  const safePhone = escapeHtml(u.phone || '—');
+  const safeEmail = escapeHtml(u.email || '—');
   const joinDate = u.createdAt ? new Date((u.createdAt.toMillis?u.createdAt.toMillis():(u.createdAt.seconds||0)*1000)).toLocaleDateString('ar-EG') : '—';
   const el = document.createElement('div');
   el.className = 'admin-overlay';
@@ -865,13 +1052,13 @@ function showUserProfile(uid) {
       <div style="text-align:center;margin-bottom:14px">
         <div style="width:64px;height:64px;border-radius:50%;background:${color};color:#fff;
           font-size:1.8em;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">${initial}</div>
-        <div style="font-size:1.05em;font-weight:800;color:var(--dark)">${u.name||'مستخدم'}</div>
+        <div style="font-size:1.05em;font-weight:800;color:var(--dark)">${safeName}</div>
         ${u.role==='admin'?'<span class="role-tag admin-tag">مدير النظام</span>':''}
         ${u.banned      ?'<span class="role-tag banned-tag">محظور</span>':''}
       </div>
       <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:12px">
-        <div class="info-row"><i class="fa fa-phone" style="color:var(--blue)"></i><span>${u.phone||'—'}</span></div>
-        <div class="info-row"><i class="fa fa-envelope" style="color:var(--blue)"></i><span>${u.email||'—'}</span></div>
+        <div class="info-row"><i class="fa fa-phone" style="color:var(--blue)"></i><span>${safePhone}</span></div>
+        <div class="info-row"><i class="fa fa-envelope" style="color:var(--blue)"></i><span>${safeEmail}</span></div>
         <div class="info-row"><i class="fa fa-calendar" style="color:var(--blue)"></i><span>انضم: ${joinDate}</span></div>
         <div class="info-row" style="border-bottom:none">
           <i class="fa fa-bullhorn" style="color:var(--green)"></i>

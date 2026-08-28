@@ -281,8 +281,12 @@ async function openDashboard() {
             استعادة تلقائي.
           </div>
         </div>
-        <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="showAddEmailForm()">
-          <i class="fa fa-envelope"></i> إضافة بريد الآن</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-gold btn-sm" onclick="showAddEmailForm()">
+            <i class="fa fa-envelope"></i> إضافة بريد الآن</button>
+          <button class="btn btn-outline btn-sm" onclick="requestRecoveryHelp()">
+            <i class="fa fa-headset"></i> طلب مساعدة</button>
+        </div>
       </div>` : ''}
 
     <!-- ── Profile header ── -->
@@ -469,6 +473,27 @@ async function doAddRecoveryEmail() {
   } finally {
     btn.disabled = false; btn.innerHTML = '<i class="fa fa-envelope"></i> إضافة البريد';
   }
+}
+
+async function requestRecoveryHelp() {
+  if (!currentUser) return;
+  const existing = await db.collection('recoveryRequests')
+    .where('userId', '==', currentUser.uid).limit(10).get().catch(() => null);
+  if (existing && existing.docs.some(doc => doc.data().status === 'pending')) {
+    showToast('لديك طلب استعادة قيد المتابعة بالفعل', 'bad');
+    return;
+  }
+  const userDoc = await db.collection('users').doc(currentUser.uid).get().catch(() => null);
+  const data = userDoc && userDoc.exists ? userDoc.data() : {};
+  await db.collection('recoveryRequests').add({
+    userId: currentUser.uid,
+    userName: data.name || currentUser.displayName || 'مستخدم',
+    phone: data.phone || '',
+    currentEmail: data.email || currentUser.email || '',
+    status: 'pending',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => showToast('تم إرسال طلبك للإدارة', 'ok'))
+    .catch(() => showToast('تعذر إرسال الطلب، حاول مجددًا', 'bad'));
 }
 
 /* kept for backward compat (HTML buttons may still call it) */

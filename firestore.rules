@@ -104,6 +104,15 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    match /recoveryRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
