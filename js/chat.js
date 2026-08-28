@@ -81,11 +81,11 @@ function renderChatList() {
     const msgAt = (data.lastMessageAt && data.lastMessageAt.toMillis) ? data.lastMessageAt.toMillis() : 0;
     const isUnread = data.lastSenderId && data.lastSenderId !== currentUser.uid && msgAt > seenAt;
     return `<div class="chat-row" onclick="openChat('${data.id}','${otherId}','${otherName}','${(data.adTitle || '').replace(/'/g, '')}')">
-      <div class="chat-avatar">${otherName.charAt(0).toUpperCase()}</div>
+      <div class="chat-avatar">${escapeHtml(otherName.charAt(0).toUpperCase())}</div>
       <div class="chat-info">
-        <div class="chat-name">${otherName}${isUnread ? ' 🔵' : ''}</div>
-        <div class="chat-msg">${data.lastMessage || 'ابدأ المحادثة'}</div>
-        <div class="chat-msg" style="font-size:.68em;margin-top:2px">${data.adTitle || ''}</div>
+        <div class="chat-name">${escapeHtml(otherName)}${isUnread ? ' 🔵' : ''}</div>
+        <div class="chat-msg">${escapeHtml(data.lastMessage || 'ابدأ المحادثة')}</div>
+        <div class="chat-msg" style="font-size:.68em;margin-top:2px">${escapeHtml(data.adTitle || '')}</div>
       </div>
     </div>`;
   });
@@ -116,7 +116,7 @@ function openChat(chatId, otherId, otherName, adTitle) {
   document.getElementById('msgTitle').textContent = otherName;
   const content = document.getElementById('msgContent');
   content.innerHTML = `
-    <div style="font-size:.75em;color:var(--gray);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:8px"><i class="fa fa-tag"></i> ${adTitle}</div>
+    <div style="font-size:.75em;color:var(--gray);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:8px"><i class="fa fa-tag"></i> ${escapeHtml(adTitle)}</div>
     <div class="chat-window">
       <div class="chat-msgs" id="chatMsgs"><div style="text-align:center;color:var(--gray);padding:20px"><i class="fa fa-spinner fa-spin"></i></div></div>
       <div class="chat-input-bar">
@@ -136,7 +136,7 @@ function openChat(chatId, otherId, otherName, adTitle) {
     el.innerHTML = snap.empty ? '<div style="text-align:center;color:var(--gray);padding:30px;font-size:.85em">ابدأ المحادثة 👋</div>' :
       snap.docs.map(d => {
         const m = d.data(); const mine = m.senderId === currentUser.uid;
-        return `<div class="msg-bubble ${mine ? 'mine' : 'theirs'}">${m.text}<div class="msg-time">${timeAgo(m.createdAt)}</div></div>`;
+        return `<div class="msg-bubble ${mine ? 'mine' : 'theirs'}">${escapeHtml(m.text)}<div class="msg-time">${timeAgo(m.createdAt)}</div></div>`;
       }).join('');
     el.scrollTop = el.scrollHeight;
     markChatSeen(chatId); // messages arriving while the chat is open count as read

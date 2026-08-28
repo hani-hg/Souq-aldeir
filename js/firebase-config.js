@@ -14,7 +14,6 @@ const ADMIN_EMAIL = 'hg78@live.com';
 const ADMIN_PHONE = '+90 552 274 09 10';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
-const WHATSAPP_NUMBER = '905522740910'; // نفس رقم الهاتف أعلاه، بصيغة دولية بدون + أو مسافات
 
 /* ---- Firebase init ---- */
 firebase.initializeApp({
@@ -47,6 +46,6 @@ let myWarnings = []; // unread admin warnings for the signed-in user
 
 /* Editable contact info: admin can change these from the panel without
    touching code (see admin.js saveContactSettings / loadContactSettings). */
-let contactSettings = { email: ADMIN_EMAIL, phone: ADMIN_PHONE, whatsapp: WHATSAPP_NUMBER };
+let contactSettings = { email: ADMIN_EMAIL, phone: ADMIN_PHONE };
 
 

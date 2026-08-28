@@ -3,7 +3,7 @@
    Strategy: Cache-first for static assets, network-first for data.
    ============================================================ */
 
-const CACHE = 'souq-aldeir-v1';
+const CACHE = 'souq-aldeir-v2';
 const STATIC = [
   '/',
   '/index.html',
@@ -19,9 +19,7 @@ const STATIC = [
   '/js/admin.js',
   '/js/app.js',
   '/favicon.svg',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+  '/manifest.json'
 ];
 
 /* ── Install: pre-cache static shell ── */
@@ -58,7 +56,11 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, res.clone()));
         }
         return res;
-      }).catch(() => cached);
+      }).catch(() => {
+        if (cached) return cached;
+        if (e.request.mode === 'navigate') return caches.match('/index.html');
+        return Response.error();
+      });
       return cached || network;
     })
   );

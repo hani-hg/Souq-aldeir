@@ -668,7 +668,6 @@ function switchSettingsTab(stab) {
         <div class="section-label">📞 بيانات التواصل</div>
         <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="settingsEmail" value="${contactSettings.email||''}"></div>
         <div class="fg"><label>رقم الهاتف</label><input type="text" id="settingsPhone" value="${contactSettings.phone||''}"></div>
-        <div class="fg"><label>رقم واتساب (دولي مثل 963944000000)</label><input type="text" id="settingsWhatsapp" value="${contactSettings.whatsapp||''}"></div>
         <button class="btn btn-blue btn-sm" onclick="saveContactSettings()"><i class="fa fa-save"></i> حفظ</button>`;
       break;
 
@@ -1006,14 +1005,16 @@ async function sendWarningToUser(uid) {
    الإعدادات العامة
 ══════════════════════════════════════════ */
 async function saveContactSettings() {
-  const email    = document.getElementById('settingsEmail')?.value.trim()||'';
-  const phone    = document.getElementById('settingsPhone')?.value.trim()||'';
-  const whatsapp = document.getElementById('settingsWhatsapp')?.value.trim().replace(/[^0-9]/g,'')||'';
-  if (!whatsapp) { showToast('رقم الواتساب غير صالح','bad'); return; }
-  await db.collection('settings').doc('contact').set({email,phone,whatsapp})
-    .catch(()=>{ showToast('تعذر الحفظ','bad'); return; });
-  contactSettings = {email,phone,whatsapp};
-  showToast('تم حفظ بيانات التواصل ✅','ok');
+  const email = document.getElementById('settingsEmail')?.value.trim() || '';
+  const phone = document.getElementById('settingsPhone')?.value.trim() || '';
+  if (!email && !phone) { showToast('أدخل البريد الإلكتروني أو رقم الهاتف', 'bad'); return; }
+  try {
+    await db.collection('settings').doc('contact').set({ email, phone }, { merge: true });
+    contactSettings = { ...contactSettings, email, phone };
+    showToast('تم حفظ بيانات التواصل ✅', 'ok');
+  } catch (error) {
+    showToast('تعذر حفظ بيانات التواصل', 'bad');
+  }
 }
 
 async function saveNews() {

@@ -121,12 +121,10 @@ async function doResetStep1() {
     const userData = snap.docs[0].data();
     const hasRealEmail = !!(userData.email && userData.email.trim() && !userData.email.includes('@souq-aldeir.local'));
     if (!hasRealEmail) {
-      const msg = `طلب إعادة تعيين كلمة المرور%0Aرقم الهاتف: ${phone}%0Aالاسم: ${userData.name || ''}`;
       sucEl.innerHTML = `هذا الحساب مسجّل برقم هاتف فقط بدون بريد إلكتروني — لا يمكن إرسال رابط تلقائي.
-        تواصل مع الإدارة عبر واتساب وسيتم إعادة تعيين كلمة المرور يدوياً.<br><br>
-        <a href="https://wa.me/${contactSettings.whatsapp}?text=${msg}" target="_blank"
-           class="btn btn-green btn-sm" style="display:inline-flex;margin-top:6px">
-          <i class="fa fa-comment"></i> تواصل عبر واتساب</a>`;
+        اتصل بالإدارة وسيتم مساعدتك في استعادة الحساب يدوياً.<br><br>
+        <a href="tel:${contactSettings.phone || ''}" class="btn btn-blue btn-sm" style="display:inline-flex;margin-top:6px">
+          <i class="fa fa-phone"></i> الاتصال بالإدارة</a>`;
       sucEl.className = 'suc show'; return;
     }
     await auth.sendPasswordResetEmail(userData.email, { url: location.origin });
@@ -270,8 +268,7 @@ async function openDashboard() {
         <i class="fa fa-sign-out-alt"></i> تسجيل الخروج</button>
     </div>
 
-    <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:18px"
-       onclick="secretAdminTap()">v2.1</p>
+    <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:18px">v2.1</p>
   `;
 }
 
@@ -378,27 +375,4 @@ function doLogout() {
   auth.signOut().then(() => { closeModal('dashModal'); showToast('تم تسجيل الخروج'); });
 }
 
-/* ── Admin bootstrap (one-time, code-word gated) ── */
-async function makeAdmin() {
-  if (!currentUser) return;
-  const pw = prompt('أدخل رمز الإدارة:');
-  if (pw !== 'SOUQ2025ADMIN') { alert('رمز خاطئ'); return; }
-  await db.collection('users').doc(currentUser.uid).update({ role: 'admin' });
-  alert('✅ تم منح صلاحية المدير! أعد تحميل الصفحة'); location.reload();
-}
-
-let adminTapCount = 0;
-function secretAdminTap() {
-  if (!currentUser) return;
-  adminTapCount++;
-  if (adminTapCount >= 5) {
-    adminTapCount = 0;
-    if (confirm('هل أنت مطور الموقع؟ هل تريد جعل هذا الحساب مديراً؟')) {
-      db.collection('users').doc(currentUser.uid).update({ role: 'admin' }).then(() => {
-        isAdmin = true;
-        document.getElementById('adminNavBtn').style.display = 'flex';
-        showToast('تم منحك صلاحيات المدير ✅', 'ok'); openDashboard();
-      }).catch(() => showToast('حدث خطأ', 'bad'));
-    }
-  }
-}
+/* تمنح صلاحيات المدير خارج العميل فقط عبر حساب موثوق وقواعد Firebase. */

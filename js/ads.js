@@ -16,7 +16,9 @@ const CATS = [
 function renderCats() {
   document.getElementById('catsScroll').innerHTML = CATS.map(c => `
     <div class="cat-chip ${(activeCat === c.n) || (activeCat === null && c.n === 'الكل') ? 'active' : ''}"
-         onclick="filterCat('${c.n}')">
+         role="button" tabindex="0" aria-pressed="${activeCat === c.n || (activeCat === null && c.n === 'الكل')}"
+         onclick="filterCat('${c.n}')"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterCat('${c.n}');}">
       <i class="fa ${c.i}"></i><span>${c.n}</span>
     </div>`).join('');
   const opts = CATS.filter(c => c.n !== 'الكل').map(c => `<option value="${c.n}">${c.n}</option>`).join('');
@@ -44,35 +46,48 @@ function loadNews() {
 }
 
 /* ============ LOAD ADS ============ */
-function loadAds() {
+let adsLoadSeq = 0;
+
+async function loadAds() {
   const g = document.getElementById('adsGrid');
-  g.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
-  db.collection('ads').orderBy('createdAt', 'desc').limit(150).get()
-    .then(snap => {
-      allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // auto-expire: remove featured flag for past-due ads
-      const now = Date.now();
-      const expiredIds = allAds
-        .filter(a => a.featured && a.featuredUntil && a.featuredUntil.toMillis && a.featuredUntil.toMillis() < now)
-        .map(a => a.id);
-      expiredIds.forEach(id => {
-        db.collection('ads').doc(id).update({ featured: false }).catch(() => {});
-        const ad = allAds.find(a => a.id === id);
-        if (ad) ad.featured = false;
-      });
-      // hide expired regular ads
-      allAds = allAds.filter(a => {
-        if (!a.expiresAt) return true;
-        const ms = a.expiresAt.toMillis ? a.expiresAt.toMillis() : (a.expiresAt.seconds * 1000);
-        return ms > now;
-      });
-      const fAds = allAds.filter(a => a.featured);
-      buildSlider(fAds);
-      applyFilter();
-      populateFeaturedSelect();
-      openSharedAdIfAny();
-    })
-    .catch(() => { g.innerHTML = '<div class="empty-state"><i class="fa fa-exclamation-circle"></i><p>تعذر التحميل</p></div>'; });
+  if (!g) return;
+  const loadSeq = ++adsLoadSeq;
+  g.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري تحميل الإعلانات...</p></div>';
+
+  try {
+    const snap = await Promise.race([
+      db.collection('ads').orderBy('createdAt', 'desc').limit(40).get(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+    ]);
+    if (loadSeq !== adsLoadSeq) return;
+
+    allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const now = Date.now();
+    const expiredIds = allAds
+      .filter(a => a.featured && a.featuredUntil && a.featuredUntil.toMillis && a.featuredUntil.toMillis() < now)
+      .map(a => a.id);
+    expiredIds.forEach(id => {
+      db.collection('ads').doc(id).update({ featured: false }).catch(() => {});
+      const ad = allAds.find(a => a.id === id);
+      if (ad) ad.featured = false;
+    });
+    allAds = allAds.filter(a => {
+      if (!a.expiresAt) return true;
+      const ms = a.expiresAt.toMillis ? a.expiresAt.toMillis() : (a.expiresAt.seconds * 1000);
+      return ms > now;
+    });
+    buildSlider(allAds.filter(a => a.featured));
+    applyFilter();
+    populateFeaturedSelect();
+    openSharedAdIfAny();
+  } catch (error) {
+    if (loadSeq !== adsLoadSeq) return;
+    g.innerHTML = `<div class="empty-state load-error">
+      <i class="fa fa-wifi"></i><p>تعذر تحميل الإعلانات حالياً</p>
+      <small>تحقق من الاتصال ثم حاول مرة أخرى</small>
+      <button class="btn btn-outline btn-sm" onclick="loadAds()">إعادة المحاولة</button>
+    </div>`;
+  }
 }
 
 /* Opens the ad referenced by ?ad=ID in the URL (from shareAd()'s link), once. */
@@ -110,15 +125,15 @@ function renderAds(list) {
     <div class="ad-card ${ad.featured ? 'featured' : ''}" onclick="openDetail('${ad.id}')">
       ${ad.featured ? '<div class="featured-badge">⭐ مميز</div>' : ''}
       <div style="position:relative">
-        ${cover ? `<img class="ad-img" src="${cover}" alt="${ad.title || ''}" loading="lazy">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
+        ${cover ? `<img class="ad-img" src="${escapeHtml(cover)}" alt="${escapeHtml(ad.title)}" loading="lazy">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
         <button class="ad-fav ${favorites.has(ad.id) ? 'liked' : ''}" onclick="event.stopPropagation();toggleFav('${ad.id}',this)"><i class="fa fa-heart"></i></button>
-        ${ad.category ? `<span class="ad-cat-badge">${ad.category}</span>` : ''}
+        ${ad.category ? `<span class="ad-cat-badge">${escapeHtml(ad.category)}</span>` : ''}
         ${(photoCount > 1 || ad.videoUrl) ? `<span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.62em;font-weight:700;padding:2px 7px;border-radius:20px">${ad.videoUrl ? '<i class="fa fa-video"></i>' : ''} ${photoCount > 1 ? photoCount : ''}</span>` : ''}
       </div>
       <div class="ad-body">
         <div class="ad-price">${formatPrice(ad)}</div>
-        <div class="ad-title">${ad.title || ''}</div>
-        <div class="ad-loc"><i class="fa fa-map-marker-alt"></i> ${ad.area || 'دير الزور'}</div>
+        <div class="ad-title">${escapeHtml(ad.title)}</div>
+        <div class="ad-loc"><i class="fa fa-map-marker-alt"></i> ${escapeHtml(ad.area || 'دير الزور')}</div>
         <div class="ad-time">${timeAgo(ad.createdAt)}</div>
       </div>
     </div>`;
@@ -142,7 +157,7 @@ function showFavorites() {
   c.innerHTML = favAds.length ? favAds.map(ad => `
     <div class="my-ad-row" onclick="closeModal('favModal');openDetail('${ad.id}')">
       <div class="my-ad-img">${ad.imageUrl ? `<img src="${ad.imageUrl}">` : '<i class="fa fa-image"></i>'}</div>
-      <div class="my-ad-info"><div class="my-ad-title">${ad.title || ''}</div><div class="my-ad-price">${formatPrice(ad)}</div></div>
+      <div class="my-ad-info"><div class="my-ad-title">${escapeHtml(ad.title)}</div><div class="my-ad-price">${formatPrice(ad)}</div></div>
       <i class="fa fa-chevron-left" style="color:var(--gray);font-size:.8em"></i>
     </div>`).join('')
     : '<div class="empty-state"><i class="fa fa-heart"></i><p>لا توجد إعلانات في المفضلة</p></div>';
@@ -173,7 +188,7 @@ function openDetail(id) {
     </div>
     ${ad.phone ? `
       <a href="tel:${ad.phone}" class="call-btn"><i class="fa fa-phone-alt"></i> اتصل بالبائع</a>
-      <a href="https://wa.me/${ad.phone.replace(/\D/g, '')}" target="_blank" class="whatsapp-btn"><i class="fa fa-comment"></i> تواصل عبر واتساب</a>` : ''}
+` : ''}
     <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
     ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="startChat('${ad.id}','${ad.userId}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-flag"></i> إبلاغ</button></div>` : ''}
     ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>` : ''}
@@ -197,7 +212,7 @@ function renderSellerOtherAdsHtml(ad) {
         const cover = (o.images && o.images.length) ? o.images[0] : o.imageUrl;
         return `<div onclick="openDetail('${o.id}')" style="flex-shrink:0;width:110px;cursor:pointer">
           ${cover ? `<img src="${cover}" style="width:110px;height:90px;object-fit:cover;border-radius:10px">` : `<div style="width:110px;height:90px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:#aab"><i class="fa fa-image"></i></div>`}
-          <div style="font-size:.72em;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.title || ''}</div>
+          <div style="font-size:.72em;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(o.title)}</div>
           <div style="font-size:.7em;color:var(--green);font-weight:700">${formatPrice(o)}</div>
         </div>`;
       }).join('')}
@@ -259,6 +274,12 @@ async function doAddAd() {
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري النشر...';
   try {
     const imgFiles = Array.from(document.getElementById('adImg').files || []).slice(0, 5);
+    const videoFile = document.getElementById('adVideo').files[0];
+    const invalidImage = imgFiles.find(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
+    if (invalidImage) throw new Error('كل صورة يجب أن تكون JPG أو PNG أو WebP وحجمها أقل من 5MB');
+    if (videoFile && (!['video/mp4', 'video/webm', 'video/quicktime'].includes(videoFile.type) || videoFile.size > 25 * 1024 * 1024)) {
+      throw new Error('الفيديو يجب أن يكون MP4 أو WebM أو MOV وحجمه أقل من 25MB');
+    }
     const images = [];
     for (const f of imgFiles) {
       const fd = new FormData();
@@ -270,7 +291,6 @@ async function doAddAd() {
     }
 
     let videoUrl = null;
-    const videoFile = document.getElementById('adVideo').files[0];
     if (videoFile) {
       const fd = new FormData();
       fd.append('file', videoFile); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads_video');
@@ -371,15 +391,17 @@ async function requestFeatured() {
   const adId = document.getElementById('featuredAdSel').value;
   if (!adId) { showToast('اختر إعلاناً أولاً', 'bad'); return; }
   const ad = allAds.find(a => a.id === adId);
-  await db.collection('featuredRequests').add({
-    adId, adTitle: ad ? ad.title : '', userId: currentUser.uid,
-    userEmail: currentUser.email || '', plan: selectedPlan,
-    status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(() => {});
-  const msg = `طلب تمييز إعلان%0Aالإعلان: ${ad ? ad.title : ''}%0Aالخطة: ${selectedPlan}%0Aالبريد: ${currentUser.email || ''}`;
-  window.open(`https://wa.me/${contactSettings.whatsapp}?text=${msg}`, '_blank');
-  closeModal('featuredModal');
-  showToast('تم إرسال طلبك! سيتم التواصل قريباً ✅', 'ok');
+  try {
+    await db.collection('featuredRequests').add({
+      adId, adTitle: ad ? ad.title : '', userId: currentUser.uid,
+      userEmail: currentUser.email || '', plan: selectedPlan,
+      status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal('featuredModal');
+    showToast('تم إرسال طلبك، ستتواصل معك الإدارة هاتفياً ✅', 'ok');
+  } catch (error) {
+    showToast('تعذر إرسال الطلب، حاول مرة أخرى', 'bad');
+  }
 }
 
 /* ============ REPORT AD ============ */
@@ -408,7 +430,8 @@ function loadContactSettings() {
 async function openAboutModal() {
   document.getElementById('aboutEmail').textContent = contactSettings.email;
   document.getElementById('aboutPhone').textContent = contactSettings.phone;
-  document.getElementById('aboutWhatsapp').href = `https://wa.me/${contactSettings.whatsapp}`;
+  const phoneLink = document.getElementById('aboutPhoneLink');
+  if (phoneLink) phoneLink.href = `tel:${contactSettings.phone || ''}`;
   document.getElementById('statAds').textContent = allAds.length;
   openModal('aboutModal');
 
