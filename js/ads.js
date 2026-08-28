@@ -1,8 +1,7 @@
 /* ============================================================
    ads.js
    Categories, home feed (load/filter/render), favorites,
-   ad detail view, add/edit/delete ad. النشر مجاني بالكامل — كل إعلان
-   يُميَّز تلقائياً بدون أي رسوم.
+   ad detail view, add/edit/delete ad, "featured ad" request flow.
    ============================================================ */
 
 /* ============ CATEGORIES ============ */
@@ -36,7 +35,7 @@ function filterCat(n) {
 /* ============ NEWS TICKER ============ */
 function loadNews() {
   db.collection('settings').doc('news').get().then(doc => {
-    let items = ['مرحباً بكم في سوق دير الزور المفتوح 🛒', 'أول سوق إلكتروني في دير الزور', 'النشر مجاني بالكامل للجميع ✅', 'جميع الإعلانات تُنشر مميزة تلقائياً بدون أي رسوم'];
+    let items = ['مرحباً بكم في سوق دير الزور المفتوح 🛒', 'أول سوق إلكتروني في دير الزور', 'النشر مجاني للجميع', 'للإعلانات المميزة تواصل مع الإدارة'];
     if (doc.exists && doc.data().items) items = doc.data().items;
     document.getElementById('newsTicker').innerHTML = items.map(i => `<span>📌 ${i}</span>`).join('');
   }).catch(() => {
@@ -68,7 +67,7 @@ function loadAds() {
         return ms > now;
       });
       const fAds = allAds.filter(a => a.featured);
-      buildSlider(fAds.slice(0, 10));
+      buildSlider(fAds);
       applyFilter();
       populateFeaturedSelect();
       openSharedAdIfAny();
@@ -285,7 +284,7 @@ async function doAddAd() {
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
-      images, imageUrl: images[0] || null, videoUrl, featured: true, views: 0,
+      images, imageUrl: images[0] || null, videoUrl, featured: false, views: 0,
       userId: currentUser.uid, userEmail: currentUser.email,
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -348,6 +347,39 @@ function confirmDelete(id) {
   if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
   db.collection('ads').doc(id).delete().then(() => { closeModal('detailModal'); showToast('تم حذف الإعلان', 'ok'); loadAds(); })
     .catch(() => showToast('خطأ أثناء الحذف', 'bad'));
+}
+
+/* ============ FEATURED AD REQUEST (user-facing) ============ */
+function openFeaturedModal() {
+  if (!currentUser) { openModal('authModal'); showToast('سجل دخولك أولاً', 'bad'); return; }
+  populateFeaturedSelect(); openModal('featuredModal');
+}
+
+function populateFeaturedSelect() {
+  const sel = document.getElementById('featuredAdSel'); if (!sel || !currentUser) return;
+  const myAds = allAds.filter(a => a.userId === currentUser.uid);
+  sel.innerHTML = '<option value="">-- اختر إعلانك --</option>' + myAds.map(a => `<option value="${a.id}">${a.title || 'إعلان'}</option>`).join('');
+}
+
+function selectPlan(el, plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function requestFeatured() {
+  const adId = document.getElementById('featuredAdSel').value;
+  if (!adId) { showToast('اختر إعلاناً أولاً', 'bad'); return; }
+  const ad = allAds.find(a => a.id === adId);
+  await db.collection('featuredRequests').add({
+    adId, adTitle: ad ? ad.title : '', userId: currentUser.uid,
+    userEmail: currentUser.email || '', plan: selectedPlan,
+    status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(() => {});
+  const msg = `طلب تمييز إعلان%0Aالإعلان: ${ad ? ad.title : ''}%0Aالخطة: ${selectedPlan}%0Aالبريد: ${currentUser.email || ''}`;
+  window.open(`https://wa.me/${contactSettings.whatsapp}?text=${msg}`, '_blank');
+  closeModal('featuredModal');
+  showToast('تم إرسال طلبك! سيتم التواصل قريباً ✅', 'ok');
 }
 
 /* ============ REPORT AD ============ */

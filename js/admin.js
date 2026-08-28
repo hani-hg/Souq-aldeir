@@ -218,13 +218,6 @@ function renderDashboard(ct) {
       </div>
     </div>
 
-    <!-- إعلانات تجريبية -->
-    <div class="adm-section-card" style="border-color:var(--gold)">
-      <div class="adm-section-head"><i class="fa fa-magic" style="color:var(--gold)"></i> إعلانات تجريبية (Demo)</div>
-      <p style="font-size:.8em;color:var(--gray);margin-bottom:10px">إضافة 8 إعلانات وهمية (عقارات، سيارات، أثاث، إلكترونيات، وظائف) لتعبئة الموقع بمحتوى جاهز للعرض. يمكن حذفها لاحقاً من تبويب الإعلانات.</p>
-      <button class="btn btn-gold btn-sm" onclick="seedDemoAds()"><i class="fa fa-plus"></i> إضافة الإعلانات التجريبية</button>
-    </div>
-
     <!-- طلبات التمييز المعلقة -->
     ${adminReqsCache.length ? `
     <div class="adm-section-card" style="border-color:#f9a825">
@@ -1064,4 +1057,3 @@ function clearAdsUserFilter() {
   adminUserFilterName = '';
   applyAdsFilter();
 }
-
