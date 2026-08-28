@@ -45,28 +45,12 @@ function loadNews() {
 }
 
 /* ============ LOAD ADS ============ */
-let adsLastDoc = null;
-let adsHasMore = false;
-let adsLoading = false;
-const ADS_PAGE_SIZE = 30;
-
-function loadAds(reset = true) {
+function loadAds() {
   const g = document.getElementById('adsGrid');
-  if (adsLoading) return;
-  adsLoading = true;
-  if (reset) {
-    adsLastDoc = null;
-    adsHasMore = false;
-    g.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
-  }
-  let query = db.collection('ads').orderBy('createdAt', 'desc').limit(ADS_PAGE_SIZE);
-  if (!reset && adsLastDoc) query = query.startAfter(adsLastDoc);
-  query.get()
+  g.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
+  db.collection('ads').orderBy('createdAt', 'desc').limit(150).get()
     .then(snap => {
-      const pageAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      allAds = reset ? pageAds : [...allAds, ...pageAds];
-      adsLastDoc = snap.docs.length ? snap.docs[snap.docs.length - 1] : adsLastDoc;
-      adsHasMore = snap.size === ADS_PAGE_SIZE;
+      allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       // auto-expire: remove featured flag for past-due ads
       const now = Date.now();
       const expiredIds = allAds
@@ -77,9 +61,8 @@ function loadAds(reset = true) {
         const ad = allAds.find(a => a.id === id);
         if (ad) ad.featured = false;
       });
-      // hide expired regular ads + hide pending/rejected ads from public feed
+      // hide expired regular ads
       allAds = allAds.filter(a => {
-        if (a.status && a.status !== 'approved') return false;
         if (!a.expiresAt) return true;
         const ms = a.expiresAt.toMillis ? a.expiresAt.toMillis() : (a.expiresAt.seconds * 1000);
         return ms > now;
@@ -90,12 +73,7 @@ function loadAds(reset = true) {
       populateFeaturedSelect();
       openSharedAdIfAny();
     })
-    .catch(() => { if (reset) g.innerHTML = '<div class="empty-state"><i class="fa fa-exclamation-circle"></i><p>تعذر التحميل</p></div>'; })
-    .finally(() => { adsLoading = false; });
-}
-
-function loadMoreAds() {
-  loadAds(false);
+    .catch(() => { g.innerHTML = '<div class="empty-state"><i class="fa fa-exclamation-circle"></i><p>تعذر التحميل</p></div>'; });
 }
 
 /* Opens the ad referenced by ?ad=ID in the URL (from shareAd()'s link), once. */
@@ -107,17 +85,7 @@ function openSharedAdIfAny() {
   if (allAds.find(a => a.id === adId)) {
     sharedAdOpened = true;
     openDetail(adId);
-    return;
   }
-  /* الروابط القديمة قد تشير إلى إعلان خارج الدفعة الأولى */
-  db.collection('ads').doc(adId).get().then(doc => {
-    if (!doc.exists) return;
-    const ad = { id: doc.id, ...doc.data() };
-    if (ad.status && ad.status !== 'approved') return;
-    allAds.push(ad);
-    sharedAdOpened = true;
-    openDetail(adId);
-  }).catch(() => {});
 }
 
 function applyFilter() {
@@ -155,10 +123,7 @@ function renderAds(list) {
         <div class="ad-time">${timeAgo(ad.createdAt)}</div>
       </div>
     </div>`;
-  }).join('') + (adsHasMore ? `
-    <button class="btn btn-outline load-more-btn" onclick="loadMoreAds()">
-      <i class="fa fa-plus"></i> تحميل المزيد
-    </button>` : '');
+  }).join('');
 }
 
 /* ============ FAVORITES ============ */
@@ -275,46 +240,6 @@ function initAddAdForm() {
   };
 }
 
-function getLocalDayKey(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-async function assertCanPublishToday() {
-  const snap = await db.collection('users').doc(currentUser.uid).get();
-  if (snap.exists && snap.data().lastAdPostDay === getLocalDayKey()) {
-    throw new Error('يمكنك نشر إعلان واحد فقط كل يوم. حاول غداً.');
-  }
-}
-
-function optimizeImage(file) {
-  if (!file || !file.type.startsWith('image/')) return Promise.resolve(file);
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('تعذر قراءة الصورة'));
-    reader.onload = event => {
-      const image = new Image();
-      image.onerror = () => reject(new Error('ملف الصورة غير صالح'));
-      image.onload = () => {
-        const maxSide = 1600;
-        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(image.width * scale));
-        canvas.height = Math.max(1, Math.round(image.height * scale));
-        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(blob => {
-          if (!blob) return reject(new Error('تعذر ضغط الصورة'));
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
-        }, 'image/jpeg', .82);
-      };
-      image.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
 async function doAddAd() {
   const title = document.getElementById('adTitle').value.trim();
   const desc = document.getElementById('adDesc').value.trim();
@@ -334,12 +259,9 @@ async function doAddAd() {
   const btn = document.getElementById('addSubmit');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري النشر...';
   try {
-    await assertCanPublishToday();
     const imgFiles = Array.from(document.getElementById('adImg').files || []).slice(0, 5);
     const images = [];
-    for (const originalFile of imgFiles) {
-      if (originalFile.size > 10 * 1024 * 1024) throw new Error('حجم كل صورة يجب ألا يتجاوز 10 ميغابايت');
-      const f = await optimizeImage(originalFile);
+    for (const f of imgFiles) {
       const fd = new FormData();
       fd.append('file', f); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads');
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
@@ -351,7 +273,6 @@ async function doAddAd() {
     let videoUrl = null;
     const videoFile = document.getElementById('adVideo').files[0];
     if (videoFile) {
-      if (videoFile.size > 30 * 1024 * 1024) throw new Error('حجم الفيديو يجب ألا يتجاوز 30 ميغابايت');
       const fd = new FormData();
       fd.append('file', videoFile); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads_video');
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: fd });
@@ -360,42 +281,17 @@ async function doAddAd() {
       videoUrl = data.secure_url;
     }
 
-    const durationDays = 30;
+    const durationDays = parseInt(document.getElementById('adDuration')?.value || '60');
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
-    const adData = {
+    await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
-      images, imageUrl: images[0] || null, videoUrl, featured: false, views: 0,
+      images, imageUrl: images[0] || null, videoUrl, featured: true, views: 0,
       userId: currentUser.uid, userEmail: currentUser.email,
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-      durationDays,
-      status: 'pending'
-    };
-    const userRef = db.collection('users').doc(currentUser.uid);
-    const adRef = db.collection('ads').doc();
-    await db.runTransaction(async transaction => {
-      const userSnap = await transaction.get(userRef);
-      if (userSnap.exists && userSnap.data().lastAdPostDay === getLocalDayKey()) {
-        throw new Error('يمكنك نشر إعلان واحد فقط كل يوم. حاول غداً.');
-      }
-      transaction.set(userRef, {
-        lastAdPostDay: getLocalDayKey(),
-        lastAdPostAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-      transaction.set(adRef, adData);
+      durationDays
     });
-    /* إشعار المدير بإعلان جديد */
-    db.collection('adminNotifications').add({
-      type: 'new_ad',
-      adId: adRef.id,
-      adTitle: title,
-      userName: currentUser.displayName || 'مستخدم',
-      userId: currentUser.uid,
-      userEmail: currentUser.email,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      read: false
-    }).catch(()=>{});
     closeModal('addModal');
     ['adTitle', 'adDesc', 'adPrice', 'adPhone', 'adAreaOther'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('adCat').value = '';
@@ -405,7 +301,7 @@ async function doAddAd() {
     document.getElementById('videoPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
     document.getElementById('adVideo').value = '';
-    showToast('تم إرسال إعلانك وهو قيد المراجعة ⏳ سيظهر بعد موافقة الإدارة', 'ok');
+    showToast('تم نشر إعلانك بنجاح! 🎉', 'ok');
     loadAds();
   } catch (ex) {
     errEl.textContent = ex.message || 'حدث خطأ أثناء النشر';
@@ -441,30 +337,9 @@ async function doEditAd() {
   const btn = document.getElementById('editSubmit');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
   try {
-    const ad = allAds.find(a => a.id === id);
-    const changes = { title, description: desc, price: parseFloat(price) || 0, phone, category: cat };
-    /* أي تعديل على إعلان منشور يعود للمراجعة حتى لا يتجاوز المحتوى الجديد الإدارة */
-    if (!ad || ad.status !== 'pending') {
-      changes.status = 'pending';
-      changes.reviewedAt = firebase.firestore.FieldValue.delete();
-      changes.rejectionReason = firebase.firestore.FieldValue.delete();
-    }
-    await db.collection('ads').doc(id).update(changes);
-    if (changes.status === 'pending') {
-      db.collection('adminNotifications').add({
-        type: 'updated_ad',
-        adId: id,
-        adTitle: title,
-        userName: currentUser.displayName || 'مستخدم',
-        userId: currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        read: false
-      }).catch(() => {});
-    }
-    closeModal('editModal');
-    showToast(changes.status === 'pending' ? 'تم حفظ التعديل وهو قيد المراجعة ⏳' : 'تم حفظ التعديلات ✅', 'ok');
-    loadAds();
-  } catch (e) { errEl.textContent = e.message || 'حدث خطأ'; errEl.className = 'err show'; }
+    await db.collection('ads').doc(id).update({ title, description: desc, price: parseFloat(price) || 0, phone, category: cat });
+    closeModal('editModal'); showToast('تم حفظ التعديلات ✅', 'ok'); loadAds();
+  } catch (e) { errEl.textContent = 'حدث خطأ'; errEl.className = 'err show'; }
   finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-save"></i> حفظ التعديلات'; }
 }
 

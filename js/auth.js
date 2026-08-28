@@ -18,15 +18,11 @@ function initAuthListener() {
       }
       isAdmin = doc && doc.exists && doc.data().role === 'admin';
       document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
-      if (isAdmin) {
-        checkAdminNotifs();
-        startAdminPendingListener();
-      }
+      if (isAdmin) checkAdminNotifs();
       initChatsListener(); checkMyWarnings();
     } else {
       isAdmin = false;
       document.getElementById('adminNavBtn').style.display = 'none';
-      stopAdminPendingListener();
       stopChatsListener();
     }
     updateUserBtn(); loadAds();
@@ -172,18 +168,7 @@ async function openDashboard() {
     '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
   openModal('dashModal');
 
-  /* allAds يحتوي الإعلانات المقبولة فقط؛ لوحة المستخدم تحتاج أيضاً
-     إعلاناته قيد المراجعة أو المرفوضة لمعرفة الحالة وسبب الرفض. */
-  let myAds = allAds.filter(a => a.userId === currentUser.uid);
-  try {
-    const myAdsSnap = await db.collection('ads')
-      .where('userId', '==', currentUser.uid)
-      .limit(100)
-      .get();
-    myAds = myAdsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) {
-    /* إن فشل الاستعلام، نعرض ما هو موجود في الذاكرة بدلاً من إخفاء الإعلانات */
-  }
+  const myAds = allAds.filter(a => a.userId === currentUser.uid);
   let userDoc = { name: currentUser.displayName || 'مستخدم', phone: '', email: '' };
   try {
     const doc = await db.collection('users').doc(currentUser.uid).get();
@@ -259,12 +244,7 @@ async function openDashboard() {
         <div class="my-ad-info">
           <div class="my-ad-title">${ad.title || ''}</div>
           <div class="my-ad-price">${formatPrice(ad)}</div>
-           <div class="my-ad-status">
-             ${ad.status === 'pending' ? '⏳ قيد المراجعة · ' :
-               ad.status === 'rejected' ? `❌ مرفوض${ad.rejectionReason ? `: ${ad.rejectionReason} · ` : ' · '}` :
-               ad.featured ? '⭐ مميز · ' : ''}
-             ${ad.area || 'دير الزور'}
-           </div>
+          <div class="my-ad-status">${ad.featured ? '⭐ مميز · ' : ''}${ad.area || 'دير الزور'}</div>
         </div>
         <div class="my-ad-actions">
           <button class="icon-btn edit" onclick="closeModal('dashModal');openEdit('${ad.id}')">
