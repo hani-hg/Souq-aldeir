@@ -41,6 +41,17 @@ service cloud.firestore {
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
+    // One deterministic document per normalized phone makes phone uniqueness enforceable
+    // without a paid backend or a privileged client-side query.
+    match /phoneIndex/{phoneId} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.phoneNormalized == phoneId;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
@@ -53,6 +64,7 @@ service cloud.firestore {
           && request.auth.uid == userId
           && request.resource.data.role == resource.data.role
           && request.resource.data.banned == resource.data.banned
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'phone', 'phoneNormalized'])
         );
       allow delete: if isAdmin();
 

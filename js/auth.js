@@ -4,6 +4,38 @@
    warnings, logout, admin bootstrap.
    ============================================================ */
 
+const AUTH_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function normalizeAuthEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normalizeArabicDigits(value) {
+  return String(value || '').replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+}
+
+function normalizePhone(value) {
+  return normalizeArabicDigits(value).trim().replace(/\D/g, '');
+}
+
+function phoneDigits(value) {
+  return normalizePhone(value);
+}
+
+function showAuthError(message) {
+  const el = document.getElementById('authErr');
+  if (!el) return;
+  el.textContent = message;
+  el.className = 'err show';
+}
+
+function showAuthSuccess(message) {
+  const el = document.getElementById('authSuc');
+  if (!el) return;
+  el.textContent = message;
+  el.className = 'suc show';
+}
+
 function initAuthListener() {
   auth.onAuthStateChanged(async u => {
     currentUser = u;
@@ -54,85 +86,133 @@ function switchAuth(tab) {
 
 /* ── Login ── */
 async function doLogin() {
-  let val = document.getElementById('loginEmail').value.trim();
+  let identifier = document.getElementById('loginEmail').value;
   const pass = document.getElementById('loginPass').value;
-  const errEl = document.getElementById('authErr'); errEl.className = 'err';
-  const btn   = document.getElementById('loginBtn');
-  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  const btn = document.getElementById('loginBtn');
+  document.getElementById('authErr').className = 'err';
+  document.getElementById('authSuc').className = 'suc';
+
+  identifier = identifier.trim();
+  if (!identifier) { showAuthError('أدخل البريد الإلكتروني أو رقم الهاتف'); return; }
+  if (!pass) { showAuthError('أدخل كلمة المرور'); return; }
+
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الدخول';
   try {
-    if (!val.includes('@')) {
-      const snap = await db.collection('users').where('phone','==',val).limit(1).get();
-      if (snap.empty) throw { code: 'auth/user-not-found' };
-      val = snap.docs[0].data().email;
+    let email = identifier;
+    if (!identifier.includes('@')) {
+      // Phone login is kept only for legacy accounts whose Firebase email was
+      // deterministically generated from the phone number. New accounts use email login.
+      const phone = normalizePhone(identifier);
+      const digits = phoneDigits(phone);
+      if (digits.length < 7) throw { code: 'auth/invalid-identifier' };
+      email = digits + '@souq-aldeir.local';
+    } else {
+      email = normalizeAuthEmail(identifier);
+      if (!AUTH_EMAIL_RE.test(email)) throw { code: 'auth/invalid-email' };
     }
-    await auth.signInWithEmailAndPassword(val, pass);
-    closeModal('authModal'); showToast('أهلاً بعودتك 👋', 'ok');
+    if (!email) throw { code: 'auth/user-not-found' };
+    await auth.signInWithEmailAndPassword(email, pass);
+    closeModal('authModal'); showToast('أهلاً بعودتك', 'ok');
   } catch(e) {
-    const m = {'auth/user-not-found':'الحساب غير موجود','auth/wrong-password':'كلمة المرور خاطئة',
-               'auth/invalid-email':'بيانات غير صحيحة','auth/too-many-requests':'محاولات كثيرة، انتظر قليلاً',
-               'auth/invalid-credential':'رقم الهاتف أو كلمة المرور خاطئة'};
-    errEl.textContent = m[e.code] || 'خطأ في تسجيل الدخول'; errEl.className = 'err show';
-  } finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-sign-in-alt"></i> دخول'; }
+    const m = {
+      'auth/user-not-found': 'الحساب غير موجود أو بيانات الدخول غير صحيحة',
+      'auth/wrong-password': 'البريد أو كلمة المرور غير صحيحة',
+      'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة',
+      'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
+      'auth/invalid-identifier': 'أدخل رقم هاتف صالحًا أو بريدًا إلكترونيًا صحيحًا',
+      'auth/too-many-requests': 'محاولات كثيرة، انتظر قليلًا ثم حاول مجددًا'
+    };
+    showAuthError(m[e.code] || 'تعذر تسجيل الدخول، حاول مجددًا');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-sign-in-alt"></i> دخول';
+  }
 }
 
 /* ── Signup ── */
 async function doSignup() {
-  const name    = document.getElementById('signupName').value.trim();
-  const phone   = document.getElementById('signupPhone').value.trim();
-  const emailRaw = document.getElementById('signupEmail').value.trim();
-  const pass    = document.getElementById('signupPass').value;
-  const agreed  = document.getElementById('signupAgreeTerms').checked;
-  const errEl   = document.getElementById('authErr'); errEl.className = 'err';
-  if (!name)        { errEl.textContent = 'الاسم مطلوب'; errEl.className = 'err show'; return; }
-  if (!phone)       { errEl.textContent = 'رقم الهاتف مطلوب'; errEl.className = 'err show'; return; }
-  if (pass.length < 6) { errEl.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'; errEl.className = 'err show'; return; }
-  if (!agreed)      { errEl.textContent = 'يجب الموافقة على شروط استخدام السوق'; errEl.className = 'err show'; return; }
-  const email = emailRaw || phone.replace(/\D/g,'') + '@souq-aldeir.local';
+  const name = document.getElementById('signupName').value.trim();
+  const phoneInput = document.getElementById('signupPhone').value.trim();
+  const phone = normalizePhone(phoneInput);
+  const email = normalizeAuthEmail(document.getElementById('signupEmail').value);
+  const pass = document.getElementById('signupPass').value;
+  const agreed = document.getElementById('signupAgreeTerms').checked;
+  document.getElementById('authErr').className = 'err';
+  document.getElementById('authSuc').className = 'suc';
+
+  if (name.length < 2) { showAuthError('أدخل الاسم الكامل'); return; }
+  if (name.length > 80) { showAuthError('الاسم طويل جدًا'); return; }
+  if (phoneDigits(phone).length < 7) { showAuthError('أدخل رقم هاتف صالحًا'); return; }
+  if (!AUTH_EMAIL_RE.test(email)) { showAuthError('أدخل بريدًا إلكترونيًا صحيحًا لاستعادة الحساب'); return; }
+  if (pass.length < 8) { showAuthError('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
+  if (!agreed) { showAuthError('يجب الموافقة على شروط استخدام السوق'); return; }
+
   const btn = document.getElementById('signupBtn');
-  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ إنشاء الحساب';
   try {
+    // Firebase Email/Password is free to use and gives every new account a reliable reset path.
+    // Phone login remains available for legacy accounts via their generated Firebase email.
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await cred.user.updateProfile({ displayName: name });
-    await db.collection('users').doc(cred.user.uid).set({
-      name, email: emailRaw || '', phone,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
-      role: 'user', banned: false
-    });
-    closeModal('authModal'); showToast('مرحباً ' + name + '! تم إنشاء حسابك 🎉', 'ok');
+    const phoneIndexRef = db.collection('phoneIndex').doc(phoneDigits(phone));
+    try {
+      await phoneIndexRef.create({ userId: cred.user.uid, phoneNormalized: phone });
+      await cred.user.updateProfile({ displayName: name });
+      await db.collection('users').doc(cred.user.uid).set({
+        name, email, phone, phoneNormalized: phone,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
+        role: 'user', banned: false
+      });
+    } catch (setupError) {
+      await phoneIndexRef.delete().catch(() => {});
+      await cred.user.delete().catch(() => {});
+      throw setupError;
+    }
+    closeModal('authModal'); showToast('مرحبًا ' + name + '! تم إنشاء حسابك', 'ok');
   } catch(e) {
-    const m = {'auth/email-already-in-use':'هذا الهاتف أو البريد مسجل مسبقاً',
-               'auth/weak-password':'كلمة المرور ضعيفة','auth/invalid-email':'بيانات غير صحيحة'};
-    errEl.textContent = m[e.code] || 'خطأ في إنشاء الحساب'; errEl.className = 'err show';
-  } finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-user-plus"></i> إنشاء الحساب'; }
+    const m = {
+      'auth/email-already-in-use': 'البريد الإلكتروني مسجل مسبقًا',
+      'already-exists': 'رقم الهاتف مسجل مسبقًا',
+      'auth/permission-denied': 'رقم الهاتف مسجل مسبقًا أو لا يمكن استخدامه',
+      'auth/weak-password': 'كلمة المرور ضعيفة، استخدم 8 أحرف على الأقل',
+      'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
+      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
+      'auth/operation-not-allowed': 'تسجيل البريد الإلكتروني غير مفعّل في إعدادات المشروع'
+    };
+    showAuthError(m[e.code] || 'تعذر إنشاء الحساب، حاول مجددًا');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-user-plus"></i> إنشاء الحساب';
+  }
 }
 
-/* ── Reset password (step 1) ── */
+/* ── Reset password ── */
 async function doResetStep1() {
-  const phone = document.getElementById('resetPhone').value.trim();
-  const errEl = document.getElementById('authErr'), sucEl = document.getElementById('authSuc');
-  errEl.className = 'err'; sucEl.className = 'suc';
-  if (!phone) { errEl.textContent = 'أدخل رقم هاتفك'; errEl.className = 'err show'; return; }
+  const email = normalizeAuthEmail(document.getElementById('resetEmail').value);
+  document.getElementById('authErr').className = 'err';
+  document.getElementById('authSuc').className = 'suc';
+  if (!AUTH_EMAIL_RE.test(email)) { showAuthError('أدخل بريدًا إلكترونيًا صحيحًا'); return; }
+
   const btn = document.getElementById('resetBtn');
-  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الإرسال';
   try {
-    const snap = await db.collection('users').where('phone','==',phone).limit(1).get();
-    if (snap.empty) { errEl.textContent = 'لم يتم العثور على حساب بهذا الرقم'; errEl.className = 'err show'; return; }
-    const userData = snap.docs[0].data();
-    const hasRealEmail = !!(userData.email && userData.email.trim() && !userData.email.includes('@souq-aldeir.local'));
-    if (!hasRealEmail) {
-      sucEl.innerHTML = `هذا الحساب مسجّل برقم هاتف فقط بدون بريد إلكتروني — لا يمكن إرسال رابط تلقائي.
-        اتصل بالإدارة وسيتم مساعدتك في استعادة الحساب يدوياً.<br><br>
-        <a href="tel:${contactSettings.phone || ''}" class="btn btn-blue btn-sm" style="display:inline-flex;margin-top:6px">
-          <i class="fa fa-phone"></i> الاتصال بالإدارة</a>`;
-      sucEl.className = 'suc show'; return;
-    }
-    await auth.sendPasswordResetEmail(userData.email, { url: location.origin });
-    sucEl.textContent = '✅ تم إرسال رابط تغيير كلمة المرور إلى بريدك الإلكتروني. تحقق من البريد ومجلد Spam.';
-    sucEl.className = 'suc show';
+    // Firebase sends the message only when the email belongs to an account.
+    // The same neutral UI response avoids exposing account existence.
+    await auth.sendPasswordResetEmail(email);
+    showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور. تحقق من البريد ومجلد Spam.');
   } catch(e) {
-    errEl.textContent = 'حدث خطأ، حاول مجدداً'; errEl.className = 'err show';
-  } finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-search"></i> ابحث عن حسابي'; }
+    const msgs = {
+      'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
+      'auth/too-many-requests': 'تم تجاوز عدد المحاولات. انتظر قليلًا ثم حاول مجددًا',
+      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا'
+    };
+    // Keep user enumeration-resistant behavior for unknown emails.
+    if (e.code === 'auth/user-not-found') {
+      showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور.');
+    } else {
+      showAuthError(msgs[e.code] || 'تعذر إرسال رابط الاستعادة، حاول مجددًا');
+    }
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-envelope"></i> إرسال رابط الاستعادة';
+  }
 }
 
 /* ── Warnings ── */
@@ -174,8 +254,11 @@ async function openDashboard() {
   } catch(e) {}
 
   const hasRealEmail = !!(userDoc.email && userDoc.email.trim() && !userDoc.email.includes('@souq-aldeir.local'));
+  const safeName = escapeHtml(userDoc.name || 'مستخدم');
+  const safePhone = escapeHtml(userDoc.phone || '');
+  const safeEmail = escapeHtml(userDoc.email || '');
+  const safeInitial = escapeHtml((userDoc.name || 'م').charAt(0));
   const avatarColor  = typeof getAvatarColor === 'function' ? getAvatarColor(userDoc.name || '') : 'var(--blue)';
-  const initial      = (userDoc.name || 'م').charAt(0);
 
   document.getElementById('dashContent').innerHTML = `
 
@@ -183,7 +266,7 @@ async function openDashboard() {
       <div class="warn-card">
         <div style="display:flex;gap:10px;align-items:flex-start">
           <i class="fa fa-triangle-exclamation" style="color:var(--red);margin-top:2px;font-size:1.1em"></i>
-          <div style="flex:1;font-size:.85em;color:#7a1a1a;line-height:1.65">${w.message}</div>
+          <div style="flex:1;font-size:.85em;color:#7a1a1a;line-height:1.65">${escapeHtml(w.message)}</div>
         </div>
         <button class="btn btn-red btn-sm" style="margin-top:8px" onclick="ackWarning('${w.id}')">
           فهمت</button>
@@ -204,11 +287,11 @@ async function openDashboard() {
 
     <!-- ── Profile header ── -->
     <div class="dash-profile">
-      <div class="dash-avatar" style="background:${avatarColor}">${initial}</div>
+      <div class="dash-avatar" style="background:${avatarColor}">${safeInitial}</div>
       <div class="dash-profile-info">
-        <div class="dash-profile-name">${userDoc.name}</div>
-        <div class="dash-profile-sub">${userDoc.phone || ''}</div>
-        ${hasRealEmail ? `<div class="dash-profile-sub" style="color:var(--blue)">${userDoc.email}</div>` : ''}
+        <div class="dash-profile-name">${safeName}</div>
+        <div class="dash-profile-sub">${safePhone}</div>
+        ${hasRealEmail ? `<div class="dash-profile-sub" style="color:var(--blue)">${safeEmail}</div>` : ''}
       </div>
     </div>
 
@@ -240,9 +323,9 @@ async function openDashboard() {
             : '<i class="fa fa-image"></i>'}
         </div>
         <div class="my-ad-info">
-          <div class="my-ad-title">${ad.title || ''}</div>
+          <div class="my-ad-title">${escapeHtml(ad.title || '')}</div>
           <div class="my-ad-price">${formatPrice(ad)}</div>
-          <div class="my-ad-status">${ad.featured ? '⭐ مميز · ' : ''}${ad.area || 'دير الزور'}</div>
+          <div class="my-ad-status">${ad.featured ? '⭐ مميز · ' : ''}${escapeHtml(ad.area || 'دير الزور')}</div>
         </div>
         <div class="my-ad-actions">
           <button class="icon-btn edit" onclick="closeModal('dashModal');openEdit('${ad.id}')">
@@ -268,7 +351,7 @@ async function openDashboard() {
         <i class="fa fa-sign-out-alt"></i> تسجيل الخروج</button>
     </div>
 
-    <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:18px">v2.1</p>
+    <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:18px">v2.2</p>
   `;
 }
 
@@ -281,15 +364,15 @@ function showChangePasswordForm() {
     <div class="section-label">🔐 تغيير كلمة المرور</div>
     <div class="fg">
       <label>كلمة المرور الحالية</label>
-      <input type="password" id="cpCurrent" placeholder="أدخل كلمة مرورك الحالية">
+      <input type="password" id="cpCurrent" autocomplete="current-password" placeholder="أدخل كلمة مرورك الحالية">
     </div>
     <div class="fg">
       <label>كلمة المرور الجديدة</label>
-      <input type="password" id="cpNew" placeholder="6 أحرف على الأقل">
+      <input type="password" id="cpNew" autocomplete="new-password" minlength="8" placeholder="8 أحرف على الأقل">
     </div>
     <div class="fg">
       <label>تأكيد كلمة المرور الجديدة</label>
-      <input type="password" id="cpConfirm" placeholder="أعد كتابة كلمة المرور الجديدة">
+      <input type="password" id="cpConfirm" autocomplete="new-password" placeholder="أعد كتابة كلمة المرور الجديدة">
     </div>
     <div class="err" id="cpErr"></div>
     <button class="btn btn-blue" id="cpBtn" onclick="doChangePassword()">
@@ -304,7 +387,7 @@ async function doChangePassword() {
   errEl.className = 'err';
 
   if (!current)        { errEl.textContent = 'أدخل كلمة المرور الحالية'; errEl.className = 'err show'; return; }
-  if (newPass.length < 6) { errEl.textContent = 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'; errEl.className = 'err show'; return; }
+  if (newPass.length < 8) { errEl.textContent = 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل'; errEl.className = 'err show'; return; }
   if (newPass !== confirm) { errEl.textContent = 'كلمة المرور الجديدة غير متطابقة'; errEl.className = 'err show'; return; }
 
   const btn = document.getElementById('cpBtn');
@@ -340,30 +423,51 @@ function showAddEmailForm() {
       سيُستخدم فقط لاستعادة كلمة المرور عند نسيانها.</p>
     <div class="fg">
       <label>البريد الإلكتروني</label>
-      <input type="email" id="recovEmailInput" placeholder="example@email.com">
+      <input type="email" id="recovEmailInput" autocomplete="email" maxlength="254" placeholder="example@email.com">
+    </div>
+    <div class="fg">
+      <label>كلمة المرور الحالية</label>
+      <input type="password" id="recovCurrentPass" autocomplete="current-password" placeholder="للتأكد من هويتك">
     </div>
     <div class="err" id="recovEmailErr"></div>
-    <button class="btn btn-blue" onclick="doAddRecoveryEmail()">
+    <button class="btn btn-blue" id="recovEmailBtn" onclick="doAddRecoveryEmail()">
       <i class="fa fa-envelope"></i> إضافة البريد</button>`;
 }
 
 async function doAddRecoveryEmail() {
-  const email = document.getElementById('recovEmailInput').value.trim();
-  const errEl = document.getElementById('recovEmailErr'); errEl.className = 'err';
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const email = normalizeAuthEmail(document.getElementById('recovEmailInput').value);
+  const currentPass = document.getElementById('recovCurrentPass').value;
+  const errEl = document.getElementById('recovEmailErr');
+  const btn = document.getElementById('recovEmailBtn');
+  errEl.className = 'err';
+  if (!AUTH_EMAIL_RE.test(email)) {
     errEl.textContent = 'صيغة البريد الإلكتروني غير صحيحة'; errEl.className = 'err show'; return;
   }
+  if (!currentPass) {
+    errEl.textContent = 'أدخل كلمة المرور الحالية للتأكد من هويتك'; errEl.className = 'err show'; return;
+  }
+  if (!currentUser || !currentUser.email) {
+    errEl.textContent = 'انتهت جلسة الدخول، سجّل الدخول مجددًا'; errEl.className = 'err show'; return;
+  }
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الحفظ';
   try {
+    const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPass);
+    await currentUser.reauthenticateWithCredential(credential);
     await currentUser.updateEmail(email);
     await db.collection('users').doc(currentUser.uid).update({ email });
-    showToast('تم إضافة بريدك بنجاح ✅', 'ok'); openDashboard();
+    showToast('تمت إضافة بريد الاسترداد بنجاح', 'ok'); openDashboard();
   } catch(e) {
     const msgs = {
-      'auth/requires-recent-login' : 'لأسباب أمنية، سجّل خروج ثم دخول مجدداً وأعد المحاولة',
-      'auth/email-already-in-use'  : 'هذا البريد مستخدم في حساب آخر',
-      'auth/invalid-email'         : 'صيغة البريد غير صحيحة'
+      'auth/wrong-password'       : 'كلمة المرور الحالية خاطئة',
+      'auth/invalid-credential'   : 'كلمة المرور الحالية خاطئة',
+      'auth/requires-recent-login': 'انتهت صلاحية التحقق، سجّل الدخول مجددًا ثم أعد المحاولة',
+      'auth/email-already-in-use' : 'هذا البريد مستخدم في حساب آخر',
+      'auth/invalid-email'        : 'صيغة البريد غير صحيحة',
+      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا'
     };
     errEl.textContent = msgs[e.code] || 'تعذر إضافة البريد'; errEl.className = 'err show';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-envelope"></i> إضافة البريد';
   }
 }
 

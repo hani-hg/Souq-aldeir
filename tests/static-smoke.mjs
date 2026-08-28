@@ -37,9 +37,23 @@ const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
 if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
   throw new Error('Client-side admin escalation path is still present');
 }
+if (!auth.includes('id="resetEmail"') && !html.includes('id="resetEmail"')) {
+  throw new Error('Email reset field is missing');
+}
+if (!auth.includes('sendPasswordResetEmail(email)')) {
+  throw new Error('Password reset must use Firebase email reset');
+}
+if (!auth.includes('reauthenticateWithCredential')) {
+  throw new Error('Sensitive account changes must reauthenticate the user');
+}
+if (!auth.includes('phoneIndex')) {
+  throw new Error('Phone uniqueness index is missing');
+}
 
 const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
 if (!rules.includes("allow write: if isAdmin();")) throw new Error('Admin-only settings rule is missing');
+if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
+if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
 
