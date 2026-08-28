@@ -98,7 +98,7 @@ export default function App() {
         </Suspense>
       </main>
       <MarketFooter settings={settings} />
-      <div className="floating-actions"><button className="qr-fab" onClick={() => setShowInstallQr(true)} title="رمز إضافة التطبيق" aria-label="رمز QR لإضافة التطبيق"><i className="fas fa-qrcode" /></button><button className="fab" onClick={() => navigate('new')} title="أضف إعلاناً" aria-label="أضف إعلاناً"><i className="fas fa-plus" /></button></div>
+      <div className="floating-actions"><button className="qr-fab" onClick={() => setShowInstallQr(true)} title="رمز إضافة التطبيق" aria-label="رمز QR لإضافة التطبيق"><i className="fas fa-qrcode" /></button><button className="fab" onClick={() => navigate('new')} title="أضف إعلاناً" aria-label="أضف إعلاناً"><i className="fas fa-plus" /><span>أضف إعلان</span></button></div>
       <BottomNav route={route} navigate={navigate} unread={unread} />
       <InstallPrompt />
       {showInstallQr && <InstallQr onClose={() => setShowInstallQr(false)} />}

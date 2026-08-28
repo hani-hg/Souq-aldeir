@@ -22,7 +22,9 @@ const CAT_ICONS = {
   'كتب وأدوات تعليمية': 'fa-book',
   'وظائف': 'fa-briefcase',
   'خدمات': 'fa-screwdriver-wrench',
-  'أخرى': 'fa-tags'
+  'أخرى': 'fa-tags',
+  'إلكترونيات': 'fa-tv',
+  'أكلي': 'fa-utensils'
 };
 
 export function catIcon(cat) {
@@ -41,7 +43,7 @@ export default function Header({ onAuth, onMessages, onFavorites, onAdmin, onAcc
       <div className="topbar-row">
         <button className="brand" onClick={() => { window.location.hash = ''; }} aria-label="العودة إلى الرئيسية">
           <span className="brand-mark"><img src={BRAND_SYMBOL} alt="" /></span>
-          <span className="brand-copy"><strong>سوق دير الزور</strong><small>إعلانات قريبة منك</small></span>
+          <span className="brand-copy"><strong>سوق دير الزور</strong><small>أول سوق إلكتروني</small></span>
         </button>
         <div className="topbar-actions">
           {user && user.role === 'admin' && (
