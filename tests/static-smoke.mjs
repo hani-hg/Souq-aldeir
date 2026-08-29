@@ -52,6 +52,20 @@ if (!auth.includes('reauthenticateWithCredential')) {
 if (!auth.includes('phoneIndex')) {
   throw new Error('Phone uniqueness index is missing');
 }
+if (!auth.includes('signupConfirmPass') && !html.includes('id="signupConfirmPass"')) {
+  throw new Error('Signup confirm-password field is missing');
+}
+if (!auth.includes('togglePassword')) {
+  throw new Error('Password visibility toggle helper is missing');
+}
+if (!auth.includes('initAuthWiring')) {
+  throw new Error('Auth keyboard/hint wiring is missing');
+}
+const usersSetIdx = auth.indexOf("collection('users').doc(cred.user.uid).set");
+const phoneIdxCreateIdx = auth.indexOf('phoneIndexRef.create');
+if (usersSetIdx < 0 || phoneIdxCreateIdx < 0 || usersSetIdx > phoneIdxCreateIdx) {
+  throw new Error('Signup must create the users doc before phoneIndex (anti-squatting)');
+}
 const ads = readFileSync(join(root, 'js/ads.js'), 'utf8');
 const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
@@ -63,6 +77,9 @@ const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
 const sw = readFileSync(join(root, 'sw.js'), 'utf8');
 if (!rules.includes("allow write: if isAdmin();")) throw new Error('Admin-only settings rule is missing');
 if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
+if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phoneNormalized == phoneId')) {
+  throw new Error('Phone index create must match the claiming user profile (anti-squatting)');
+}
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
 if (!sw.includes("souq-aldeir-v4") || !sw.includes("/js/share.js")) throw new Error('Service worker share asset cache is missing');

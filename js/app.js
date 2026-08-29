@@ -22,6 +22,7 @@ function initApp() {
   initModals();
   initAddAdForm();
   initSearch();
+  initAuthWiring();
   loadChatSeenMap();
   initAuthListener();  // also triggers the first loadAds() and initChatsListener()
   loadFavorites();

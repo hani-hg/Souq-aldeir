@@ -113,7 +113,13 @@
     <!-- LOGIN -->
     <div id="formLogin">
       <div class="fg"><label for="loginEmail">البريد الإلكتروني أو رقم الهاتف للحسابات القديمة</label><input type="text" id="loginEmail" autocomplete="username" placeholder="example@mail.com أو 09xxxxxxxx"></div>
-      <div class="fg"><label for="loginPass">كلمة المرور</label><input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••"></div>
+      <div class="fg">
+        <label for="loginPass">كلمة المرور</label>
+        <div style="position:relative">
+          <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••" style="padding-left:40px">
+          <button type="button" class="pw-toggle" onclick="togglePassword('loginPass', this)" aria-label="إظهار كلمة المرور"><i class="fa fa-eye"></i></button>
+        </div>
+      </div>
       <button class="btn btn-blue" id="loginBtn" type="button" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
     </div>
     <!-- SIGNUP -->
@@ -121,7 +127,21 @@
       <div class="fg"><label for="signupName">الاسم الكامل *</label><input type="text" id="signupName" autocomplete="name" maxlength="80" placeholder="اسمك الكامل"></div>
       <div class="fg"><label for="signupPhone">رقم الهاتف * <small style="color:var(--red)">(إجباري)</small></label><input type="tel" id="signupPhone" autocomplete="tel" maxlength="20" placeholder="09xxxxxxxx"></div>
       <div class="fg"><label for="signupEmail">البريد الإلكتروني * <small style="color:var(--red)">(مطلوب لاستعادة كلمة المرور)</small></label><input type="email" id="signupEmail" autocomplete="email" maxlength="254" placeholder="example@mail.com"></div>
-      <div class="fg"><label for="signupPass">كلمة المرور * (8 أحرف على الأقل)</label><input type="password" id="signupPass" autocomplete="new-password" minlength="8" placeholder="••••••••"></div>
+      <div class="fg">
+        <label for="signupPass">كلمة المرور * (8 أحرف على الأقل)</label>
+        <div style="position:relative">
+          <input type="password" id="signupPass" autocomplete="new-password" minlength="8" maxlength="128" placeholder="••••••••" style="padding-left:40px">
+          <button type="button" class="pw-toggle" onclick="togglePassword('signupPass', this)" aria-label="إظهار كلمة المرور"><i class="fa fa-eye"></i></button>
+        </div>
+        <div id="signupPassHint" class="pw-hint"></div>
+      </div>
+      <div class="fg">
+        <label for="signupConfirmPass">تأكيد كلمة المرور *</label>
+        <div style="position:relative">
+          <input type="password" id="signupConfirmPass" autocomplete="new-password" minlength="8" maxlength="128" placeholder="••••••••" style="padding-left:40px">
+          <button type="button" class="pw-toggle" onclick="togglePassword('signupConfirmPass', this)" aria-label="إظهار كلمة المرور"><i class="fa fa-eye"></i></button>
+        </div>
+      </div>
       <div class="fg" style="display:flex;align-items:flex-start;gap:8px">
         <input type="checkbox" id="signupAgreeTerms" style="width:auto;margin-top:3px">
         <label for="signupAgreeTerms" style="font-weight:400;font-size:.82em;color:var(--dark);margin-bottom:0">أوافق على <a href="#" onclick="openModal('termsModal');return false;" style="color:var(--blue);font-weight:700">شروط استخدام السوق</a></label>

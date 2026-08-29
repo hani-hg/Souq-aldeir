@@ -36,6 +36,61 @@ function showAuthSuccess(message) {
   el.className = 'suc show';
 }
 
+/* ── Password visibility toggle ── */
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  const icon = btn ? btn.querySelector('i') : null;
+  if (icon) icon.className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
+}
+
+/* ── Password strength (0..4) ── */
+function passwordStrength(pass) {
+  let score = 0;
+  if (pass.length >= 8) score++;
+  if (pass.length >= 12) score++;
+  if (/[A-Za-z]/.test(pass) && /\d/.test(pass)) score++;
+  if (/[^A-Za-z0-9]/.test(pass)) score++;
+  return Math.min(score, 4);
+}
+
+/* ── Live password strength hint (signup + change-password) ── */
+function updatePassHint(inputId, hintId) {
+  const input = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  if (!input || !hint) return;
+  const pass = input.value;
+  if (!pass) { hint.textContent = ''; hint.className = 'pw-hint'; return; }
+  if (pass.length < 8) {
+    hint.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+    hint.className = 'pw-hint bad';
+    return;
+  }
+  const score = passwordStrength(pass);
+  const labels = ['ضعيفة', 'مقبولة', 'جيدة', 'قوية'];
+  const colors = ['var(--red)', '#e6a700', '#4caf50', '#2e7d32'];
+  hint.textContent = 'قوة كلمة المرور: ' + labels[score];
+  hint.style.color = colors[score];
+  hint.className = 'pw-hint';
+}
+
+/* ── Keyboard support + live hints wiring ── */
+function initAuthWiring() {
+  const enter = handler => e => { if (e.key === 'Enter') handler(); };
+  ['loginEmail', 'loginPass'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.addEventListener('keydown', enter(doLogin));
+  });
+  ['signupName', 'signupPhone', 'signupEmail', 'signupPass', 'signupConfirmPass'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.addEventListener('keydown', enter(doSignup));
+  });
+  const resetEl = document.getElementById('resetEmail');
+  if (resetEl) resetEl.addEventListener('keydown', enter(doResetStep1));
+  const sp = document.getElementById('signupPass');
+  if (sp) sp.addEventListener('input', () => updatePassHint('signupPass', 'signupPassHint'));
+}
+
 function initAuthListener() {
   auth.onAuthStateChanged(async u => {
     currentUser = u;
@@ -82,6 +137,10 @@ function switchAuth(tab) {
   });
   document.getElementById('authErr').className = 'err';
   document.getElementById('authSuc').className = 'suc';
+  const hint = document.getElementById('signupPassHint');
+  if (hint) { hint.textContent = ''; hint.className = 'pw-hint'; hint.style.color = ''; }
+  const firstField = document.getElementById({ login: 'loginEmail', signup: 'signupName', reset: 'resetEmail' }[tab]);
+  if (firstField) firstField.focus();
 }
 
 /* ── Login ── */
@@ -135,15 +194,18 @@ async function doSignup() {
   const phone = normalizePhone(phoneInput);
   const email = normalizeAuthEmail(document.getElementById('signupEmail').value);
   const pass = document.getElementById('signupPass').value;
+  const confirmPass = document.getElementById('signupConfirmPass') ? document.getElementById('signupConfirmPass').value : '';
   const agreed = document.getElementById('signupAgreeTerms').checked;
   document.getElementById('authErr').className = 'err';
   document.getElementById('authSuc').className = 'suc';
 
   if (name.length < 2) { showAuthError('أدخل الاسم الكامل'); return; }
   if (name.length > 80) { showAuthError('الاسم طويل جدًا'); return; }
-  if (phoneDigits(phone).length < 7) { showAuthError('أدخل رقم هاتف صالحًا'); return; }
+  if (phoneDigits(phone).length < 7 || phoneDigits(phone).length > 15) { showAuthError('أدخل رقم هاتف صالحًا'); return; }
   if (!AUTH_EMAIL_RE.test(email)) { showAuthError('أدخل بريدًا إلكترونيًا صحيحًا لاستعادة الحساب'); return; }
   if (pass.length < 8) { showAuthError('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
+  if (pass.length > 128) { showAuthError('كلمة المرور طويلة جدًا'); return; }
+  if (confirmPass && pass !== confirmPass) { showAuthError('كلمتا المرور غير متطابقتين'); return; }
   if (!agreed) { showAuthError('يجب الموافقة على شروط استخدام السوق'); return; }
 
   const btn = document.getElementById('signupBtn');
@@ -154,16 +216,19 @@ async function doSignup() {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     const phoneIndexRef = db.collection('phoneIndex').doc(phoneDigits(phone));
     try {
-      await phoneIndexRef.create({ userId: cred.user.uid, phoneNormalized: phone });
-      await cred.user.updateProfile({ displayName: name });
+      // The users doc is created before phoneIndex so that Firestore rules can tie the
+      // phone index to the phone the user actually claimed in their own profile (anti-squatting).
       await db.collection('users').doc(cred.user.uid).set({
         name, email, phone, phoneNormalized: phone,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
         role: 'user', banned: false
       });
+      await phoneIndexRef.create({ userId: cred.user.uid, phoneNormalized: phone });
+      await cred.user.updateProfile({ displayName: name });
     } catch (setupError) {
       await phoneIndexRef.delete().catch(() => {});
+      await db.collection('users').doc(cred.user.uid).delete().catch(() => {});
       await cred.user.delete().catch(() => {});
       throw setupError;
     }
@@ -368,19 +433,32 @@ function showChangePasswordForm() {
     <div class="section-label">🔐 تغيير كلمة المرور</div>
     <div class="fg">
       <label>كلمة المرور الحالية</label>
-      <input type="password" id="cpCurrent" autocomplete="current-password" placeholder="أدخل كلمة مرورك الحالية">
+      <div style="position:relative">
+        <input type="password" id="cpCurrent" autocomplete="current-password" placeholder="أدخل كلمة مرورك الحالية" style="padding-left:40px">
+        <button type="button" class="pw-toggle" onclick="togglePassword('cpCurrent', this)" aria-label="إظهار كلمة المرور"><i class="fa fa-eye"></i></button>
+      </div>
     </div>
     <div class="fg">
       <label>كلمة المرور الجديدة</label>
-      <input type="password" id="cpNew" autocomplete="new-password" minlength="8" placeholder="8 أحرف على الأقل">
+      <div style="position:relative">
+        <input type="password" id="cpNew" autocomplete="new-password" minlength="8" maxlength="128" placeholder="8 أحرف على الأقل" style="padding-left:40px">
+        <button type="button" class="pw-toggle" onclick="togglePassword('cpNew', this)" aria-label="إظهار كلمة المرور"><i class="fa fa-eye"></i></button>
+      </div>
+      <div id="cpNewHint" class="pw-hint"></div>
     </div>
     <div class="fg">
       <label>تأكيد كلمة المرور الجديدة</label>
-      <input type="password" id="cpConfirm" autocomplete="new-password" placeholder="أعد كتابة كلمة المرور الجديدة">
+      <div style="position:relative">
+        <input type="password" id="cpConfirm" autocomplete="new-password" placeholder="أعد كتابة كلمة المرور الجديدة" style="padding-left:40px">
+        <button type="button" class="pw-toggle" onclick="togglePassword('cpConfirm', this)" aria-label="إظهار كلمة المرور"><i class="fa fa-eye"></i></button>
+      </div>
     </div>
     <div class="err" id="cpErr"></div>
     <button class="btn btn-blue" id="cpBtn" onclick="doChangePassword()">
       <i class="fa fa-lock"></i> تغيير كلمة المرور</button>`;
+
+  const cpNew = document.getElementById('cpNew');
+  if (cpNew) cpNew.addEventListener('input', () => updatePassHint('cpNew', 'cpNewHint'));
 }
 
 async function doChangePassword() {
@@ -392,6 +470,8 @@ async function doChangePassword() {
 
   if (!current)        { errEl.textContent = 'أدخل كلمة المرور الحالية'; errEl.className = 'err show'; return; }
   if (newPass.length < 8) { errEl.textContent = 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل'; errEl.className = 'err show'; return; }
+  if (newPass.length > 128) { errEl.textContent = 'كلمة المرور الجديدة طويلة جدًا'; errEl.className = 'err show'; return; }
+  if (newPass === current) { errEl.textContent = 'كلمة المرور الجديدة يجب أن تختلف عن الحالية'; errEl.className = 'err show'; return; }
   if (newPass !== confirm) { errEl.textContent = 'كلمة المرور الجديدة غير متطابقة'; errEl.className = 'err show'; return; }
 
   const btn = document.getElementById('cpBtn');
