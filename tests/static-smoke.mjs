@@ -34,6 +34,7 @@ if (!positions.every((position, index) => index === 0 || position > positions[in
 if (!html.includes('lang="ar"') || !html.includes('dir="rtl"')) throw new Error('Arabic RTL document metadata is missing');
 if (!html.includes('serviceWorker.register')) throw new Error('PWA service worker registration is missing');
 if (!html.includes('id="siteShareBtn"') || !html.includes('qrcode.min.js')) throw new Error('QR sharing UI is missing');
+if (!html.includes("selectPlan(this,'3 أيام')") || !html.includes("selectPlan(this,'7 أيام')") || !html.includes("selectPlan(this,'15 يومًا')") || !html.includes("selectPlan(this,'30 يومًا')")) throw new Error('Featured duration options are incomplete');
 if (html.includes('id="adDuration"')) throw new Error('Ad duration selector should be removed');
 
 const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
@@ -71,6 +72,7 @@ const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
 if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
+if (!admin.includes('function openAdminFeatureDuration') || !admin.includes('applyAdminFeatureDuration') || !admin.includes('[3, 7, 15, 30]')) throw new Error('Admin featured duration controls are missing');
 if (!chat.includes('maxlength="1000"')) throw new Error('Chat message length guard is missing');
 
 const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
@@ -84,6 +86,7 @@ if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) t
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
 if (!sw.includes("souq-aldeir-v4") || !sw.includes("/js/share.js")) throw new Error('Service worker share asset cache is missing');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
+if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
 

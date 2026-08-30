@@ -381,6 +381,7 @@ function populateFeaturedSelect() {
   sel.innerHTML = '<option value="">-- اختر إعلانك --</option>' + myAds.map(a => `<option value="${a.id}">${a.title || 'إعلان'}</option>`).join('');
 }
 
+const FEATURED_PLAN_DAYS = {'3 أيام': 3, '7 أيام': 7, '15 يومًا': 15, '30 يومًا': 30};
 function selectPlan(el, plan) {
   selectedPlan = plan;
   document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
@@ -395,6 +396,7 @@ async function requestFeatured() {
     await db.collection('featuredRequests').add({
       adId, adTitle: ad ? ad.title : '', userId: currentUser.uid,
       userEmail: currentUser.email || '', plan: selectedPlan,
+      durationDays: FEATURED_PLAN_DAYS[selectedPlan] || 3,
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     closeModal('featuredModal');

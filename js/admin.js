@@ -1102,23 +1102,59 @@ async function adminDeleteAd(id) {
   applyAdsFilter();
 }
 async function adminToggleFeatured(id, current) {
-  await db.collection('ads').doc(id).update({featured:!current}).catch(()=>{});
-  const ad = adminAdsAllCache.find(a=>a.id===id);
-  if (ad) ad.featured = !current;
-  showToast(current?'تم إلغاء التمييز':'تم التمييز ⭐','ok');
-  loadAds(); applyAdsFilter();
+  if (current) {
+    await db.collection('ads').doc(id).update({featured:false, featuredUntil:null, featuredDurationDays:null}).catch(()=>{});
+    const ad = adminAdsAllCache.find(a => a.id===id);
+    if (ad) { ad.featured = false; ad.featuredUntil = null; ad.featuredDurationDays = null; }
+    showToast('تم إلغاء التمييز','ok'); loadAds(); applyAdsFilter(); return;
+  }
+  openAdminFeatureDuration(id);
+}
+
+function openAdminFeatureDuration(adId) {
+  const ad = adminAdsAllCache.find(a => a.id === adId) || allAds.find(a => a.id === adId);
+  if (!ad) return;
+  const el = document.createElement('div');
+  el.className = 'admin-overlay';
+  el.innerHTML = `<div class="admin-dialog admin-feature-duration" role="dialog" aria-modal="true" aria-labelledby="featureDurationTitle">
+    <button class="share-close" onclick="this.closest('.admin-overlay').remove()" aria-label="إغلاق">✕</button>
+    <div class="share-icon"><i class="fa fa-star"></i></div>
+    <h3 id="featureDurationTitle">تمييز الإعلان</h3>
+    <p class="field-help">${escapeHtml(ad.title || 'إعلان')}<br>اختر مدة ظهور الإعلان في أعلى النتائج.</p>
+    <div class="admin-duration-options">
+      <button class="btn btn-outline" onclick="applyAdminFeatureDuration('${adId}',3)"><strong>3 أيام</strong><small>تمييز قصير</small></button>
+      <button class="btn btn-outline" onclick="applyAdminFeatureDuration('${adId}',7)"><strong>7 أيام</strong><small>خيار شائع</small></button>
+      <button class="btn btn-outline" onclick="applyAdminFeatureDuration('${adId}',15)"><strong>15 يومًا</strong><small>ظهور ممتد</small></button>
+      <button class="btn btn-gold" onclick="applyAdminFeatureDuration('${adId}',30)"><strong>شهر واحد</strong><small>30 يومًا</small></button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+}
+
+async function applyAdminFeatureDuration(adId, days) {
+  if (![3, 7, 15, 30].includes(days)) return;
+  const until = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + days * 86400000));
+  try {
+    await db.collection('ads').doc(adId).update({featured:true, featuredUntil:until, featuredDurationDays:days});
+    const ad = adminAdsAllCache.find(a => a.id === adId);
+    if (ad) { ad.featured = true; ad.featuredUntil = until; ad.featuredDurationDays = days; }
+    document.querySelector('.admin-feature-duration')?.closest('.admin-overlay')?.remove();
+    showToast(`تم تمييز الإعلان لمدة ${days === 30 ? 'شهر' : days + ' أيام'} ⭐`, 'ok');
+    loadAds(); applyAdsFilter();
+  } catch (error) { showToast('تعذر تمييز الإعلان، حاول مرة أخرى', 'bad'); }
 }
 
 /* ══════════════════════════════════════════
    إجراءات طلبات التمييز
 ══════════════════════════════════════════ */
-const PLAN_DAYS = {'3 أيام':3,'7 أيام':7,'30 يوماً':30,'3 days':3,'7 days':7,'30 days':30};
+const PLAN_DAYS = {'3 أيام':3,'7 أيام':7,'15 يومًا':15,'30 يومًا':30,'30 يوماً':30,'15 يوم':15,'3 أيام - 1$':3,'7 أيام - 2$':7,'15 يوم - 3$':15,'30 يوم - 5$':30,'3 days':3,'7 days':7,'15 days':15,'30 days':30};
 async function approveFeature(reqId, adId) {
   const req  = adminReqsCache.find(r=>r.id===reqId);
   const plan = req ? req.plan : '';
-  const days = PLAN_DAYS[plan] || 7;
+  const days = Number(req?.durationDays) || PLAN_DAYS[plan] || 7;
   const featuredUntil = firebase.firestore.Timestamp.fromDate(new Date(Date.now()+days*86400000));
-  await db.collection('ads').doc(adId).update({featured:true, featuredUntil}).catch(()=>{});
+  await db.collection('ads').doc(adId).update({featured:true, featuredUntil, featuredDurationDays:days}).catch(()=>{});
   await db.collection('featuredRequests').doc(reqId).update({status:'approved'}).catch(()=>{});
   adminReqsCache = adminReqsCache.filter(r=>r.id!==reqId);
   showToast(`تم التمييز لمدة ${days} أيام ⭐`, 'ok');
