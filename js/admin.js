@@ -681,13 +681,17 @@ async function sendResetLinkForRequest(requestId, uid) {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ email })
       });
-      if (!response.ok) throw new Error('reset-service-unavailable');
-      await db.collection('recoveryRequests').doc(requestId).update({ status: 'resolved', method: 'email-smtp', handledAt: firebase.firestore.FieldValue.serverTimestamp() });
+      let method = 'email-smtp';
+      if (!response.ok) {
+        await auth.sendPasswordResetEmail(email);
+        method = 'email-firebase-fallback';
+      }
+      await db.collection('recoveryRequests').doc(requestId).update({ status: 'resolved', method, handledAt: firebase.firestore.FieldValue.serverTimestamp() });
       adminRecoveryCache = adminRecoveryCache.filter(r => r.id !== requestId);
       showToast('تم إرسال رابط تغيير كلمة المرور', 'ok');
       checkAdminNotifs(); switchAdminTab('recovery');
     } catch (error) {
-      showToast(error.message === 'reset-service-unavailable' ? 'خدمة البريد غير متاحة، تأكد من نشر Vercel وإعداد المتغيرات' : 'تعذر إرسال الرابط', 'bad');
+      showToast(error.code === 'auth/user-not-found' ? 'البريد غير مرتبط بحساب Firebase' : 'تعذر إرسال الرابط؛ تحقق من إعدادات البريد', 'bad');
     }
   }, false);
 }

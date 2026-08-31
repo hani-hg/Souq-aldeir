@@ -271,7 +271,13 @@ async function doResetStep1() {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ email })
     });
-    if (!response.ok) throw new Error('reset-service-unavailable');
+    if (!response.ok) {
+      // Resilience fallback: Firebase sends the reset email if the optional SMTP
+      // service is temporarily unavailable, so users are not locked out.
+      await auth.sendPasswordResetEmail(email);
+      showAuthSuccess('تم إرسال رابط إعادة التعيين. تحقق من البريد ومجلد Spam.');
+      return;
+    }
     showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور. تحقق من البريد ومجلد Spam.');
   } catch(e) {
     const msgs = {
@@ -283,7 +289,7 @@ async function doResetStep1() {
     if (e.code === 'auth/user-not-found') {
       showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور.');
     } else if (e.message === 'reset-service-unavailable' || e.message === 'Failed to fetch') {
-      showAuthError('خدمة البريد غير متاحة حاليًا؛ تأكد من نشر Vercel وإعداد متغيرات البيئة ثم حاول مجددًا');
+      showAuthError('تعذر إرسال رابط الاستعادة. تأكد من أن البريد مسجل في Firebase وأن مزود Email/Password مفعّل');
     } else {
       showAuthError(msgs[e.code] || 'تعذر إرسال رابط الاستعادة، حاول مجددًا');
     }
