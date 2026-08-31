@@ -555,8 +555,17 @@ async function doAddRecoveryEmail() {
   try {
     const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPass);
     await currentUser.reauthenticateWithCredential(credential);
+    const previousEmail = currentUser.email;
     await currentUser.updateEmail(email);
-    await db.collection('users').doc(currentUser.uid).update({ email });
+    try {
+      // merge supports legacy profile documents while Firestore rules still
+      // restrict a normal user's update to allowed profile fields.
+      await db.collection('users').doc(currentUser.uid).set({ email }, { merge: true });
+    } catch (profileError) {
+      await currentUser.updateEmail(previousEmail).catch(() => {});
+      throw profileError;
+    }
+    await currentUser.reload();
     showToast('تمت إضافة بريد الاسترداد بنجاح', 'ok'); openDashboard();
   } catch(e) {
     const msgs = {
@@ -565,7 +574,14 @@ async function doAddRecoveryEmail() {
       'auth/requires-recent-login': 'انتهت صلاحية التحقق، سجّل الدخول مجددًا ثم أعد المحاولة',
       'auth/email-already-in-use' : 'هذا البريد مستخدم في حساب آخر',
       'auth/invalid-email'        : 'صيغة البريد غير صحيحة',
-      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا'
+      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
+      'auth/operation-not-allowed': 'تعديل البريد غير مفعّل في إعدادات Firebase',
+      'auth/user-token-expired'   : 'انتهت جلسة التحقق، سجّل الدخول مجددًا',
+      'auth/invalid-user-token'   : 'انتهت جلسة التحقق، سجّل الدخول مجددًا',
+      'auth/user-disabled'        : 'هذا الحساب موقوف',
+      'permission-denied'         : 'لا تملك صلاحية تحديث ملف الحساب',
+      'not-found'                 : 'ملف الحساب غير موجود في قاعدة البيانات',
+      'unavailable'               : 'قاعدة البيانات غير متاحة مؤقتًا، حاول مجددًا'
     };
     errEl.textContent = msgs[e.code] || 'تعذر إضافة البريد'; errEl.className = 'err show';
   } finally {
