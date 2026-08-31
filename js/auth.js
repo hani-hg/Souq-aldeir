@@ -515,7 +515,15 @@ async function doChangePassword() {
 }
 
 /* ── Add recovery email (inline form — replaces prompt()) ── */
+function isPhoneAuthOnlyAccount() {
+  const providers = currentUser?.providerData || [];
+  return !currentUser?.email
+    && providers.some(provider => provider.providerId === 'phone')
+    && !providers.some(provider => provider.providerId === 'password');
+}
+
 function showAddEmailForm() {
+  const phoneOnly = isPhoneAuthOnlyAccount();
   document.getElementById('dashContent').innerHTML = `
     <button class="btn btn-outline btn-sm" style="margin-bottom:16px" onclick="openDashboard()">
       <i class="fa fa-arrow-right"></i> رجوع للحساب</button>
@@ -527,10 +535,19 @@ function showAddEmailForm() {
       <label>البريد الإلكتروني</label>
       <input type="email" id="recovEmailInput" autocomplete="email" maxlength="254" placeholder="example@email.com">
     </div>
+    ${phoneOnly ? `
+    <div class="fg">
+      <label>أنشئ كلمة مرور للحساب</label>
+      <input type="password" id="recovNewPass" autocomplete="new-password" minlength="8" maxlength="128" placeholder="8 أحرف على الأقل">
+    </div>
+    <div class="fg">
+      <label>تأكيد كلمة المرور</label>
+      <input type="password" id="recovConfirmPass" autocomplete="new-password" minlength="8" maxlength="128" placeholder="أعد كتابة كلمة المرور">
+    </div>` : `
     <div class="fg">
       <label>كلمة المرور الحالية</label>
       <input type="password" id="recovCurrentPass" autocomplete="current-password" placeholder="للتأكد من هويتك">
-    </div>
+    </div>`}
     <div class="err" id="recovEmailErr"></div>
     <button class="btn btn-blue" id="recovEmailBtn" onclick="doAddRecoveryEmail()">
       <i class="fa fa-envelope"></i> إضافة البريد</button>`;
@@ -538,31 +555,49 @@ function showAddEmailForm() {
 
 async function doAddRecoveryEmail() {
   const email = normalizeAuthEmail(document.getElementById('recovEmailInput').value);
-  const currentPass = document.getElementById('recovCurrentPass').value;
+  const phoneOnly = isPhoneAuthOnlyAccount();
+  const currentPass = document.getElementById('recovCurrentPass')?.value || '';
+  const newPass = document.getElementById('recovNewPass')?.value || '';
+  const confirmPass = document.getElementById('recovConfirmPass')?.value || '';
   const errEl = document.getElementById('recovEmailErr');
   const btn = document.getElementById('recovEmailBtn');
   errEl.className = 'err';
   if (!AUTH_EMAIL_RE.test(email)) {
     errEl.textContent = 'صيغة البريد الإلكتروني غير صحيحة'; errEl.className = 'err show'; return;
   }
-  if (!currentPass) {
+  if (phoneOnly) {
+    if (newPass.length < 8) {
+      errEl.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'; errEl.className = 'err show'; return;
+    }
+    if (newPass !== confirmPass) {
+      errEl.textContent = 'كلمتا المرور غير متطابقتين'; errEl.className = 'err show'; return;
+    }
+  } else if (!currentPass) {
     errEl.textContent = 'أدخل كلمة المرور الحالية للتأكد من هويتك'; errEl.className = 'err show'; return;
   }
-  if (!currentUser || !currentUser.email) {
+  if (!currentUser) {
     errEl.textContent = 'انتهت جلسة الدخول، سجّل الدخول مجددًا'; errEl.className = 'err show'; return;
   }
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الحفظ';
   try {
-    const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPass);
-    await currentUser.reauthenticateWithCredential(credential);
-    const previousEmail = currentUser.email;
-    await currentUser.updateEmail(email);
+    let linkedPhonePassword = false;
+    let previousEmail = currentUser.email;
+    if (phoneOnly) {
+      const credential = firebase.auth.EmailAuthProvider.credential(email, newPass);
+      await currentUser.linkWithCredential(credential);
+      linkedPhonePassword = true;
+    } else {
+      const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPass);
+      await currentUser.reauthenticateWithCredential(credential);
+      await currentUser.updateEmail(email);
+    }
     try {
       // merge supports legacy profile documents while Firestore rules still
       // restrict a normal user's update to allowed profile fields.
       await db.collection('users').doc(currentUser.uid).set({ email }, { merge: true });
     } catch (profileError) {
-      await currentUser.updateEmail(previousEmail).catch(() => {});
+      if (linkedPhonePassword) await currentUser.unlink('password').catch(() => {});
+      else await currentUser.updateEmail(previousEmail).catch(() => {});
       throw profileError;
     }
     await currentUser.reload();
@@ -573,6 +608,9 @@ async function doAddRecoveryEmail() {
       'auth/invalid-credential'   : 'كلمة المرور الحالية خاطئة',
       'auth/requires-recent-login': 'انتهت صلاحية التحقق، سجّل الدخول مجددًا ثم أعد المحاولة',
       'auth/email-already-in-use' : 'هذا البريد مستخدم في حساب آخر',
+      'auth/credential-already-in-use': 'هذا البريد مستخدم في حساب آخر',
+      'auth/provider-already-linked': 'هذا الحساب مرتبط ببريد مسبقًا',
+      'auth/weak-password'        : 'كلمة المرور ضعيفة، استخدم 8 أحرف على الأقل',
       'auth/invalid-email'        : 'صيغة البريد غير صحيحة',
       'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
       'auth/operation-not-allowed': 'تعديل البريد غير مفعّل في إعدادات Firebase',
