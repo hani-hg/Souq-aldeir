@@ -13,6 +13,9 @@ const requiredFiles = [
   'js/share.js',
   'js/admin.js',
   'js/app.js',
+  'server/index.js',
+  'package.json',
+  '.env.example',
   'manifest.json',
   'sw.js',
   'firestore.rules',
@@ -44,8 +47,8 @@ if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
 if (!auth.includes('id="resetEmail"') && !html.includes('id="resetEmail"')) {
   throw new Error('Email reset field is missing');
 }
-if (!auth.includes('sendPasswordResetEmail(email)')) {
-  throw new Error('Password reset must use Firebase email reset');
+if (!auth.includes("window.SOUQ_PASSWORD_RESET_ENDPOINT") || !auth.includes("fetch(endpoint")) {
+  throw new Error('Password reset must use the secure SMTP backend endpoint');
 }
 if (!auth.includes('reauthenticateWithCredential')) {
   throw new Error('Sensitive account changes must reauthenticate the user');
@@ -84,9 +87,14 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 }
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v4") || !sw.includes("/js/share.js")) throw new Error('Service worker share asset cache is missing');
+if (!sw.includes("souq-aldeir-v5") || !sw.includes("/js/share.js")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');
+const server = readFileSync(join(root, 'server/index.js'), 'utf8');
+const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('SMTP reset server is incomplete');
+if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requireTLS: true')) throw new Error('SMTP TLS is not enforced');
+if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
 

@@ -259,9 +259,14 @@ async function doResetStep1() {
   const btn = document.getElementById('resetBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الإرسال';
   try {
-    // Firebase sends the message only when the email belongs to an account.
-    // The same neutral UI response avoids exposing account existence.
-    await auth.sendPasswordResetEmail(email);
+    // The server generates the Firebase reset link and sends it through Outlook SMTP.
+    // Keep the endpoint response neutral so account existence is never exposed.
+    const endpoint = window.SOUQ_PASSWORD_RESET_ENDPOINT || '/api/password-reset';
+    const response = await fetch(endpoint, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) throw new Error('reset-service-unavailable');
     showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور. تحقق من البريد ومجلد Spam.');
   } catch(e) {
     const msgs = {
