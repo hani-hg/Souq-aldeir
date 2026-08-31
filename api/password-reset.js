@@ -51,14 +51,19 @@ function escapeHtml(value) {
 }
 
 async function sendMail(email, link) {
-  const sender = process.env.SMTP_USER || 'souq.aldeir@outlook.sa';
-  if (!String(process.env.SMTP_APP_PASSWORD || '').trim()) throw new Error('SMTP_APP_PASSWORD is missing');
+  const sender = String(process.env.SMTP_USER || 'souq.aldeir@outlook.sa').trim();
+  const appPassword = String(process.env.SMTP_APP_PASSWORD || '').trim();
+  if (!appPassword) throw new Error('SMTP_APP_PASSWORD is missing');
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
     port: Number(process.env.SMTP_PORT || 587),
     secure: false,
     requireTLS: true,
-    auth: { user: sender, pass: process.env.SMTP_APP_PASSWORD }
+    auth: { user: sender, pass: appPassword },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: { minVersion: 'TLSv1.2' }
   });
   const safeLink = escapeHtml(link);
   await transporter.sendMail({

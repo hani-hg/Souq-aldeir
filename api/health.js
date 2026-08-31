@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import admin from 'firebase-admin';
 
 function present(name) {
@@ -19,8 +20,13 @@ function initFirebase() {
   return admin.app();
 }
 
-function safeError(error) {
+function safeError(error, kind) {
   const text = String(error?.code || error?.message || 'unknown').toLowerCase();
+  if (kind === 'smtp') {
+    if (text.includes('auth') || text.includes('535')) return 'smtp_auth_failed';
+    if (text.includes('timeout') || text.includes('connection')) return 'smtp_connection_failed';
+    return 'smtp_check_failed';
+  }
   if (text.includes('json')) return 'invalid_service_account_json';
   if (text.includes('private key') || text.includes('credential')) return 'invalid_firebase_credentials';
   if (text.includes('incomplete')) return 'incomplete_firebase_admin_variables';
@@ -28,24 +34,43 @@ function safeError(error) {
   return 'firebase_connection_failed';
 }
 
+async function verifySmtp() {
+  const sender = String(process.env.SMTP_USER || 'souq.aldeir@outlook.sa').trim();
+  const password = String(process.env.SMTP_APP_PASSWORD || '').trim();
+  if (!password) throw new Error('SMTP_APP_PASSWORD is missing');
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: false,
+    requireTLS: true,
+    auth: { user: sender, pass: password },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: { minVersion: 'TLSv1.2' }
+  });
+  await transporter.verify();
+}
+
 export default async function handler(_req, res) {
   const status = {
     ok: false,
     service: 'password-reset',
-    config: {
-      firebaseAdmin: false,
-      smtpPassword: present('SMTP_APP_PASSWORD'),
-      smtpUser: present('SMTP_USER'),
-      appUrl: present('APP_URL') || present('VERCEL_URL')
-    }
+    config: { firebaseAdmin: false, smtpConnection: false, appUrl: present('APP_URL') || present('VERCEL_URL') }
   };
   try {
     initFirebase();
     await admin.auth().listUsers(1);
     status.config.firebaseAdmin = true;
   } catch (error) {
-    status.error = safeError(error);
+    status.firebaseError = safeError(error, 'firebase');
   }
-  status.ok = status.config.firebaseAdmin && status.config.smtpPassword;
+  try {
+    await verifySmtp();
+    status.config.smtpConnection = true;
+  } catch (error) {
+    status.smtpError = safeError(error, 'smtp');
+  }
+  status.ok = status.config.firebaseAdmin && status.config.smtpConnection;
   return res.status(status.ok ? 200 : 503).json(status);
 }
