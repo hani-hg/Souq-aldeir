@@ -14,6 +14,8 @@ const requiredFiles = [
   'js/admin.js',
   'js/app.js',
   'server/index.js',
+  'api/password-reset.js',
+  'api/health.js',
   'package.json',
   '.env.example',
   'manifest.json',
@@ -92,7 +94,11 @@ if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/ch
 if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');
 const server = readFileSync(join(root, 'server/index.js'), 'utf8');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('SMTP reset server is incomplete');
+const vercelReset = readFileSync(join(root, 'api/password-reset.js'), 'utf8');
+const vercelHealth = readFileSync(join(root, 'api/health.js'), 'utf8');
+if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('Local SMTP reset server is incomplete');
+if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('SMTP_APP_PASSWORD') || !vercelReset.includes('export default')) throw new Error('Vercel SMTP reset function is incomplete');
+if (!vercelHealth.includes('status(200)')) throw new Error('Vercel health function is missing');
 if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requireTLS: true')) throw new Error('SMTP TLS is not enforced');
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
