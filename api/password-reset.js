@@ -12,14 +12,20 @@ function appUrl() {
 
 function initFirebase() {
   if (admin.apps.length) return admin.app();
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)) });
-  } else {
-    admin.initializeApp({ credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n')
-    }) });
+  try {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      if (!serviceAccount.project_id && !serviceAccount.projectId) throw new Error('Firebase service account JSON has no project id');
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    } else {
+      const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
+      const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
+      const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
+      if (!projectId || !clientEmail || !privateKey) throw new Error('Firebase Admin environment variables are incomplete');
+      admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
+    }
+  } catch (error) {
+    throw new Error(`Firebase Admin configuration error: ${error.message}`);
   }
   return admin.app();
 }
@@ -46,6 +52,7 @@ function escapeHtml(value) {
 
 async function sendMail(email, link) {
   const sender = process.env.SMTP_USER || 'souq.aldeir@outlook.sa';
+  if (!String(process.env.SMTP_APP_PASSWORD || '').trim()) throw new Error('SMTP_APP_PASSWORD is missing');
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
     port: Number(process.env.SMTP_PORT || 587),

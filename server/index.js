@@ -79,7 +79,21 @@ async function sendResetEmail(email, link) {
   });
 }
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'password-reset' }));
+app.get('/api/health', (_req, res) => {
+  const hasJson = Boolean(String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim());
+  const hasSplitFirebase = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'].every(name => Boolean(String(process.env[name] || '').trim()));
+  const status = {
+    ok: (hasJson || hasSplitFirebase) && Boolean(String(process.env.SMTP_APP_PASSWORD || '').trim()),
+    service: 'password-reset',
+    config: {
+      firebaseAdmin: hasJson || hasSplitFirebase,
+      smtpPassword: Boolean(String(process.env.SMTP_APP_PASSWORD || '').trim()),
+      smtpUser: Boolean(String(process.env.SMTP_USER || '').trim()),
+      appUrl: Boolean(String(process.env.APP_URL || '').trim())
+    }
+  };
+  res.status(status.ok ? 200 : 503).json(status);
+});
 app.post('/api/password-reset', async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!emailPattern.test(email) || email.endsWith('@souq-aldeir.local') || isRateLimited(req, email)) return genericResponse(res);
