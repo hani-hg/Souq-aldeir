@@ -74,7 +74,11 @@ export default async function handler(req, res) {
     const link = await admin.auth().generatePasswordResetLink(email, { url: baseUrl, handleCodeInApp: false });
     await sendMail(email, link);
   } catch (error) {
+    // An unknown Firebase account keeps the same neutral response; infrastructure
+    // failures return a generic service error so the UI does not claim success.
+    if (error.code === 'auth/user-not-found') return generic(res);
     console.error('password-reset:', error.code || error.message);
+    return res.status(503).json({ ok: false, error: 'reset_service_unavailable' });
   }
   return generic(res);
 }

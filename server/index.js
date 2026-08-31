@@ -88,8 +88,10 @@ app.post('/api/password-reset', async (req, res) => {
     const link = await admin.auth().generatePasswordResetLink(email, { url: siteUrl, handleCodeInApp: false });
     await sendResetEmail(email, link);
   } catch (error) {
-    // Keep account existence and SMTP failures private from the public endpoint.
+    // Keep account existence private, but let the UI distinguish an infrastructure failure.
+    if (error.code === 'auth/user-not-found') return genericResponse(res);
     console.error('password-reset:', error.code || error.message);
+    return res.status(503).json({ ok: false, error: 'reset_service_unavailable' });
   }
   return genericResponse(res);
 });

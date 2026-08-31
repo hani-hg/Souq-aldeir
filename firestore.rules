@@ -70,7 +70,8 @@ service cloud.firestore {
           && request.resource.data.banned == resource.data.banned
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'phone', 'phoneNormalized'])
         );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin()
+        || (signedIn() && request.auth.uid == userId && resource.data.role == 'user');
 
       match /warnings/{warningId} {
         allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);

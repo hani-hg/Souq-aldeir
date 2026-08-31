@@ -52,6 +52,8 @@ if (!auth.includes('id="resetEmail"') && !html.includes('id="resetEmail"')) {
 if (!auth.includes("window.SOUQ_PASSWORD_RESET_ENDPOINT") || !auth.includes("fetch(endpoint")) {
   throw new Error('Password reset must use the secure SMTP backend endpoint');
 }
+if (!auth.includes('phoneIndexRef.set(')) throw new Error('Signup phone index must use Firebase Web SDK set');
+if (!auth.includes("'permission-denied':") || !auth.includes("'unavailable':")) throw new Error('Signup Firebase error mapping is incomplete');
 if (!auth.includes('reauthenticateWithCredential')) {
   throw new Error('Sensitive account changes must reauthenticate the user');
 }
@@ -68,7 +70,7 @@ if (!auth.includes('initAuthWiring')) {
   throw new Error('Auth keyboard/hint wiring is missing');
 }
 const usersSetIdx = auth.indexOf("collection('users').doc(cred.user.uid).set");
-const phoneIdxCreateIdx = auth.indexOf('phoneIndexRef.create');
+const phoneIdxCreateIdx = auth.indexOf('phoneIndexRef.set');
 if (usersSetIdx < 0 || phoneIdxCreateIdx < 0 || usersSetIdx > phoneIdxCreateIdx) {
   throw new Error('Signup must create the users doc before phoneIndex (anti-squatting)');
 }
@@ -77,6 +79,7 @@ const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
 if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
+if (!admin.includes("fetch(endpoint") || !admin.includes("method: 'POST'")) throw new Error('Admin reset must use SMTP backend');
 if (!admin.includes('function openAdminFeatureDuration') || !admin.includes('applyAdminFeatureDuration') || !admin.includes('[3, 7, 15, 30]')) throw new Error('Admin featured duration controls are missing');
 if (!chat.includes('maxlength="1000"')) throw new Error('Chat message length guard is missing');
 
@@ -98,6 +101,7 @@ const vercelReset = readFileSync(join(root, 'api/password-reset.js'), 'utf8');
 const vercelHealth = readFileSync(join(root, 'api/health.js'), 'utf8');
 if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('Local SMTP reset server is incomplete');
 if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('SMTP_APP_PASSWORD') || !vercelReset.includes('export default')) throw new Error('Vercel SMTP reset function is incomplete');
+if (!vercelReset.includes('status(503)') || !vercelReset.includes("auth/user-not-found")) throw new Error('Vercel reset failure handling is incomplete');
 if (!vercelHealth.includes('status(200)')) throw new Error('Vercel health function is missing');
 if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requireTLS: true')) throw new Error('SMTP TLS is not enforced');
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');

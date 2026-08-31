@@ -676,13 +676,18 @@ async function sendResetLinkForRequest(requestId, uid) {
   if (!email) return;
   adminConfirm(`سيتم إرسال رابط تغيير كلمة المرور إلى ${escapeHtml(email)}. هل تريد المتابعة؟`, async () => {
     try {
-      await auth.sendPasswordResetEmail(email);
-      await db.collection('recoveryRequests').doc(requestId).update({ status: 'resolved', method: 'email', handledAt: firebase.firestore.FieldValue.serverTimestamp() });
+      const endpoint = window.SOUQ_PASSWORD_RESET_ENDPOINT || '/api/password-reset';
+      const response = await fetch(endpoint, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email })
+      });
+      if (!response.ok) throw new Error('reset-service-unavailable');
+      await db.collection('recoveryRequests').doc(requestId).update({ status: 'resolved', method: 'email-smtp', handledAt: firebase.firestore.FieldValue.serverTimestamp() });
       adminRecoveryCache = adminRecoveryCache.filter(r => r.id !== requestId);
       showToast('تم إرسال رابط تغيير كلمة المرور', 'ok');
       checkAdminNotifs(); switchAdminTab('recovery');
     } catch (error) {
-      showToast(error.code === 'auth/user-not-found' ? 'البريد غير مرتبط بحساب Firebase' : 'تعذر إرسال الرابط', 'bad');
+      showToast(error.message === 'reset-service-unavailable' ? 'خدمة البريد غير متاحة، تأكد من نشر Vercel وإعداد المتغيرات' : 'تعذر إرسال الرابط', 'bad');
     }
   }, false);
 }

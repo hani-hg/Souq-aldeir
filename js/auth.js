@@ -224,7 +224,9 @@ async function doSignup() {
         agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
         role: 'user', banned: false
       });
-      await phoneIndexRef.create({ userId: cred.user.uid, phoneNormalized: phone });
+      // Firebase Web SDK v8 supports set(); Firestore rules reject an overwrite
+      // of an existing phone index, preserving uniqueness without a paid backend.
+      await phoneIndexRef.set({ userId: cred.user.uid, phoneNormalized: phone });
       await cred.user.updateProfile({ displayName: name });
     } catch (setupError) {
       await phoneIndexRef.delete().catch(() => {});
@@ -238,6 +240,9 @@ async function doSignup() {
       'auth/email-already-in-use': 'البريد الإلكتروني مسجل مسبقًا',
       'already-exists': 'رقم الهاتف مسجل مسبقًا',
       'auth/permission-denied': 'رقم الهاتف مسجل مسبقًا أو لا يمكن استخدامه',
+      'permission-denied': 'تعذر حفظ الحساب؛ قد يكون رقم الهاتف مستخدمًا مسبقًا',
+      'failed-precondition': 'تعذر إكمال إنشاء الحساب، حاول مجددًا',
+      'unavailable': 'خدمة الحساب غير متاحة مؤقتًا، حاول مجددًا',
       'auth/weak-password': 'كلمة المرور ضعيفة، استخدم 8 أحرف على الأقل',
       'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
       'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
@@ -277,6 +282,8 @@ async function doResetStep1() {
     // Keep user enumeration-resistant behavior for unknown emails.
     if (e.code === 'auth/user-not-found') {
       showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور.');
+    } else if (e.message === 'reset-service-unavailable' || e.message === 'Failed to fetch') {
+      showAuthError('خدمة البريد غير متاحة حاليًا؛ تأكد من نشر Vercel وإعداد متغيرات البيئة ثم حاول مجددًا');
     } else {
       showAuthError(msgs[e.code] || 'تعذر إرسال رابط الاستعادة، حاول مجددًا');
     }
