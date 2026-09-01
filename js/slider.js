@@ -15,7 +15,7 @@ function buildSlider(ads) {
         <div class="slide-promo-content">
           <div class="slide-promo-icon"><i class="fa fa-star"></i></div>
           <div class="slide-promo-title">أبرز إعلانك أمام آلاف المشترين</div>
-          <div class="slide-promo-sub">ابدأ بـ 1$ فقط · اضغط لطلب التمييز</div>
+          <div class="slide-promo-sub">اطلب تمييز إعلانك مجانًا · اضغط لطلب التمييز</div>
         </div>
       </div>`;
     document.getElementById('sliderDots').innerHTML = '';

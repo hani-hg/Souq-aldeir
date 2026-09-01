@@ -21,7 +21,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.featured == false
-        && !request.resource.data.keys().hasAny(['userEmail', 'role', 'banned', 'views']);
+        && !request.resource.data.keys().hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl']);
       allow update: if isAdmin()
         || (
           signedIn()

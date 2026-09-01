@@ -26,8 +26,9 @@ export default async function handler(req, res) {
   try {
     initFirebase();
     await admin.auth().verifyIdToken(authHeader.slice(7));
-    const resourceType = req.body?.resourceType === 'video' ? 'video' : 'image';
-    const folder = resourceType === 'video' ? 'souq_ads_video' : 'souq_ads';
+    if (req.body?.resourceType && req.body.resourceType !== 'image') return res.status(400).json({ error: 'video_uploads_disabled' });
+    const resourceType = 'image';
+    const folder = 'souq_ads';
     const timestamp = Math.floor(Date.now() / 1000);
     const signature = crypto.createHash('sha1').update(`folder=${folder}&timestamp=${timestamp}${apiSecret}`).digest('hex');
     return res.status(200).json({ cloudName, apiKey, timestamp, folder, signature, resourceType });

@@ -1157,7 +1157,7 @@ async function applyAdminFeatureDuration(adId, days) {
 /* ══════════════════════════════════════════
    إجراءات طلبات التمييز
 ══════════════════════════════════════════ */
-const PLAN_DAYS = {'3 أيام':3,'7 أيام':7,'15 يومًا':15,'30 يومًا':30,'30 يوماً':30,'15 يوم':15,'3 أيام - 1$':3,'7 أيام - 2$':7,'15 يوم - 3$':15,'30 يوم - 5$':30,'3 days':3,'7 days':7,'15 days':15,'30 days':30};
+const PLAN_DAYS = {'3 أيام':3,'7 أيام':7,'15 يومًا':15,'30 يومًا':30,'30 يوماً':30,'15 يوم':15,'مجاني':7};
 async function approveFeature(reqId, adId) {
   const req  = adminReqsCache.find(r=>r.id===reqId);
   const plan = req ? req.plan : '';

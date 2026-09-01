@@ -210,7 +210,6 @@
     </div>
     <div class="ad-duration-fixed"><i class="fa fa-calendar-check"></i><span><strong>مدة الإعلان ثابتة: 20 يومًا</strong><small>ينتهي الإعلان تلقائيًا بعد 20 يومًا من النشر.</small></span></div>
     <div class="fg"><label for="adImg">صور الإعلان (حتى 5 صور، بحد أقصى 5MB للصورة)</label><input type="file" id="adImg" accept="image/jpeg,image/png,image/webp" multiple aria-describedby="imgHelp"><small id="imgHelp" class="field-help">يفضل استخدام صور واضحة بحجم صغير لتسريع النشر.</small><div id="imgPreview" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
-    <div class="fg"><label for="adVideo">فيديو للإعلان (اختياري، بحد أقصى 25MB)</label><input type="file" id="adVideo" accept="video/mp4,video/webm,video/quicktime" aria-describedby="videoHelp"><small id="videoHelp" class="field-help">اجعل الفيديو قصيراً لتقليل وقت الرفع.</small><div id="videoPreview"></div></div>
     <div class="fg" style="display:flex;align-items:flex-start;gap:8px">
       <input type="checkbox" id="adAgreeTerms" style="width:auto;margin-top:3px">
       <label for="adAgreeTerms" style="font-weight:400;font-size:.82em;color:var(--dark);margin-bottom:0">أوافق على <a href="#" onclick="openModal('termsModal');return false;" style="color:var(--blue);font-weight:700">شروط استخدام السوق</a> وأتحمّل مسؤولية صحة إعلاني والتعامل مع الطرف الآخر</label>
@@ -330,16 +329,10 @@
       <span class="sheet-title">⭐ إعلانات مميزة</span>
       <button class="x-btn" onclick="closeModal('featuredModal')">✕</button>
     </div>
-    <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;">أبرز إعلانك في أعلى الصفحة أمام آلاف المشترين</p>
-    <div class="promo-plans">
-      <div class="plan-card selected" onclick="selectPlan(this,'3 أيام')"><div class="plan-name">3 أيام</div><div class="plan-price">1$</div><div class="plan-desc">للإعلانات السريعة</div></div>
-      <div class="plan-card" onclick="selectPlan(this,'7 أيام')"><div class="plan-name">7 أيام</div><div class="plan-price">2$</div><div class="plan-desc">الأكثر شعبية ✨</div></div>
-      <div class="plan-card" onclick="selectPlan(this,'15 يومًا')"><div class="plan-name">15 يومًا</div><div class="plan-price">3$</div><div class="plan-desc">للبضائع التي تحتاج وقتًا</div></div>
-      <div class="plan-card" onclick="selectPlan(this,'30 يومًا')"><div class="plan-name">شهر واحد</div><div class="plan-price">5$</div><div class="plan-desc">للمتاجر والتجار</div></div>
-    </div>
+    <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;">يمكنك طلب تمييز إعلانك مجانًا، وتراجع الإدارة الطلب يدويًا.</p>
     <div class="fg"><label>اختر إعلانك</label><select id="featuredAdSel"><option value="">-- اختر إعلانك --</option></select></div>
-    <button class="btn btn-gold" onclick="requestFeatured()"><i class="fa fa-star"></i> طلب التمييز</button>
-    <p style="font-size:.73em;color:var(--gray);text-align:center;margin-top:8px;">ستراجع الإدارة الطلب وتتواصل معك هاتفياً لإتمام الدفع</p>
+    <button class="btn btn-gold" onclick="requestFeatured()"><i class="fa fa-star"></i> طلب تمييز مجاني</button>
+    <p style="font-size:.73em;color:var(--gray);text-align:center;margin-top:8px;">لا يوجد دفع إلكتروني أو رسوم عبر الموقع.</p>
   </div>
 </div>
 

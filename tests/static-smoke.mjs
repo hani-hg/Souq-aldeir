@@ -40,7 +40,8 @@ if (!positions.every((position, index) => index === 0 || position > positions[in
 if (!html.includes('lang="ar"') || !html.includes('dir="rtl"')) throw new Error('Arabic RTL document metadata is missing');
 if (!html.includes('serviceWorker.register')) throw new Error('PWA service worker registration is missing');
 if (!html.includes('id="siteShareBtn"') || !html.includes('qrcode.min.js')) throw new Error('QR sharing UI is missing');
-if (!html.includes("selectPlan(this,'3 أيام')") || !html.includes("selectPlan(this,'7 أيام')") || !html.includes("selectPlan(this,'15 يومًا')") || !html.includes("selectPlan(this,'30 يومًا')")) throw new Error('Featured duration options are incomplete');
+if (!html.includes('طلب تمييز مجاني') || html.includes('plan-price') || html.includes('إتمام الدفع')) throw new Error('Paid featured flow must be disabled');
+if (html.includes('id="adVideo"') || html.includes('videoHelp')) throw new Error('Video upload UI must be removed');
 if (html.includes('id="adDuration"')) throw new Error('Ad duration selector should be removed');
 
 const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
@@ -79,11 +80,12 @@ const ads = readFileSync(join(root, 'js/ads.js'), 'utf8');
 const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
 if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
-if (!ads.includes('safeMediaUrl(ad.videoUrl)') || !ads.includes('escapeHtml(ad.description)')) throw new Error('Ad detail media/text sanitization is missing');
+if (!ads.includes('escapeHtml(ad.description)') || !ads.includes('safeMediaUrl(images[0])')) throw new Error('Ad detail media/text sanitization is missing');
 const adCreateStart = ads.indexOf("db.collection('ads').add({");
 const adCreateBlock = adCreateStart >= 0 ? ads.slice(adCreateStart, adCreateStart + 1400) : '';
 if (adCreateBlock.includes('userEmail')) throw new Error('Public ad must not store user email');
 if (ads.includes('upload_preset') || !ads.includes('getSignedUpload')) throw new Error('Uploads must use authenticated signed upload');
+if (ads.includes('videoUrl') || ads.includes('adVideo')) throw new Error('Video support must be removed from ad logic');
 if (ads.includes("doc(id).update({ views:") || ads.includes('countVisitOnce();')) throw new Error('Client-side view/visit counters must not write directly');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
 if (!admin.includes("fetch(endpoint") || !admin.includes("method: 'POST'")) throw new Error('Admin reset must use SMTP backend');
@@ -102,7 +104,7 @@ if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Rec
 if (!sw.includes("souq-aldeir-v6") || !sw.includes("/js/share.js")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
-if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views'])")) throw new Error('Ad create fields are not restricted');
+if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
 if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');
 const server = readFileSync(join(root, 'server/index.js'), 'utf8');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));

@@ -128,7 +128,7 @@ function renderAds(list) {
         ${cover ? `<img class="ad-img" src="${escapeHtml(cover)}" alt="${escapeHtml(ad.title)}" loading="lazy">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
         <button class="ad-fav ${favorites.has(ad.id) ? 'liked' : ''}" onclick="event.stopPropagation();toggleFav('${ad.id}',this)"><i class="fa fa-heart"></i></button>
         ${ad.category ? `<span class="ad-cat-badge">${escapeHtml(ad.category)}</span>` : ''}
-        ${(photoCount > 1 || ad.videoUrl) ? `<span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.62em;font-weight:700;padding:2px 7px;border-radius:20px">${ad.videoUrl ? '<i class="fa fa-video"></i>' : ''} ${photoCount > 1 ? photoCount : ''}</span>` : ''}
+        ${photoCount > 1 ? `<span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.62em;font-weight:700;padding:2px 7px;border-radius:20px">${photoCount}</span>` : ''}
       </div>
       <div class="ad-body">
         <div class="ad-price">${formatPrice(ad)}</div>
@@ -174,7 +174,6 @@ function openDetail(id) {
     ${images.length > 1
       ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `${safeMediaUrl(url) ? `<img src="${escapeHtml(safeMediaUrl(url))}" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${escapeHtml(ad.title)}">` : ''}`).join('')}</div>`
       : (images.length === 1 ? `${safeMediaUrl(images[0]) ? `<img class="detail-img" src="${escapeHtml(safeMediaUrl(images[0]))}" alt="${escapeHtml(ad.title)}">` : ''}` : '')}
-    ${safeMediaUrl(ad.videoUrl) ? `<video controls style="width:100%;border-radius:14px;margin-bottom:12px;background:#000"><source src="${escapeHtml(safeMediaUrl(ad.videoUrl))}">متصفحك لا يدعم تشغيل الفيديو</video>` : ''}
     ${ad.featured ? '<div style="color:var(--gold);font-weight:800;margin-bottom:6px">⭐ إعلان مميز</div>' : ''}
     <span style="background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:.78em;font-weight:700">${escapeHtml(ad.category)}</span>
     <h3 style="font-size:1.1em;font-weight:800;margin:10px 0 4px">${escapeHtml(ad.title)}</h3>
@@ -249,10 +248,6 @@ function initAddAdForm() {
       r.readAsDataURL(f);
     });
   };
-  document.getElementById('adVideo').onchange = function () {
-    const f = this.files[0];
-    document.getElementById('videoPreview').textContent = f ? `🎬 ${f.name}` : '';
-  };
 }
 
 async function getSignedUpload(resourceType) {
@@ -269,7 +264,7 @@ async function getSignedUpload(resourceType) {
 }
 
 async function uploadToCloudinary(file, resourceType, signed) {
-  const endpointType = resourceType === 'video' ? 'auto' : 'image';
+  const endpointType = 'image';
   const fd = new FormData();
   fd.append('file', file);
   fd.append('api_key', signed.apiKey);
@@ -302,27 +297,18 @@ async function doAddAd() {
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري النشر...';
   try {
     const imgFiles = Array.from(document.getElementById('adImg').files || []).slice(0, 5);
-    const videoFile = document.getElementById('adVideo').files[0];
     const invalidImage = imgFiles.find(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
     if (invalidImage) throw new Error('كل صورة يجب أن تكون JPG أو PNG أو WebP وحجمها أقل من 5MB');
-    if (videoFile && (!['video/mp4', 'video/webm', 'video/quicktime'].includes(videoFile.type) || videoFile.size > 25 * 1024 * 1024)) {
-      throw new Error('الفيديو يجب أن يكون MP4 أو WebM أو MOV وحجمه أقل من 25MB');
-    }
     const images = [];
     const imageSignature = imgFiles.length ? await getSignedUpload('image') : null;
     for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
 
-    let videoUrl = null;
-    if (videoFile) {
-      const videoSignature = await getSignedUpload('video');
-      videoUrl = await uploadToCloudinary(videoFile, 'video', videoSignature);
-    }
 
     const durationDays = 20;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
-      images, imageUrl: images[0] || null, videoUrl, featured: false,
+      images, imageUrl: images[0] || null, featured: false,
       userId: currentUser.uid,
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -335,9 +321,7 @@ async function doAddAd() {
     document.getElementById('adAreaOther').style.display = 'none';
     document.getElementById('adAgreeTerms').checked = false;
     document.getElementById('imgPreview').innerHTML = '';
-    document.getElementById('videoPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
-    document.getElementById('adVideo').value = '';
     showToast('تم نشر إعلانك بنجاح! 🎉', 'ok');
     loadAds();
   } catch (ex) {
@@ -399,13 +383,6 @@ function populateFeaturedSelect() {
   sel.innerHTML = '<option value="">-- اختر إعلانك --</option>' + myAds.map(a => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.title || 'إعلان')}</option>`).join('');
 }
 
-const FEATURED_PLAN_DAYS = {'3 أيام': 3, '7 أيام': 7, '15 يومًا': 15, '30 يومًا': 30};
-function selectPlan(el, plan) {
-  selectedPlan = plan;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
 async function requestFeatured() {
   const adId = document.getElementById('featuredAdSel').value;
   if (!adId) { showToast('اختر إعلاناً أولاً', 'bad'); return; }
@@ -413,8 +390,8 @@ async function requestFeatured() {
   try {
     await db.collection('featuredRequests').add({
       adId, adTitle: ad ? ad.title : '', userId: currentUser.uid,
-      userEmail: currentUser.email || '', plan: selectedPlan,
-      durationDays: FEATURED_PLAN_DAYS[selectedPlan] || 3,
+      userEmail: currentUser.email || '', plan: 'مجاني',
+      durationDays: 0,
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     closeModal('featuredModal');
