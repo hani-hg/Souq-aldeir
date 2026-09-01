@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
 import admin from 'firebase-admin';
+import nodemailer from 'nodemailer';
 
 function present(name) {
   return Boolean(String(process.env[name] || '').trim());
@@ -55,8 +55,8 @@ async function verifySmtp() {
 export default async function handler(_req, res) {
   const status = {
     ok: false,
-    service: 'password-reset',
-    config: { firebaseAdmin: false, smtpConnection: false, appUrl: present('APP_URL') || present('VERCEL_URL') }
+    service: 'souq-aldeir-backend',
+    config: { firebaseAdmin: false, smtpConnection: false, cloudinarySigning: present('CLOUDINARY_CLOUD_NAME') && present('CLOUDINARY_API_KEY') && present('CLOUDINARY_API_SECRET'), appUrl: present('APP_URL') || present('VERCEL_URL') }
   };
   try {
     initFirebase();
@@ -71,6 +71,6 @@ export default async function handler(_req, res) {
   } catch (error) {
     status.smtpError = safeError(error, 'smtp');
   }
-  status.ok = status.config.firebaseAdmin && status.config.smtpConnection;
+  status.ok = status.config.firebaseAdmin && status.config.smtpConnection && status.config.cloudinarySigning;
   return res.status(status.ok ? 200 : 503).json(status);
 }

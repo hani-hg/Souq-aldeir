@@ -172,31 +172,30 @@ function openDetail(id) {
   const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
   document.getElementById('detailContent').innerHTML = `
     ${images.length > 1
-      ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `<img src="${url}" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${ad.title}">`).join('')}</div>`
-      : (images.length === 1 ? `<img class="detail-img" src="${images[0]}" alt="${ad.title}">` : '')}
-    ${ad.videoUrl ? `<video controls style="width:100%;border-radius:14px;margin-bottom:12px;background:#000"><source src="${ad.videoUrl}">متصفحك لا يدعم تشغيل الفيديو</video>` : ''}
+      ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `${safeMediaUrl(url) ? `<img src="${escapeHtml(safeMediaUrl(url))}" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${escapeHtml(ad.title)}">` : ''}`).join('')}</div>`
+      : (images.length === 1 ? `${safeMediaUrl(images[0]) ? `<img class="detail-img" src="${escapeHtml(safeMediaUrl(images[0]))}" alt="${escapeHtml(ad.title)}">` : ''}` : '')}
+    ${safeMediaUrl(ad.videoUrl) ? `<video controls style="width:100%;border-radius:14px;margin-bottom:12px;background:#000"><source src="${escapeHtml(safeMediaUrl(ad.videoUrl))}">متصفحك لا يدعم تشغيل الفيديو</video>` : ''}
     ${ad.featured ? '<div style="color:var(--gold);font-weight:800;margin-bottom:6px">⭐ إعلان مميز</div>' : ''}
-    <span style="background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:.78em;font-weight:700">${ad.category || ''}</span>
-    <h3 style="font-size:1.1em;font-weight:800;margin:10px 0 4px">${ad.title || ''}</h3>
+    <span style="background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:.78em;font-weight:700">${escapeHtml(ad.category)}</span>
+    <h3 style="font-size:1.1em;font-weight:800;margin:10px 0 4px">${escapeHtml(ad.title)}</h3>
     <div class="detail-price">${formatPrice(ad)}</div>
-    <p class="detail-desc">${(ad.description || '').replace(/\n/g, '<br>')}</p>
+    <p class="detail-desc">${escapeHtml(ad.description).replace(/\n/g, '<br>')}</p>
     <div class="info-box">
-      ${ad.phone ? `<div class="info-row"><i class="fa fa-phone"></i><span>${ad.phone}</span></div>` : ''}
-      <div class="info-row"><i class="fa fa-map-marker-alt"></i><span>${ad.area || 'دير الزور'}</span></div>
+      ${ad.phone ? `<div class="info-row"><i class="fa fa-phone"></i><span>${escapeHtml(ad.phone)}</span></div>` : ''}
+      <div class="info-row"><i class="fa fa-map-marker-alt"></i><span>${escapeHtml(ad.area || 'دير الزور')}</span></div>
       <div class="info-row"><i class="fa fa-clock"></i><span>${timeAgo(ad.createdAt)}</span></div>
       <div class="info-row"><i class="fa fa-eye"></i><span>${(ad.views || 0) + 1} مشاهدة</span></div>
     </div>
     ${ad.phone ? `
-      <a href="tel:${ad.phone}" class="call-btn"><i class="fa fa-phone-alt"></i> اتصل بالبائع</a>
+      <a href="tel:${escapeHtml(String(ad.phone || '').replace(/[^+\d\s()-]/g, ''))}" class="call-btn"><i class="fa fa-phone-alt"></i> اتصل بالبائع</a>
 ` : ''}
-    <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
-    ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="startChat('${ad.id}','${ad.userId}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${ad.id}','${(ad.title || '').replace(/'/g, '')}')"><i class="fa fa-flag"></i> إبلاغ</button></div>` : ''}
+    <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${escapeHtml(ad.id)}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
+    ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="startChat('${escapeHtml(ad.id)}','${escapeHtml(ad.userId)}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${escapeHtml(ad.id)}')"><i class="fa fa-flag"></i> إبلاغ</button></div>` : ''}
     ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>` : ''}
     ${canAdmin && !isOwner ? `<div class="action-btns" style="margin-top:6px"><button class="btn btn-red btn-sm" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i> حذف (مدير)</button><button class="btn btn-outline btn-sm" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? 'إلغاء التمييز' : '⭐ تمييز'}</button></div>` : ''}
     ${renderSellerOtherAdsHtml(ad)}
   `;
   openModal('detailModal');
-  db.collection('ads').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
 }
 
 /* Surfaces a seller's other active listings — helps buyers browse
@@ -211,7 +210,7 @@ function renderSellerOtherAdsHtml(ad) {
       ${others.map(o => {
         const cover = (o.images && o.images.length) ? o.images[0] : o.imageUrl;
         return `<div onclick="openDetail('${o.id}')" style="flex-shrink:0;width:110px;cursor:pointer">
-          ${cover ? `<img src="${cover}" style="width:110px;height:90px;object-fit:cover;border-radius:10px">` : `<div style="width:110px;height:90px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:#aab"><i class="fa fa-image"></i></div>`}
+          ${safeMediaUrl(cover) ? `<img src="${escapeHtml(safeMediaUrl(cover))}" style="width:110px;height:90px;object-fit:cover;border-radius:10px">` : `<div style="width:110px;height:90px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:#aab"><i class="fa fa-image"></i></div>`}
           <div style="font-size:.72em;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(o.title)}</div>
           <div style="font-size:.7em;color:var(--green);font-weight:700">${formatPrice(o)}</div>
         </div>`;
@@ -221,7 +220,9 @@ function renderSellerOtherAdsHtml(ad) {
 
 /* Shareable per-ad link: ?ad=ID auto-opens that ad's detail on load (see app.js) */
 function shareAd(adId, adTitle) {
-  const url = `${location.origin}${location.pathname}?ad=${adId}`;
+  const knownAd = allAds.find(a => a.id === adId);
+  adTitle = adTitle || knownAd?.title || 'إعلان';
+  const url = `${location.origin}${location.pathname}?ad=${encodeURIComponent(adId)}`;
   if (navigator.share) {
     navigator.share({ title: adTitle || 'إعلان', text: 'شاهد هذا الإعلان في سوق دير الزور', url }).catch(() => {});
   } else {
@@ -254,6 +255,33 @@ function initAddAdForm() {
   };
 }
 
+async function getSignedUpload(resourceType) {
+  if (!currentUser) throw new Error('يجب تسجيل الدخول قبل رفع الملفات');
+  const token = await currentUser.getIdToken();
+  const response = await fetch(window.SOUQ_CLOUDINARY_SIGN_ENDPOINT || '/api/cloudinary-sign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ resourceType })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.signature) throw new Error('خدمة رفع الملفات غير متاحة حاليًا');
+  return data;
+}
+
+async function uploadToCloudinary(file, resourceType, signed) {
+  const endpointType = resourceType === 'video' ? 'auto' : 'image';
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('api_key', signed.apiKey);
+  fd.append('timestamp', String(signed.timestamp));
+  fd.append('folder', signed.folder);
+  fd.append('signature', signed.signature);
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signed.cloudName)}/${endpointType}/upload`, { method: 'POST', body: fd });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.secure_url) throw new Error(data.error?.message || 'فشل رفع الملف');
+  return data.secure_url;
+}
+
 async function doAddAd() {
   const title = document.getElementById('adTitle').value.trim();
   const desc = document.getElementById('adDesc').value.trim();
@@ -281,31 +309,21 @@ async function doAddAd() {
       throw new Error('الفيديو يجب أن يكون MP4 أو WebM أو MOV وحجمه أقل من 25MB');
     }
     const images = [];
-    for (const f of imgFiles) {
-      const fd = new FormData();
-      fd.append('file', f); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads');
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!data.secure_url) throw new Error(data.error?.message ? `فشل رفع صورة: ${data.error.message}` : 'فشل رفع إحدى الصور');
-      images.push(data.secure_url);
-    }
+    const imageSignature = imgFiles.length ? await getSignedUpload('image') : null;
+    for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
 
     let videoUrl = null;
     if (videoFile) {
-      const fd = new FormData();
-      fd.append('file', videoFile); fd.append('upload_preset', CLOUDINARY_PRESET); fd.append('folder', 'souq_ads_video');
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!data.secure_url) throw new Error(data.error?.message ? `فشل رفع الفيديو: ${data.error.message}` : 'فشل رفع الفيديو');
-      videoUrl = data.secure_url;
+      const videoSignature = await getSignedUpload('video');
+      videoUrl = await uploadToCloudinary(videoFile, 'video', videoSignature);
     }
 
     const durationDays = 20;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
-      images, imageUrl: images[0] || null, videoUrl, featured: false, views: 0,
-      userId: currentUser.uid, userEmail: currentUser.email,
+      images, imageUrl: images[0] || null, videoUrl, featured: false,
+      userId: currentUser.uid,
       userName: currentUser.displayName || 'مستخدم',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
@@ -378,7 +396,7 @@ function openFeaturedModal() {
 function populateFeaturedSelect() {
   const sel = document.getElementById('featuredAdSel'); if (!sel || !currentUser) return;
   const myAds = allAds.filter(a => a.userId === currentUser.uid);
-  sel.innerHTML = '<option value="">-- اختر إعلانك --</option>' + myAds.map(a => `<option value="${a.id}">${a.title || 'إعلان'}</option>`).join('');
+  sel.innerHTML = '<option value="">-- اختر إعلانك --</option>' + myAds.map(a => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.title || 'إعلان')}</option>`).join('');
 }
 
 const FEATURED_PLAN_DAYS = {'3 أيام': 3, '7 أيام': 7, '15 يومًا': 15, '30 يومًا': 30};
@@ -408,6 +426,7 @@ async function requestFeatured() {
 
 /* ============ REPORT AD ============ */
 async function reportAd(adId, adTitle) {
+  adTitle = adTitle || allAds.find(a => a.id === adId)?.title || '';
   const reason = prompt('لماذا تُبلغ عن هذا الإعلان؟ (مثال: احتيال، سلعة مخالفة، إعلان مكرر...)');
   if (reason === null) return; // cancelled
   try {
@@ -437,10 +456,14 @@ async function openAboutModal() {
   document.getElementById('statAds').textContent = allAds.length;
   openModal('aboutModal');
 
-  db.collection('users').get().then(s => { document.getElementById('statUsers').textContent = s.size; }).catch(() => {});
   db.collection('settings').doc('stats').get().then(doc => {
-    document.getElementById('statVisits').textContent = (doc.exists && doc.data().totalVisits) ? doc.data().totalVisits.toLocaleString() : '0';
-  }).catch(() => { document.getElementById('statVisits').textContent = '—'; });
+    const stats = doc.exists ? doc.data() : {};
+    document.getElementById('statUsers').textContent = Number(stats.userCount || 0).toLocaleString();
+    document.getElementById('statVisits').textContent = Number(stats.totalVisits || 0).toLocaleString();
+  }).catch(() => {
+    document.getElementById('statUsers').textContent = '—';
+    document.getElementById('statVisits').textContent = '—';
+  });
 }
 
 /* Counts a visit once per browser tab/session (not on every reload within

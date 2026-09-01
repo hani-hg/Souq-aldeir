@@ -103,6 +103,7 @@ function openMessages() {
 }
 
 function startChat(adId, sellerId, adTitle) {
+  adTitle = adTitle || allAds.find(a => a.id === adId)?.title || '';
   if (!currentUser) { openModal('authModal'); return; }
   if (currentUser.uid === sellerId) { showToast('لا يمكنك مراسلة نفسك', 'bad'); return; }
   closeModal('detailModal');

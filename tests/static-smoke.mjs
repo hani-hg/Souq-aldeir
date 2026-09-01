@@ -15,6 +15,7 @@ const requiredFiles = [
   'js/app.js',
   'server/index.js',
   'api/password-reset.js',
+  'api/cloudinary-sign.js',
   'api/health.js',
   'package.json',
   '.env.example',
@@ -78,6 +79,12 @@ const ads = readFileSync(join(root, 'js/ads.js'), 'utf8');
 const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
 if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
+if (!ads.includes('safeMediaUrl(ad.videoUrl)') || !ads.includes('escapeHtml(ad.description)')) throw new Error('Ad detail media/text sanitization is missing');
+const adCreateStart = ads.indexOf("db.collection('ads').add({");
+const adCreateBlock = adCreateStart >= 0 ? ads.slice(adCreateStart, adCreateStart + 1400) : '';
+if (adCreateBlock.includes('userEmail')) throw new Error('Public ad must not store user email');
+if (ads.includes('upload_preset') || !ads.includes('getSignedUpload')) throw new Error('Uploads must use authenticated signed upload');
+if (ads.includes("doc(id).update({ views:") || ads.includes('countVisitOnce();')) throw new Error('Client-side view/visit counters must not write directly');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
 if (!admin.includes("fetch(endpoint") || !admin.includes("method: 'POST'")) throw new Error('Admin reset must use SMTP backend');
 if (!admin.includes('function openAdminFeatureDuration') || !admin.includes('applyAdminFeatureDuration') || !admin.includes('[3, 7, 15, 30]')) throw new Error('Admin featured duration controls are missing');
@@ -94,15 +101,19 @@ if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) t
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
 if (!sw.includes("souq-aldeir-v6") || !sw.includes("/js/share.js")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
+if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
+if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views'])")) throw new Error('Ad create fields are not restricted');
 if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');
 const server = readFileSync(join(root, 'server/index.js'), 'utf8');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const vercelReset = readFileSync(join(root, 'api/password-reset.js'), 'utf8');
+const cloudinarySign = readFileSync(join(root, 'api/cloudinary-sign.js'), 'utf8');
 const vercelHealth = readFileSync(join(root, 'api/health.js'), 'utf8');
 if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('Local SMTP reset server is incomplete');
-if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('SMTP_APP_PASSWORD') || !vercelReset.includes('export default')) throw new Error('Vercel SMTP reset function is incomplete');
+if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('SMTP_APP_PASSWORD') || !vercelReset.includes('export default') || !vercelReset.includes("from 'nodemailer'")) throw new Error('Vercel SMTP reset function is incomplete');
 if (!vercelReset.includes('status(503)') || !vercelReset.includes("auth/user-not-found")) throw new Error('Vercel reset failure handling is incomplete');
-if (!vercelHealth.includes('status.ok ? 200 : 503') || !vercelHealth.includes('firebaseAdmin')) throw new Error('Vercel health function is missing');
+if (!vercelHealth.includes('status.ok ? 200 : 503') || !vercelHealth.includes('firebaseAdmin') || !vercelHealth.includes("from 'nodemailer'")) throw new Error('Vercel health function is missing');
+if (!cloudinarySign.includes('verifyIdToken') || !cloudinarySign.includes('createHash') || !cloudinarySign.includes('CLOUDINARY_API_SECRET')) throw new Error('Signed Cloudinary endpoint is incomplete');
 if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requireTLS: true')) throw new Error('SMTP TLS is not enforced');
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));

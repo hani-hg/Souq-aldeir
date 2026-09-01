@@ -26,7 +26,6 @@ function initApp() {
   loadChatSeenMap();
   initAuthListener();  // also triggers the first loadAds() and initChatsListener()
   loadFavorites();
-  countVisitOnce();
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

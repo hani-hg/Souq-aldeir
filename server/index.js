@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import crypto from 'node:crypto';
 import helmet from 'helmet';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
@@ -94,6 +95,27 @@ app.get('/api/health', (_req, res) => {
   };
   res.status(status.ok ? 200 : 503).json(status);
 });
+app.post('/api/cloudinary-sign', async (req, res) => {
+  const authHeader = String(req.headers.authorization || '');
+  if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required' });
+  const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+  const apiKey = String(process.env.CLOUDINARY_API_KEY || '').trim();
+  const apiSecret = String(process.env.CLOUDINARY_API_SECRET || '').trim();
+  if (!cloudName || !apiKey || !apiSecret) return res.status(503).json({ error: 'upload_service_unavailable' });
+  try {
+    initFirebase();
+    await admin.auth().verifyIdToken(authHeader.slice(7));
+    const resourceType = req.body?.resourceType === 'video' ? 'video' : 'image';
+    const folder = resourceType === 'video' ? 'souq_ads_video' : 'souq_ads';
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = crypto.createHash('sha1').update(`folder=${folder}&timestamp=${timestamp}${apiSecret}`).digest('hex');
+    return res.json({ cloudName, apiKey, timestamp, folder, signature, resourceType });
+  } catch (error) {
+    console.error('cloudinary-sign:', error.code || error.message);
+    return res.status(error.code?.startsWith?.('auth/') ? 401 : 503).json({ error: 'upload_service_unavailable' });
+  }
+});
+
 app.post('/api/password-reset', async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!emailPattern.test(email) || email.endsWith('@souq-aldeir.local') || isRateLimited(req, email)) return genericResponse(res);

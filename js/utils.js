@@ -33,3 +33,14 @@ function escapeHtml(value) {
     '"': '&quot;'
   }[char]));
 }
+
+// Only render media from HTTPS origins. This prevents javascript:/data: URLs
+// from becoming executable markup when legacy or malicious records are read.
+function safeMediaUrl(value) {
+  try {
+    const url = new URL(String(value ?? ''));
+    return url.protocol === 'https:' ? url.href : '';
+  } catch (_) {
+    return '';
+  }
+}

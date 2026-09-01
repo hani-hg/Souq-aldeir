@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
 import admin from 'firebase-admin';
+import nodemailer from 'nodemailer';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const attempts = new Map();
