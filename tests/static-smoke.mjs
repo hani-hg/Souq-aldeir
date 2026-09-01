@@ -86,6 +86,9 @@ const adCreateBlock = adCreateStart >= 0 ? ads.slice(adCreateStart, adCreateStar
 if (adCreateBlock.includes('userEmail')) throw new Error('Public ad must not store user email');
 if (ads.includes('upload_preset') || !ads.includes('getSignedUpload')) throw new Error('Uploads must use authenticated signed upload');
 if (ads.includes('videoUrl') || ads.includes('adVideo')) throw new Error('Video support must be removed from ad logic');
+if (!ads.includes("moderationStatus: 'pending'")) throw new Error('New ads must enter moderation');
+if (!ads.includes('isPublicAd')) throw new Error('Public ad visibility filter is missing');
+if (!admin.includes('adminSetAdModerationStatus')) throw new Error('Admin moderation controls are missing');
 if (ads.includes("doc(id).update({ views:") || ads.includes('countVisitOnce();')) throw new Error('Client-side view/visit counters must not write directly');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
 if (!admin.includes("fetch(endpoint") || !admin.includes("method: 'POST'")) throw new Error('Admin reset must use SMTP backend');
@@ -105,6 +108,7 @@ if (!sw.includes("souq-aldeir-v7") || !sw.includes("/js/share.js")) throw new Er
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
+if (!rules.includes("request.resource.data.moderationStatus == 'pending'")) throw new Error('Firestore must block direct ad publication');
 if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');
 const server = readFileSync(join(root, 'server/index.js'), 'utf8');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));

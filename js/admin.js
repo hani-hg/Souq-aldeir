@@ -78,12 +78,13 @@ function adminInput(title, placeholder, onSubmit) {
 
 /* ── شارة الإشعارات ── */
 async function checkAdminNotifs() {
-  const [rSnap, pSnap, recoverySnap] = await Promise.all([
+  const [rSnap, pSnap, recoverySnap, pendingAdsSnap] = await Promise.all([
     db.collection('featuredRequests').where('status','==','pending').get().catch(()=>null),
     db.collection('reports').where('status','==','pending').get().catch(()=>null),
-    db.collection('recoveryRequests').where('status','==','pending').get().catch(()=>null)
+    db.collection('recoveryRequests').where('status','==','pending').get().catch(()=>null),
+    db.collection('ads').where('moderationStatus','==','pending').get().catch(()=>null)
   ]);
-  const count = (rSnap ? rSnap.size : 0) + (pSnap ? pSnap.size : 0) + (recoverySnap ? recoverySnap.size : 0);
+  const count = (rSnap ? rSnap.size : 0) + (pSnap ? pSnap.size : 0) + (recoverySnap ? recoverySnap.size : 0) + (pendingAdsSnap ? pendingAdsSnap.size : 0);
   const badge = document.getElementById('adminBadge');
   if (badge) { badge.style.display = count > 0 ? 'flex' : 'none'; badge.textContent = count > 9 ? '9+' : count; }
 }
@@ -112,12 +113,13 @@ async function openAdminPanel() {
   adminAdsAllCache  = adsSnap.docs.map(d=>({id:d.id,...d.data()}));
 
   const pendingAll = adminReqsCache.length + adminReportsCache.length + adminRecoveryCache.length;
+  const pendingAdsCount = adminAdsAllCache.filter(a => a.moderationStatus === 'pending').length;
 
   document.getElementById('adminContent').innerHTML = `
     <!-- ── شريط التبويبات ── -->
     <div class="adm-tabs" id="admTabsBar">
       <button class="adm-tab" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 نظرة عامة</button>
-      <button class="adm-tab" data-tab="ads"       onclick="switchAdminTab('ads')">📋 الإعلانات</button>
+      <button class="adm-tab" data-tab="ads"       onclick="switchAdminTab('ads')">📋 الإعلانات ${pendingAdsCount ? `<span class="adm-tab-badge">${pendingAdsCount}</span>` : ''}</button>
       <button class="adm-tab" data-tab="users"     onclick="switchAdminTab('users')">👥 المستخدمون</button>
       <button class="adm-tab" data-tab="recovery"  onclick="switchAdminTab('recovery')">🔐 استعادة الحساب ${adminRecoveryCache.length ? `<span class="adm-tab-badge">${adminRecoveryCache.length}</span>` : ''}</button>
       <button class="adm-tab" data-tab="reports"   onclick="switchAdminTab('reports')">
@@ -343,6 +345,7 @@ function renderAdsTab(ct) {
       <select id="adsFilterStatus" class="adm-filter-sel" onchange="applyAdsFilter()">
         <option value="">الحالة: الكل</option>
         <option value="featured">مميز ⭐</option>
+        <option value="pending">قيد المراجعة</option>
         <option value="active">نشط</option>
         <option value="expired">منتهي</option>
       </select>
@@ -381,6 +384,7 @@ function applyAdsFilter() {
     (a.phone||'').toLowerCase().includes(q) ||
     (a.userEmail||'').toLowerCase().includes(q));
   if (status==='featured') list = list.filter(a=>a.featured);
+  if (status==='pending') list = list.filter(a=>a.moderationStatus === 'pending');
   if (status==='expired')  list = list.filter(a=>
     a.expiresAt && (a.expiresAt.toMillis?a.expiresAt.toMillis():(a.expiresAt.seconds||0)*1000) < now);
   if (status==='active')   list = list.filter(a=>!a.featured &&
@@ -421,6 +425,7 @@ function applyAdsFilter() {
             const date  = ad.createdAt ? new Date((ad.createdAt.toMillis?ad.createdAt.toMillis():(ad.createdAt.seconds||0)*1000)).toLocaleDateString('ar-EG') : '—';
             const now   = Date.now();
             const expired = ad.expiresAt && (ad.expiresAt.toMillis?ad.expiresAt.toMillis():(ad.expiresAt.seconds||0)*1000) < now;
+            const moderation = ad.moderationStatus || 'approved';
             return `<tr>
               <td>
                 <div style="display:flex;align-items:center;gap:8px">
@@ -438,17 +443,18 @@ function applyAdsFilter() {
               <td style="font-size:.78em">${ad.city||ad.location||'—'}</td>
               <td style="font-size:.72em;color:var(--gray)">${date}</td>
               <td>
-                ${ad.featured ? '<span class="adm-status-tag feat">⭐ مميز</span>' :
-                  expired     ? '<span class="adm-status-tag expired">منتهي</span>' :
-                                '<span class="adm-status-tag active">نشط</span>'}
+                ${moderation === 'pending' ? '<span class="adm-status-tag" style="background:#fff3e0;color:#e65100">قيد المراجعة</span>' :
+                  moderation === 'rejected' ? '<span class="adm-status-tag expired">مرفوض</span>' :
+                  moderation === 'hidden' ? '<span class="adm-status-tag expired">مخفي</span>' :
+                  ad.featured ? '<span class="adm-status-tag feat">⭐ مميز</span>' :
+                  expired ? '<span class="adm-status-tag expired">منتهي</span>' :
+                  '<span class="adm-status-tag active">نشط</span>'}
               </td>
               <td>
                 <div style="display:flex;gap:4px">
                   <button class="icon-btn" title="عرض" onclick="openDetail('${ad.id}')"
                     style="background:#e3f2fd;color:var(--blue)"><i class="fa fa-eye"></i></button>
-                  <button class="icon-btn ${ad.featured?'':'edit'}" title="${ad.featured?'إلغاء التمييز':'تمييز'}"
-                    style="${ad.featured?'background:var(--gold-light);color:#7a5000':''}"
-                    onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured?'★':'☆'}</button>
+                  ${moderation === 'pending' ? `<button class="icon-btn" title="موافقة" style="background:#e8f5e9;color:#2e7d32" onclick="adminSetAdModerationStatus('${ad.id}','approved')"><i class="fa fa-check"></i></button><button class="icon-btn" title="رفض" style="background:#ffebee;color:#c62828" onclick="adminSetAdModerationStatus('${ad.id}','rejected')"><i class="fa fa-ban"></i></button>` : `<button class="icon-btn ${ad.featured?'':'edit'}" title="${ad.featured?'إلغاء التمييز':'تمييز'}" style="${ad.featured?'background:var(--gold-light);color:#7a5000':''}" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured?'★':'☆'}</button>`}
                   <button class="icon-btn del" title="حذف" onclick="adminDeleteAdConfirm('${ad.id}')">
                     <i class="fa fa-trash"></i></button>
                 </div>
@@ -1110,6 +1116,19 @@ async function adminDeleteAd(id) {
   loadAds();
   applyAdsFilter();
 }
+async function adminSetAdModerationStatus(id, status) {
+  if (!['approved', 'rejected', 'hidden'].includes(status)) return;
+  const labels = { approved: 'الموافقة على الإعلان؟', rejected: 'رفض الإعلان وإخفاؤه؟', hidden: 'إخفاء الإعلان؟' };
+  const note = status === 'rejected' ? (prompt('اكتب سبب رفض الإعلان (اختياري):') || 'لم يستوفِ شروط النشر').trim() : '';
+  adminConfirm(labels[status], async () => {
+    await db.collection('ads').doc(id).update({ moderationStatus: status, moderationNote: note, moderationUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+    const ad = adminAdsAllCache.find(a => a.id === id);
+    if (ad) ad.moderationStatus = status;
+    showToast(status === 'approved' ? 'تمت الموافقة على الإعلان' : status === 'rejected' ? 'تم رفض الإعلان' : 'تم إخفاء الإعلان', 'ok');
+    loadAds(); applyAdsFilter(); checkAdminNotifs();
+  });
+}
+
 async function adminToggleFeatured(id, current) {
   if (current) {
     await db.collection('ads').doc(id).update({featured:false, featuredUntil:null, featuredDurationDays:null}).catch(()=>{});

@@ -47,6 +47,9 @@ function loadNews() {
 
 /* ============ LOAD ADS ============ */
 let adsLoadSeq = 0;
+function isPublicAd(ad) {
+  return ad.moderationStatus !== 'pending' && ad.moderationStatus !== 'rejected' && ad.moderationStatus !== 'hidden';
+}
 
 async function loadAds() {
   const g = document.getElementById('adsGrid');
@@ -76,7 +79,7 @@ async function loadAds() {
       const ms = a.expiresAt.toMillis ? a.expiresAt.toMillis() : (a.expiresAt.seconds * 1000);
       return ms > now;
     });
-    buildSlider(allAds.filter(a => a.featured));
+    buildSlider(allAds.filter(a => a.featured && isPublicAd(a)));
     applyFilter();
     populateFeaturedSelect();
     openSharedAdIfAny();
@@ -96,7 +99,7 @@ function openSharedAdIfAny() {
   if (sharedAdOpened) return;
   const adId = new URLSearchParams(location.search).get('ad');
   if (!adId) return;
-  if (allAds.find(a => a.id === adId)) {
+  if (allAds.find(a => a.id === adId && isPublicAd(a))) {
     sharedAdOpened = true;
     openDetail(adId);
   }
@@ -105,7 +108,7 @@ function openSharedAdIfAny() {
 function applyFilter() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
   const sort = document.getElementById('sortSelect').value;
-  let list = [...allAds];
+  let list = allAds.filter(isPublicAd);
   if (activeCat) list = list.filter(a => a.category === activeCat);
   if (q) list = list.filter(a => (a.title || '').toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q));
   if (sort === 'price_asc') list.sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -201,7 +204,7 @@ function openDetail(id) {
    more from a seller they already trust/like, the way OpenSooq does. */
 function renderSellerOtherAdsHtml(ad) {
   if (!ad.userId) return '';
-  const others = allAds.filter(a => a.userId === ad.userId && a.id !== ad.id).slice(0, 6);
+  const others = allAds.filter(a => isPublicAd(a) && a.userId === ad.userId && a.id !== ad.id).slice(0, 6);
   if (!others.length) return '';
   return `
     <div class="section-label">📦 إعلانات أخرى لنفس البائع</div>
@@ -311,6 +314,7 @@ async function doAddAd() {
       images, imageUrl: images[0] || null, featured: false,
       userId: currentUser.uid,
       userName: currentUser.displayName || 'مستخدم',
+      moderationStatus: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
       durationDays: 20
@@ -322,7 +326,7 @@ async function doAddAd() {
     document.getElementById('adAgreeTerms').checked = false;
     document.getElementById('imgPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
-    showToast('تم نشر إعلانك بنجاح! 🎉', 'ok');
+    showToast('تم إرسال إعلانك للمراجعة، وسيظهر بعد موافقة الإدارة ✅', 'ok');
     loadAds();
   } catch (ex) {
     errEl.textContent = ex.message || 'حدث خطأ أثناء النشر';
@@ -358,7 +362,7 @@ async function doEditAd() {
   const btn = document.getElementById('editSubmit');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
   try {
-    await db.collection('ads').doc(id).update({ title, description: desc, price: parseFloat(price) || 0, phone, category: cat });
+    await db.collection('ads').doc(id).update({ title, description: desc, price: parseFloat(price) || 0, phone, category: cat, moderationStatus: 'pending' });
     closeModal('editModal'); showToast('تم حفظ التعديلات ✅', 'ok'); loadAds();
   } catch (e) { errEl.textContent = 'حدث خطأ'; errEl.className = 'err show'; }
   finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-save"></i> حفظ التعديلات'; }
