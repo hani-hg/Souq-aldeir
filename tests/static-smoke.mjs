@@ -101,7 +101,7 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 }
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v6") || !sw.includes("/js/share.js")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v7") || !sw.includes("/js/share.js")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');

@@ -393,6 +393,11 @@ body{background:var(--bg);color:var(--dark);padding-top:env(safe-area-inset-top)
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.cat-chip:focus-visible{outline:3px solid rgba(245,124,0,.7);outline-offset:3px;}
 .cat-chip{min-height:68px;}
 .bottomnav{padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+@media (display-mode: standalone), (display-mode: fullscreen){
+  body{padding-top:max(24px, env(safe-area-inset-top));}
+  .topnav{top:0;}
+}
+
 @media(max-width:480px){
   .topnav{padding:8px 10px;gap:6px;}
   .logo-text{font-size:.95em;}
