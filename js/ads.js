@@ -303,9 +303,16 @@ async function doAddAd() {
     const invalidImage = imgFiles.find(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
     if (invalidImage) throw new Error('كل صورة يجب أن تكون JPG أو PNG أو WebP وحجمها أقل من 5MB');
     const images = [];
-    const imageSignature = imgFiles.length ? await getSignedUpload('image') : null;
-    for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
-
+    let imageUploadWarning = false;
+    if (imgFiles.length) {
+      try {
+        const imageSignature = await getSignedUpload('image');
+        for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
+      } catch (uploadError) {
+        imageUploadWarning = true;
+        console.warn('Image upload skipped:', uploadError?.message || uploadError);
+      }
+    }
 
     const durationDays = 20;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
@@ -326,7 +333,7 @@ async function doAddAd() {
     document.getElementById('adAgreeTerms').checked = false;
     document.getElementById('imgPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
-    showToast('تم إرسال إعلانك للمراجعة، وسيظهر بعد موافقة الإدارة ✅', 'ok');
+    showToast(imageUploadWarning ? 'تم إرسال الإعلان بدون صور، وسيظهر بعد موافقة الإدارة ✅' : 'تم إرسال إعلانك للمراجعة، وسيظهر بعد موافقة الإدارة ✅', 'ok');
     loadAds();
   } catch (ex) {
     errEl.textContent = ex.message || 'حدث خطأ أثناء النشر';
