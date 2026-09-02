@@ -1,19 +1,5 @@
 import crypto from 'node:crypto';
-import admin from 'firebase-admin';
-
-function initFirebase() {
-  if (admin.apps.length) return admin.app();
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)) });
-  } else {
-    const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
-    const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
-    const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
-    if (!projectId || !clientEmail || !privateKey) throw new Error('Firebase Admin configuration is incomplete');
-    admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-  }
-  return admin.app();
-}
+import { admin, initFirebaseAdmin } from './_lib/firebase-admin.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -24,7 +10,7 @@ export default async function handler(req, res) {
   const apiSecret = String(process.env.CLOUDINARY_API_SECRET || '').trim();
   if (!cloudName || !apiKey || !apiSecret) return res.status(503).json({ error: 'upload_service_unavailable' });
   try {
-    initFirebase();
+    initFirebaseAdmin();
     await admin.auth().verifyIdToken(authHeader.slice(7));
     if (req.body?.resourceType && req.body.resourceType !== 'image') return res.status(400).json({ error: 'video_uploads_disabled' });
     const resourceType = 'image';

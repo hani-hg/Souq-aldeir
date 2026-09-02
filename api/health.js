@@ -1,24 +1,11 @@
-import admin from 'firebase-admin';
 import nodemailer from 'nodemailer';
+import { admin, initFirebaseAdmin, hasServiceAccountEnv } from './_lib/firebase-admin.js';
 
 function present(name) {
   return Boolean(String(process.env[name] || '').trim());
 }
 
-function initFirebase() {
-  if (admin.apps.length) return admin.app();
-  if (present('FIREBASE_SERVICE_ACCOUNT_JSON')) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-  } else {
-    const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
-    const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
-    const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
-    if (!projectId || !clientEmail || !privateKey) throw new Error('incomplete_firebase_admin_variables');
-    admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-  }
-  return admin.app();
-}
+function initFirebase() { return initFirebaseAdmin(); }
 
 function safeError(error, kind) {
   const text = String(error?.code || error?.message || 'unknown').toLowerCase();

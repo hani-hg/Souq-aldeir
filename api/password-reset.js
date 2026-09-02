@@ -1,5 +1,5 @@
-import admin from 'firebase-admin';
 import nodemailer from 'nodemailer';
+import { admin, initFirebaseAdmin } from './_lib/firebase-admin.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const attempts = new Map();
@@ -10,25 +10,7 @@ function appUrl() {
   return String(process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')).replace(/\/$/, '');
 }
 
-function initFirebase() {
-  if (admin.apps.length) return admin.app();
-  try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      if (!serviceAccount.project_id && !serviceAccount.projectId) throw new Error('Firebase service account JSON has no project id');
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    } else {
-      const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
-      const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
-      const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
-      if (!projectId || !clientEmail || !privateKey) throw new Error('Firebase Admin environment variables are incomplete');
-      admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-    }
-  } catch (error) {
-    throw new Error(`Firebase Admin configuration error: ${error.message}`);
-  }
-  return admin.app();
-}
+
 
 function limited(req, email) {
   const key = `${req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown'}:${email}`;
@@ -82,7 +64,7 @@ export default async function handler(req, res) {
   try {
     const baseUrl = appUrl();
     if (!baseUrl) throw new Error('APP_URL or VERCEL_URL is required');
-    initFirebase();
+    initFirebaseAdmin();
     const link = await admin.auth().generatePasswordResetLink(email, { url: baseUrl, handleCodeInApp: false });
     await sendMail(email, link);
   } catch (error) {
