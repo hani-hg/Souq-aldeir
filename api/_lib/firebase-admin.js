@@ -1,7 +1,15 @@
 import admin from 'firebase-admin';
 
+function envValue(name) {
+  const value = String(process.env[name] || '').trim();
+  if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+    return value.slice(1, -1).trim();
+  }
+  return value;
+}
+
 function readServiceAccount() {
-  const raw = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
+  const raw = envValue('FIREBASE_SERVICE_ACCOUNT_JSON') || envValue('FIREBASE_SERVICE_ACCOUNT');
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
@@ -19,9 +27,9 @@ export function initFirebaseAdmin() {
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     return admin.app();
   }
-  const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
-  const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
-  const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
+  const projectId = envValue('FIREBASE_PROJECT_ID');
+  const clientEmail = envValue('FIREBASE_CLIENT_EMAIL');
+  const privateKey = envValue('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n').trim();
   if (!projectId || !clientEmail || !privateKey) throw new Error('incomplete_firebase_admin_variables');
   admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
   return admin.app();
@@ -31,7 +39,7 @@ export { admin };
 export default admin;
 
 function hasServiceAccountEnv() {
-  return Boolean(String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT || '').trim());
+  return Boolean(envValue('FIREBASE_SERVICE_ACCOUNT_JSON') || envValue('FIREBASE_SERVICE_ACCOUNT'));
 }
 
 export { hasServiceAccountEnv };
