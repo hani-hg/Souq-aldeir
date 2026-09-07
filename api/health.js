@@ -9,6 +9,18 @@ function missing(names) {
   return names.filter(name => !present(name));
 }
 
+function serviceAccountProjectId() {
+  const raw = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw);
+    const account = typeof value === 'string' ? JSON.parse(value) : value;
+    return account?.project_id || account?.projectId || null;
+  } catch {
+    return null;
+  }
+}
+
 function initFirebase() { return initFirebaseAdmin(); }
 
 function safeError(error, kind) {
@@ -60,7 +72,7 @@ export default async function handler(_req, res) {
       firebaseCredentialSource: firebaseJson ? 'json' : (firebaseSplit.every(present) ? 'split' : 'missing'),
       firebaseMissing: firebaseJson ? [] : missing(firebaseSplit),
       cloudinaryMissing: missing(cloudinaryVars),
-      firebaseProjectId: present('FIREBASE_PROJECT_ID') ? String(process.env.FIREBASE_PROJECT_ID).trim() : null
+      firebaseProjectId: present('FIREBASE_PROJECT_ID') ? String(process.env.FIREBASE_PROJECT_ID).trim() : serviceAccountProjectId()
     }
   };
   try {
@@ -69,6 +81,7 @@ export default async function handler(_req, res) {
     status.config.firebaseAdmin = true;
   } catch (error) {
     status.firebaseError = safeError(error, 'firebase');
+    status.firebaseErrorCode = String(error?.code || 'unknown');
   }
   try {
     await verifySmtp();
