@@ -5,6 +5,10 @@ function present(name) {
   return Boolean(String(process.env[name] || '').trim());
 }
 
+function missing(names) {
+  return names.filter(name => !present(name));
+}
+
 function initFirebase() { return initFirebaseAdmin(); }
 
 function safeError(error, kind) {
@@ -40,10 +44,24 @@ async function verifySmtp() {
 }
 
 export default async function handler(_req, res) {
+  const firebaseJson = present('FIREBASE_SERVICE_ACCOUNT_JSON') || present('FIREBASE_SERVICE_ACCOUNT');
+  const firebaseSplit = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
+  const cloudinaryVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
   const status = {
     ok: false,
     service: 'souq-aldeir-backend',
-    config: { firebaseAdmin: false, smtpConnection: false, cloudinarySigning: present('CLOUDINARY_CLOUD_NAME') && present('CLOUDINARY_API_KEY') && present('CLOUDINARY_API_SECRET'), appUrl: present('APP_URL') || present('VERCEL_URL') }
+    config: {
+      firebaseAdmin: false,
+      smtpConnection: false,
+      cloudinarySigning: cloudinaryVars.every(present),
+      appUrl: present('APP_URL') || present('VERCEL_URL')
+    },
+    diagnostics: {
+      firebaseCredentialSource: firebaseJson ? 'json' : (firebaseSplit.every(present) ? 'split' : 'missing'),
+      firebaseMissing: firebaseJson ? [] : missing(firebaseSplit),
+      cloudinaryMissing: missing(cloudinaryVars),
+      firebaseProjectId: present('FIREBASE_PROJECT_ID') ? String(process.env.FIREBASE_PROJECT_ID).trim() : null
+    }
   };
   try {
     initFirebase();
