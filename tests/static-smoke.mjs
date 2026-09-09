@@ -51,8 +51,8 @@ if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
 if (!auth.includes('id="resetEmail"') && !html.includes('id="resetEmail"')) {
   throw new Error('Email reset field is missing');
 }
-if (!auth.includes('sendPasswordResetEmail')) {
-  throw new Error('Password reset must use Firebase direct email delivery');
+if (!auth.includes("window.SOUQ_PASSWORD_RESET_ENDPOINT") || !auth.includes("fetch(endpoint")) {
+  throw new Error('Password reset must use the secure SMTP backend endpoint');
 }
 if (!auth.includes('phoneIndexRef.set(')) throw new Error('Signup phone index must use Firebase Web SDK set');
 if (!auth.includes("'permission-denied':") || !auth.includes("'unavailable':")) throw new Error('Signup Firebase error mapping is incomplete');
@@ -91,7 +91,7 @@ if (!ads.includes('isPublicAd')) throw new Error('Public ad visibility filter is
 if (!admin.includes('adminSetAdModerationStatus')) throw new Error('Admin moderation controls are missing');
 if (ads.includes("doc(id).update({ views:") || ads.includes('countVisitOnce();')) throw new Error('Client-side view/visit counters must not write directly');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
-if (!admin.includes('sendPasswordResetEmail')) throw new Error('Admin reset must use Firebase direct email delivery');
+if (!admin.includes("fetch(endpoint") || !admin.includes("method: 'POST'")) throw new Error('Admin reset must use SMTP backend');
 if (!admin.includes('function openAdminFeatureDuration') || !admin.includes('applyAdminFeatureDuration') || !admin.includes('[3, 7, 15, 30]')) throw new Error('Admin featured duration controls are missing');
 if (!chat.includes('maxlength="1000"')) throw new Error('Chat message length guard is missing');
 
