@@ -687,16 +687,9 @@ async function sendResetLinkForRequest(requestId, uid) {
   if (!email) return;
   adminConfirm(`سيتم إرسال رابط تغيير كلمة المرور إلى ${escapeHtml(email)}. هل تريد المتابعة؟`, async () => {
     try {
-      const endpoint = window.SOUQ_PASSWORD_RESET_ENDPOINT || '/api/password-reset';
-      const response = await fetch(endpoint, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ email })
-      });
-      let method = 'email-smtp';
-      if (!response.ok) {
-        await auth.sendPasswordResetEmail(email);
-        method = 'email-firebase-fallback';
-      }
+      /* Firebase يرسل الرابط مباشرة، لذلك لا يعتمد هذا المسار على SMTP */
+      await auth.sendPasswordResetEmail(email);
+      const method = 'email-firebase';
       await db.collection('recoveryRequests').doc(requestId).update({ status: 'resolved', method, handledAt: firebase.firestore.FieldValue.serverTimestamp() });
       adminRecoveryCache = adminRecoveryCache.filter(r => r.id !== requestId);
       showToast('تم إرسال رابط تغيير كلمة المرور', 'ok');

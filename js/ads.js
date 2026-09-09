@@ -174,6 +174,10 @@ function openDetail(id) {
   if (!ad) { showToast('تعذر العثور على تفاصيل الإعلان', 'bad'); return; }
   const isOwner = currentUser && currentUser.uid === ad.userId;
   const canAdmin = isAdmin;
+  /* adminModal يأتي لاحقًا في DOM وبنفس z-index، لذلك كان يغطي detailModal */
+  if (canAdmin && document.getElementById('adminModal')?.classList.contains('active')) {
+    closeModal('adminModal');
+  }
   const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
   document.getElementById('detailContent').innerHTML = `
     ${images.length > 1
