@@ -1,11 +1,25 @@
 import nodemailer from 'nodemailer';
-import { admin, initFirebaseAdmin, hasServiceAccountEnv, hasIdentityToolkitConfig } from './_lib/firebase-admin.js';
+import { admin, initFirebaseAdmin, hasIdentityToolkitConfig, envValue } from './_lib/firebase-admin.js';
 
 function present(name) {
-  return Boolean(String(process.env[name] || '').trim());
+  return Boolean(envValue(name));
 }
 
-function initFirebase() { return initFirebaseAdmin(); }
+function missing(names) {
+  return names.filter(name => !present(name));
+}
+
+function serviceAccountProjectId() {
+  const raw = envValue('FIREBASE_SERVICE_ACCOUNT_JSON') || envValue('FIREBASE_SERVICE_ACCOUNT');
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw);
+    const account = typeof value === 'string' ? JSON.parse(value) : value;
+    return account?.project_id || account?.projectId || null;
+  } catch {
+    return null;
+  }
+}
 
 function safeError(error, kind) {
   const text = String(error?.code || error?.message || 'unknown').toLowerCase();
@@ -22,12 +36,12 @@ function safeError(error, kind) {
 }
 
 async function verifySmtp() {
-  const sender = String(process.env.SMTP_USER || 'souq.aldeir@outlook.sa').trim();
-  const password = String(process.env.SMTP_APP_PASSWORD || '').trim();
+  const sender = envValue('SMTP_USER') || 'souq.aldeir@outlook.sa';
+  const password = envValue('SMTP_APP_PASSWORD');
   if (!password) throw new Error('SMTP_APP_PASSWORD is missing');
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
-    port: Number(process.env.SMTP_PORT || 587),
+    host: envValue('SMTP_HOST') || 'smtp-mail.outlook.com',
+    port: Number(envValue('SMTP_PORT') || 587),
     secure: false,
     requireTLS: true,
     auth: { user: sender, pass: password },
@@ -40,17 +54,33 @@ async function verifySmtp() {
 }
 
 export default async function handler(_req, res) {
+  const firebaseJson = present('FIREBASE_SERVICE_ACCOUNT_JSON') || present('FIREBASE_SERVICE_ACCOUNT');
+  const firebaseSplit = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
+  const cloudinaryVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
   const status = {
     ok: false,
     service: 'souq-aldeir-backend',
-    config: { firebaseAdmin: false, firebaseTokenVerification: hasIdentityToolkitConfig(), smtpConnection: false, cloudinarySigning: present('CLOUDINARY_CLOUD_NAME') && present('CLOUDINARY_API_KEY') && present('CLOUDINARY_API_SECRET'), appUrl: present('APP_URL') || present('VERCEL_URL') }
+    config: {
+      firebaseAdmin: false,
+      firebaseTokenVerification: hasIdentityToolkitConfig(),
+      smtpConnection: false,
+      cloudinarySigning: cloudinaryVars.every(present),
+      appUrl: present('APP_URL') || present('VERCEL_URL')
+    },
+    diagnostics: {
+      firebaseCredentialSource: firebaseJson ? 'json' : (firebaseSplit.every(present) ? 'split' : 'missing'),
+      firebaseMissing: firebaseJson ? [] : missing(firebaseSplit),
+      cloudinaryMissing: missing(cloudinaryVars),
+      firebaseProjectId: present('FIREBASE_PROJECT_ID') ? envValue('FIREBASE_PROJECT_ID') : serviceAccountProjectId()
+    }
   };
   try {
-    initFirebase();
+    initFirebaseAdmin();
     await admin.auth().listUsers(1);
     status.config.firebaseAdmin = true;
   } catch (error) {
     status.firebaseError = safeError(error, 'firebase');
+    status.firebaseErrorCode = String(error?.code || 'unknown');
   }
   try {
     await verifySmtp();

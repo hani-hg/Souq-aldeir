@@ -309,8 +309,7 @@ async function doAddAd() {
         const imageSignature = await getSignedUpload('image');
         for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
       } catch (uploadError) {
-        imageUploadWarning = true;
-        console.warn('Image upload skipped:', uploadError?.message || uploadError);
+        throw new Error(uploadError?.message || 'فشل رفع الصور؛ لم يتم نشر الإعلان');
       }
     }
 
@@ -464,5 +463,4 @@ function countVisitOnce() {
     totalVisits: firebase.firestore.FieldValue.increment(1)
   }, { merge: true }).catch(() => {});
 }
-
 
