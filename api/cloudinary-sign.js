@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { admin, initFirebaseAdmin } from './_lib/firebase-admin.js';
+import { verifyFirebaseIdToken } from './_lib/firebase-admin.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -10,8 +10,7 @@ export default async function handler(req, res) {
   const apiSecret = String(process.env.CLOUDINARY_API_SECRET || '').trim();
   if (!cloudName || !apiKey || !apiSecret) return res.status(503).json({ error: 'upload_service_unavailable' });
   try {
-    initFirebaseAdmin();
-    await admin.auth().verifyIdToken(authHeader.slice(7));
+    await verifyFirebaseIdToken(authHeader.slice(7));
     if (req.body?.resourceType && req.body.resourceType !== 'image') return res.status(400).json({ error: 'video_uploads_disabled' });
     const resourceType = 'image';
     const folder = 'souq_ads';

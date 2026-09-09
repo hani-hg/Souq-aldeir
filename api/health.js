@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { admin, initFirebaseAdmin, hasServiceAccountEnv } from './_lib/firebase-admin.js';
+import { admin, initFirebaseAdmin, hasServiceAccountEnv, hasIdentityToolkitConfig } from './_lib/firebase-admin.js';
 
 function present(name) {
   return Boolean(String(process.env[name] || '').trim());
@@ -43,7 +43,7 @@ export default async function handler(_req, res) {
   const status = {
     ok: false,
     service: 'souq-aldeir-backend',
-    config: { firebaseAdmin: false, smtpConnection: false, cloudinarySigning: present('CLOUDINARY_CLOUD_NAME') && present('CLOUDINARY_API_KEY') && present('CLOUDINARY_API_SECRET'), appUrl: present('APP_URL') || present('VERCEL_URL') }
+    config: { firebaseAdmin: false, firebaseTokenVerification: hasIdentityToolkitConfig(), smtpConnection: false, cloudinarySigning: present('CLOUDINARY_CLOUD_NAME') && present('CLOUDINARY_API_KEY') && present('CLOUDINARY_API_SECRET'), appUrl: present('APP_URL') || present('VERCEL_URL') }
   };
   try {
     initFirebase();
@@ -58,6 +58,7 @@ export default async function handler(_req, res) {
   } catch (error) {
     status.smtpError = safeError(error, 'smtp');
   }
-  status.ok = status.config.firebaseAdmin && status.config.smtpConnection && status.config.cloudinarySigning;
+  status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
+  status.ok = status.uploadReady && status.config.appUrl;
   return res.status(status.ok ? 200 : 503).json(status);
 }

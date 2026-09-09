@@ -1,5 +1,7 @@
 import admin from 'firebase-admin';
 
+const DEFAULT_FIREBASE_WEB_API_KEY = 'AIzaSyAlFgTzlcbaS6NKKlqyOvrxYAnKmxXLTLQ';
+
 function readServiceAccount() {
   const raw = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
   if (!raw) return null;
@@ -27,6 +29,34 @@ export function initFirebaseAdmin() {
   return admin.app();
 }
 
+export async function verifyFirebaseIdToken(idToken) {
+  try {
+    initFirebaseAdmin();
+    return await admin.auth().verifyIdToken(idToken);
+  } catch (adminError) {
+    const apiKey = String(process.env.FIREBASE_WEB_API_KEY || DEFAULT_FIREBASE_WEB_API_KEY).trim();
+    if (!apiKey) throw adminError;
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    if (!response.ok) {
+      const error = new Error('firebase_token_invalid');
+      error.code = 'auth/id-token-error';
+      throw error;
+    }
+    const result = await response.json();
+    const user = result.users?.[0];
+    if (!user?.localId) {
+      const error = new Error('firebase_token_invalid');
+      error.code = 'auth/id-token-error';
+      throw error;
+    }
+    return { uid: user.localId, email: user.email || null, email_verified: user.emailVerified === true };
+  }
+}
+
 export { admin };
 export default admin;
 
@@ -34,4 +64,8 @@ function hasServiceAccountEnv() {
   return Boolean(String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT || '').trim());
 }
 
-export { hasServiceAccountEnv };
+function hasIdentityToolkitConfig() {
+  return Boolean(String(process.env.FIREBASE_WEB_API_KEY || DEFAULT_FIREBASE_WEB_API_KEY).trim());
+}
+
+export { hasServiceAccountEnv, hasIdentityToolkitConfig };
