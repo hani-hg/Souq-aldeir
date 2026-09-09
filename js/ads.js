@@ -169,7 +169,9 @@ function showFavorites() {
 
 /* ============ AD DETAIL ============ */
 function openDetail(id) {
-  const ad = allAds.find(a => a.id === id); if (!ad) return;
+  /* الإعلان pending غير موجود في allAds العامة؛ استعمل نسخة لوحة الإدارة عند فتحه للمراجعة */
+  const ad = allAds.find(a => a.id === id) || (window.adminGetAdById ? window.adminGetAdById(id) : null);
+  if (!ad) { showToast('تعذر العثور على تفاصيل الإعلان', 'bad'); return; }
   const isOwner = currentUser && currentUser.uid === ad.userId;
   const canAdmin = isAdmin;
   const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);

@@ -12,6 +12,11 @@ let adminUserFilter   = null;
 let adminUserFilterName = '';
 let currentAdminTab   = 'dashboard';
 
+/* يتيح لواجهة تفاصيل الإعلان الوصول إلى إعلانات الإدارة، بما فيها pending */
+window.adminGetAdById = function (id) {
+  return adminAdsAllCache.find(ad => ad.id === id) || null;
+};
+
 /* ── وقت آخر نشاط ── */
 function lastActive(ts) {
   if (!ts) return '—';
