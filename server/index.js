@@ -12,7 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port = Number(process.env.PORT || 4173);
 const siteUrl = String(process.env.APP_URL || `http://localhost:${port}`).replace(/\/$/, '');
-const sender = process.env.SMTP_USER || 'souq.aldeir@outlook.sa';
+const sender = String(process.env.SMTP_USER || '').trim();
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const attempts = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
@@ -63,10 +63,15 @@ function escapeHtml(value) {
 }
 
 async function sendResetEmail(email, link) {
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || smtpPort === 465;
+  if (!sender) throw new Error('SMTP_USER is missing');
+  if (!String(process.env.SMTP_APP_PASSWORD || '').trim()) throw new Error('SMTP_APP_PASSWORD is missing');
+  if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535) throw new Error('SMTP_PORT is invalid');
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
+    port: smtpPort,
+    secure,
     requireTLS: true,
     auth: { user: sender, pass: process.env.SMTP_APP_PASSWORD }
   });
@@ -83,15 +88,16 @@ async function sendResetEmail(email, link) {
 app.get('/api/health', (_req, res) => {
   const hasJson = Boolean(String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim());
   const hasSplitFirebase = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'].every(name => Boolean(String(process.env[name] || '').trim()));
+  const config = {
+    firebaseAdmin: hasJson || hasSplitFirebase,
+    smtpPassword: Boolean(String(process.env.SMTP_APP_PASSWORD || '').trim()),
+    smtpUser: Boolean(String(process.env.SMTP_USER || '').trim()),
+    appUrl: Boolean(String(process.env.APP_URL || '').trim())
+  };
   const status = {
-    ok: (hasJson || hasSplitFirebase) && Boolean(String(process.env.SMTP_APP_PASSWORD || '').trim()),
+    ok: config.firebaseAdmin && config.smtpPassword && config.smtpUser && config.appUrl,
     service: 'password-reset',
-    config: {
-      firebaseAdmin: hasJson || hasSplitFirebase,
-      smtpPassword: Boolean(String(process.env.SMTP_APP_PASSWORD || '').trim()),
-      smtpUser: Boolean(String(process.env.SMTP_USER || '').trim()),
-      appUrl: Boolean(String(process.env.APP_URL || '').trim())
-    }
+    config
   };
   res.status(status.ok ? 200 : 503).json(status);
 });
