@@ -10,8 +10,6 @@ function appUrl() {
   return String(process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')).replace(/\/$/, '');
 }
 
-
-
 function limited(req, email) {
   const key = `${req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown'}:${email}`;
   const now = Date.now();
@@ -33,13 +31,19 @@ function escapeHtml(value) {
 }
 
 async function sendMail(email, link) {
-  const sender = String(process.env.SMTP_USER || 'souq.aldeir@outlook.sa').trim();
+  const sender = String(process.env.SMTP_USER || '').trim();
   const appPassword = String(process.env.SMTP_APP_PASSWORD || '').trim();
+  const host = String(process.env.SMTP_HOST || 'smtp-mail.outlook.com').trim();
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || port === 465;
+  const fromName = String(process.env.SMTP_FROM_NAME || 'سوق دير الزور').trim();
+  if (!sender) throw new Error('SMTP_USER is missing');
   if (!appPassword) throw new Error('SMTP_APP_PASSWORD is missing');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('SMTP_PORT is invalid');
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
+    host,
+    port,
+    secure,
     requireTLS: true,
     auth: { user: sender, pass: appPassword },
     connectionTimeout: 10000,
@@ -49,7 +53,7 @@ async function sendMail(email, link) {
   });
   const safeLink = escapeHtml(link);
   await transporter.sendMail({
-    from: `سوق دير الزور <${sender}>`,
+    from: `${fromName} <${sender}>`,
     to: email,
     subject: 'إعادة تعيين كلمة المرور - سوق دير الزور',
     text: `يمكنك تغيير كلمة المرور من خلال الرابط التالي:\n${link}\n\nإذا لم تطلب ذلك، تجاهل هذه الرسالة.`,
