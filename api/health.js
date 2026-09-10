@@ -36,13 +36,17 @@ function safeError(error, kind) {
 }
 
 async function verifySmtp() {
-  const sender = envValue('SMTP_USER') || 'souq.aldeir@outlook.sa';
+  const sender = envValue('SMTP_USER');
   const password = envValue('SMTP_APP_PASSWORD');
+  const port = Number(envValue('SMTP_PORT') || 587);
+  const secure = envValue('SMTP_SECURE').toLowerCase() === 'true' || port === 465;
+  if (!sender) throw new Error('SMTP_USER is missing');
   if (!password) throw new Error('SMTP_APP_PASSWORD is missing');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('SMTP_PORT is invalid');
   const transporter = nodemailer.createTransport({
     host: envValue('SMTP_HOST') || 'smtp-mail.outlook.com',
-    port: Number(envValue('SMTP_PORT') || 587),
-    secure: false,
+    port,
+    secure,
     requireTLS: true,
     auth: { user: sender, pass: password },
     connectionTimeout: 10000,
@@ -89,6 +93,9 @@ export default async function handler(_req, res) {
     status.smtpError = safeError(error, 'smtp');
   }
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
-  status.ok = status.uploadReady && status.config.appUrl;
+  status.ok = status.config.firebaseAdmin
+    && status.config.smtpConnection
+    && status.uploadReady
+    && status.config.appUrl;
   return res.status(status.ok ? 200 : 503).json(status);
 }
