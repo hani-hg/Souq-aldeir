@@ -23,10 +23,18 @@ function serviceAccountProjectId() {
 function safeError(error) {
   const text = String(error?.code || error?.message || 'unknown').toLowerCase();
   if (text.includes('json')) return 'invalid_service_account_json';
-  if (text.includes('private key') || text.includes('credential')) return 'invalid_firebase_credentials';
-  if (text.includes('incomplete')) return 'incomplete_firebase_admin_variables';
-  if (text.includes('permission')) return 'firebase_permission_denied';
+  if (text.includes('private key') || text.includes('credential') || text.includes('pem')) return 'invalid_firebase_credentials';
+  if (text.includes('project') || text.includes('project_id')) return 'firebase_project_mismatch';
+  if (text.includes('permission') || text.includes('unauthorized')) return 'firebase_permission_denied';
+  if (text.includes('invalid_grant') || text.includes('jwt')) return 'firebase_service_account_auth_failed';
+  if (text.includes('timeout') || text.includes('network') || text.includes('econn')) return 'firebase_network_failed';
   return 'firebase_connection_failed';
+}
+
+function safeErrorDetail(error) {
+  const code = String(error?.code || '').slice(0, 120);
+  const message = String(error?.message || '').replace(/[\r\n]+/g, ' ').replace(/(private_key|client_email|project_id|token|secret|password)\s*[:=][^,; ]+/gi, '$1=[redacted]').slice(0, 240);
+  return { code: code || 'unknown', message: message || 'unknown' };
 }
 
 export default async function handler(_req, res) {
@@ -59,6 +67,7 @@ export default async function handler(_req, res) {
   } catch (error) {
     status.firebaseError = safeError(error);
     status.firebaseErrorCode = String(error?.code || 'unknown');
+    status.firebaseErrorDetail = safeErrorDetail(error);
   }
   status.passwordResetReady = status.config.firebaseAdmin && status.config.emailjsConfigured && status.config.appUrl;
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
