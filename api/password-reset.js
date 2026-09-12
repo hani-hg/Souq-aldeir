@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import emailjs from '@emailjs/nodejs';
 import { admin, initFirebaseAdmin } from './_lib/firebase-admin.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -6,11 +6,13 @@ const attempts = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
-function appUrl() {
-  return String(process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')).replace(/\/$/, '');
+function envValue(name) {
+  return String(process.env[name] || '').trim().replace(/^['"]|['"]$/g, '');
 }
 
-
+function appUrl() {
+  return (envValue('APP_URL') || (envValue('VERCEL_URL') ? `https://${envValue('VERCEL_URL')}` : '')).replace(/\/$/, '');
+}
 
 function limited(req, email) {
   const key = `${req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown'}:${email}`;
@@ -28,48 +30,43 @@ function generic(res) {
   return res.status(200).json({ ok: true, message: 'إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور. تحقق من البريد ومجلد Spam.' });
 }
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+function emailJsConfig() {
+  const config = {
+    serviceId: envValue('EMAILJS_SERVICE_ID'),
+    templateId: envValue('EMAILJS_TEMPLATE_ID'),
+    publicKey: envValue('EMAILJS_PUBLIC_KEY'),
+    privateKey: envValue('EMAILJS_PRIVATE_KEY')
+  };
+  if (Object.values(config).some(value => !value)) throw new Error('emailjs_configuration_missing');
+  return config;
 }
 
-async function sendMail(email, link) {
-  const sender = String(process.env.SMTP_USER || 'souq.aldeir@outlook.sa').trim();
-  const appPassword = String(process.env.SMTP_APP_PASSWORD || '').trim();
-  if (!appPassword) throw new Error('SMTP_APP_PASSWORD is missing');
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
-    requireTLS: true,
-    auth: { user: sender, pass: appPassword },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    tls: { minVersion: 'TLSv1.2' }
-  });
-  const safeLink = escapeHtml(link);
-  await transporter.sendMail({
-    from: `سوق دير الزور <${sender}>`,
-    to: email,
-    subject: 'إعادة تعيين كلمة المرور - سوق دير الزور',
-    text: `يمكنك تغيير كلمة المرور من خلال الرابط التالي:\n${link}\n\nإذا لم تطلب ذلك، تجاهل هذه الرسالة.`,
-    html: `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8"><h2>إعادة تعيين كلمة المرور</h2><p>اضغط على الزر التالي لتعيين كلمة مرور جديدة:</p><p><a href="${safeLink}" style="display:inline-block;background:#1565c0;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">تغيير كلمة المرور</a></p><p style="color:#666;font-size:13px">إذا لم تطلب إعادة التعيين، تجاهل هذه الرسالة.</p></div>`
-  });
+async function sendResetEmail(email, resetLink) {
+  const { serviceId, templateId, publicKey, privateKey } = emailJsConfig();
+  await emailjs.send(serviceId, templateId, {
+    reset_link: resetLink,
+    to_email: email,
+    email,
+    user_email: email,
+    recipient: email
+  }, { publicKey, privateKey });
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!EMAIL_RE.test(email) || email.endsWith('@souq-aldeir.local') || limited(req, email)) return generic(res);
+
   try {
     const baseUrl = appUrl();
     if (!baseUrl) throw new Error('APP_URL or VERCEL_URL is required');
     initFirebaseAdmin();
-    const link = await admin.auth().generatePasswordResetLink(email, { url: baseUrl, handleCodeInApp: false });
-    await sendMail(email, link);
+    const resetLink = await admin.auth().generatePasswordResetLink(email, {
+      url: baseUrl,
+      handleCodeInApp: false
+    });
+    await sendResetEmail(email, resetLink);
   } catch (error) {
-    // An unknown Firebase account keeps the same neutral response; infrastructure
-    // failures return a generic service error so the UI does not claim success.
     if (error.code === 'auth/user-not-found') return generic(res);
     console.error('password-reset:', error.code || error.message);
     return res.status(503).json({ ok: false, error: 'reset_service_unavailable' });
