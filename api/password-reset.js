@@ -61,10 +61,7 @@ export default async function handler(req, res) {
     const baseUrl = appUrl();
     if (!baseUrl) throw new Error('APP_URL or VERCEL_URL is required');
     initFirebaseAdmin();
-    const resetLink = await admin.auth().generatePasswordResetLink(email, {
-      url: baseUrl,
-      handleCodeInApp: false
-    });
+    const resetLink = await admin.auth().generatePasswordResetLink(email, { url: baseUrl, handleCodeInApp: false });
     await sendResetEmail(email, resetLink);
   } catch (error) {
     if (error.code === 'auth/user-not-found') return generic(res);

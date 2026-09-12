@@ -62,6 +62,6 @@ export default async function handler(_req, res) {
   }
   status.passwordResetReady = status.config.emailjsConfigured && status.config.appUrl;
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
-  status.ok = status.uploadReady && status.config.appUrl;
+  status.ok = status.uploadReady && status.passwordResetReady;
   return res.status(status.ok ? 200 : 503).json(status);
 }
