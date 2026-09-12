@@ -60,7 +60,7 @@ export default async function handler(_req, res) {
     status.firebaseError = safeError(error);
     status.firebaseErrorCode = String(error?.code || 'unknown');
   }
-  status.passwordResetReady = status.config.emailjsConfigured && status.config.appUrl;
+  status.passwordResetReady = status.config.firebaseAdmin && status.config.emailjsConfigured && status.config.appUrl;
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
   status.ok = status.uploadReady && status.passwordResetReady;
   return res.status(status.ok ? 200 : 503).json(status);
