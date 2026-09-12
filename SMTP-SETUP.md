@@ -1,74 +1,28 @@
-# إعداد إعادة تعيين كلمة المرور عبر Outlook SMTP
+# إعداد إعادة تعيين كلمة المرور عبر Firebase
 
-يعمل الموقع الآن عبر `POST /api/password-reset`. الخادم ينشئ رابط Firebase رسميًا بواسطة Firebase Admin SDK ثم يرسله عبر Outlook SMTP باستخدام STARTTLS. لا تُرسل كلمة مرور التطبيق إلى المتصفح ولا تُحفظ في GitHub.
+يستخدم الموقع الآن `auth.sendPasswordResetEmail(email)` من Firebase Web SDK مباشرة. لذلك لا يعتمد مسار استعادة كلمة المرور للمستخدم أو لمسؤول الموقع على Firebase Admin أو Service Account أو Outlook SMTP أو EmailJS. Firebase ينشئ الرابط ويرسل الرسالة الأصلية من خلال قالب البريد الموجود في Firebase Console.
 
-## المتغيرات المطلوبة
+## إعداد Firebase المطلوب
 
-انسخ `.env.example` إلى `.env` في الخادم أو أضف القيم نفسها في لوحة متغيرات البيئة لدى مزود الاستضافة:
+تأكد من التالي في مشروع Firebase `souq-aldeir`:
 
-```env
-APP_URL=https://your-real-domain.example
-PORT=5000
-CORS_ORIGIN=https://your-real-domain.example
-SMTP_HOST=smtp-mail.outlook.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-outlook-address@outlook.com
-SMTP_APP_PASSWORD=ضع_كلمة_مرور_التطبيق_هنا
-SMTP_FROM_NAME=سوق دير الزور
+1. تفعيل **Email/Password** من Authentication → Sign-in method.
+2. إضافة `souq-aldeir.vercel.app` إلى Authentication → Settings → Authorized domains.
+3. التأكد من أن الحساب يملك بريدًا حقيقيًا، وليس عنوانًا داخليًا منتهيًا بـ `@souq-aldeir.local`.
+4. ضبط قالب رسالة Password reset من Authentication → Templates إذا أردت تغيير النص أو اسم المرسل.
+
+## التحقق
+
+نفّذ:
+
+```text
+https://souq-aldeir.vercel.app/api/health
 ```
 
-يحتاج الخادم أيضًا إلى بيانات Firebase Admin SDK. يمكن إدخالها كمتغير واحد:
-
-```env
-FIREBASE_SERVICE_ACCOUNT_JSON={...}
-```
-
-أو كمتغيرات منفصلة:
-
-```env
-FIREBASE_PROJECT_ID=...
-FIREBASE_CLIENT_EMAIL=...
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-```
-
-استخدم أحد الخيارين فقط، ولا تضع الملف الحقيقي `.env` داخل المستودع. ملف `.gitignore` يمنع ذلك تلقائيًا.
-
-## التشغيل
-
-بعد ضبط المتغيرات، شغّل:
-
-```bash
-npm install
-npm start
-```
-
-ثم تحقق من الخادم عبر:
-
-```bash
-curl https://your-real-domain.example/api/health
-```
-
-يجب أن يعيد الخادم كائن JSON يحتوي على `ok: true`. بالنسبة لإعادة تعيين كلمة المرور، لا يعتبر الفحص ناجحًا إلا إذا كانت Firebase Admin وSMTP و`APP_URL` مهيأة ومتاحة؛ ويعرض الفحص حالة Cloudinary بشكل منفصل لعمليات رفع الصور. جرّب طلب إعادة التعيين من واجهة الموقع بعد التأكد من أن الحساب يستخدم بريدًا إلكترونيًا حقيقيًا. الحسابات القديمة المرتبطة برقم هاتف أو البريد الداخلي لا يمكن إرسال رابط Outlook إليها قبل إضافة بريد استرداد حقيقي.
-
-## ملاحظات أمان وتشغيل
-
-يجب استخدام App Password لحساب Outlook مع تفعيل SMTP AUTH، وليس كلمة المرور الأساسية للحساب. للحسابات الشخصية استخدم `smtp-mail.outlook.com` مع المنفذ 587 و`SMTP_SECURE=false`. إذا كان الحساب Microsoft 365 للمؤسسات فقد تحتاج إلى `smtp.office365.com` مع تفعيل SMTP AUTH من مسؤول المؤسسة. يجب تشغيل الخادم عبر HTTPS في الإنتاج، وتعيين `APP_URL` إلى نطاق الموقع الحقيقي. المسار يستخدم ردًا محايدًا ومحددًا بخمس محاولات لكل عنوان وIP خلال 15 دقيقة لتقليل كشف الحسابات والرسائل المزعجة.
+يجب أن يعيد `ok: true` مع `passwordResetDelivery: "firebase-client"`. قد تظهر حالة Firebase Admin أو SMTP بشكل منفصل لأن ملفات الخادم القديمة ما زالت موجودة للتوافق، لكنها ليست مطلوبة لمسار الاستعادة الجديد.
 
 ## النشر على Vercel
 
-اربط مستودع GitHub بالمشروع من لوحة Vercel واختر **Import Project**. سيكتشف Vercel دوال Node.js داخل مجلد `api` تلقائيًا. لا تحتاج إلى تشغيل خادم دائم؛ الدالة `api/password-reset.js` تعمل عند طلب إعادة التعيين، والدالة `api/health.js` مخصصة للفحص.
+لا تحتاج استعادة كلمة المرور إلى متغيرات Outlook أو Firebase Admin في Vercel. يكفي نشر ملفات الواجهة مع إعداد Firebase Client الموجود في `js/firebase-config.js`. بعد النشر، افتح نافذة «نسيت كلمة المرور» وأدخل بريدًا حقيقيًا مرتبطًا بحساب Email/Password.
 
-بعد ربط المستودع، افتح **Project Settings → Environment Variables** وأضف القيم إلى بيئة **Production** ثم أعد النشر. يوصى بتعيين `APP_URL` إلى نطاق Vercel النهائي، مثل `https://souq-aldeir.vercel.app`، وتعيين `CORS_ORIGIN` إلى نفس النطاق. إذا لم تحدد `APP_URL` فستستخدم الدالة `VERCEL_URL` تلقائيًا، لكن يظل ضبط `APP_URL` أفضل لضمان ثبات رابط البريد.
-
-استخدم أمر البناء الافتراضي أو اتركه فارغًا، واجعل أمر التشغيل غير مطلوب لدوال `api`. يجب أن تكون نقطة الفحص:
-
-```text
-https://your-domain.vercel.app/api/health
-```
-
-تدعم Vercel دوال Node.js وتقرأ المتغيرات أثناء تنفيذ الدالة، كما أن متغيرات البيئة مشفرة في التخزين ولا تُضمّن في كود الواجهة [1] [2]. خطة Hobby مجانية للمشاريع الشخصية، لكنها تخضع لسياسة الاستخدام العادل والاستخدام غير التجاري وفق وثائق Vercel [3].
-
-[1]: https://vercel.com/docs/functions/runtimes/node-js
-[2]: https://vercel.com/docs/environment-variables
-[3]: https://vercel.com/docs/plans/hobby
+إذا ظهر `auth/operation-not-allowed` فطريقة Email/Password غير مفعلة. إذا ظهر `auth/unauthorized-continue-uri` أو لم تصل الرسالة، راجع Authorized domains وقالب البريد في Firebase.

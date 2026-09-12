@@ -91,7 +91,7 @@ if (!ads.includes('isPublicAd')) throw new Error('Public ad visibility filter is
 if (!admin.includes('adminSetAdModerationStatus')) throw new Error('Admin moderation controls are missing');
 if (ads.includes("doc(id).update({ views:") || ads.includes('countVisitOnce();')) throw new Error('Client-side view/visit counters must not write directly');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
-if (!admin.includes("fetch(endpoint") || !admin.includes("method: 'POST'")) throw new Error('Admin reset must use SMTP backend');
+if (!admin.includes('sendPasswordResetEmail')) throw new Error('Admin reset must use Firebase client email delivery');
 if (!admin.includes('function openAdminFeatureDuration') || !admin.includes('applyAdminFeatureDuration') || !admin.includes('[3, 7, 15, 30]')) throw new Error('Admin featured duration controls are missing');
 if (!chat.includes('maxlength="1000"')) throw new Error('Chat message length guard is missing');
 

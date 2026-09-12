@@ -99,9 +99,8 @@ export default async function handler(_req, res) {
     status.smtpError = safeError(error, 'smtp');
   }
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
-  status.passwordResetReady = status.config.firebaseAdmin
-    && status.config.smtpConnection
-    && status.config.appUrl;
+  status.passwordResetDelivery = 'firebase-client';
+  status.passwordResetReady = status.config.firebaseTokenVerification;
   status.ok = status.passwordResetReady;
   return res.status(status.ok ? 200 : 503).json(status);
 }
