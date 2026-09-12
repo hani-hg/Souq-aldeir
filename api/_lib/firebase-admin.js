@@ -32,7 +32,15 @@ export function initFirebaseAdmin() {
     const serviceAccount = readServiceAccount();
     if (serviceAccount) {
       if (!serviceAccount.project_id && !serviceAccount.projectId) throw new Error('invalid_service_account_json');
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      const normalizedAccount = {
+        projectId: String(serviceAccount.project_id).trim(),
+        clientEmail: String(serviceAccount.client_email).trim(),
+        privateKey: String(serviceAccount.private_key).replace(/\\\\n/g, '\n').trim()
+      };
+      if (!normalizedAccount.projectId || !normalizedAccount.clientEmail || !normalizedAccount.privateKey) {
+        throw new Error('invalid_service_account_json_missing_fields');
+      }
+      admin.initializeApp({ credential: admin.credential.cert(normalizedAccount) });
       return admin.app();
     }
   } catch (error) {
