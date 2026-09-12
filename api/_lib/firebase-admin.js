@@ -27,11 +27,22 @@ function readServiceAccount() {
 
 export function initFirebaseAdmin() {
   if (admin.apps.length) return admin.app();
-  let jsonError = null;
+  let splitError = null;
+  const projectId = envValue('FIREBASE_PROJECT_ID');
+  const clientEmail = envValue('FIREBASE_CLIENT_EMAIL');
+  const privateKey = envValue('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n').trim();
+  if (projectId && clientEmail && privateKey) {
+    try {
+      admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
+      return admin.app();
+    } catch (error) {
+      splitError = error;
+    }
+  }
+
   try {
     const serviceAccount = readServiceAccount();
     if (serviceAccount) {
-      if (!serviceAccount.project_id && !serviceAccount.projectId) throw new Error('invalid_service_account_json');
       const normalizedAccount = {
         projectId: String(serviceAccount.project_id).trim(),
         clientEmail: String(serviceAccount.client_email).trim(),
@@ -43,21 +54,11 @@ export function initFirebaseAdmin() {
       admin.initializeApp({ credential: admin.credential.cert(normalizedAccount) });
       return admin.app();
     }
-  } catch (error) {
-    jsonError = error;
+  } catch (jsonError) {
+    jsonError.cause = splitError || undefined;
+    throw jsonError;
   }
-
-  const projectId = envValue('FIREBASE_PROJECT_ID');
-  const clientEmail = envValue('FIREBASE_CLIENT_EMAIL');
-  const privateKey = envValue('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n').trim();
-  if (!projectId || !clientEmail || !privateKey) throw (jsonError || new Error('incomplete_firebase_admin_variables'));
-  try {
-    admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-    return admin.app();
-  } catch (splitError) {
-    splitError.cause = jsonError || undefined;
-    throw splitError;
-  }
+  throw (splitError || new Error('incomplete_firebase_admin_variables'));
 }
 
 export async function verifyFirebaseIdToken(idToken) {
