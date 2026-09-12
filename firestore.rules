@@ -1,19 +1,22 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
 
+    // Privileged access is based on Firebase Auth custom claims, not a UI flag
+    // or a user-controlled Firestore role field.
     function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return signedIn() && request.auth.token.admin == true;
     }
 
     function isParticipant() {
       return signedIn() && request.auth.uid in resource.data.participants;
+    }
+
+    function userBlocked(uid, otherUid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.blockedUids.hasAny([otherUid]);
     }
 
     match /ads/{adId} {
@@ -22,6 +25,8 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.featured == false
         && request.resource.data.moderationStatus == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.keys().hasAll(['title', 'description', 'price', 'phone', 'category', 'userId', 'moderationStatus', 'createdAt'])
         && !request.resource.data.keys().hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl']);
       allow update: if isAdmin()
         || (
@@ -30,23 +35,17 @@ service cloud.firestore {
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.featured == resource.data.featured
           && request.resource.data.moderationStatus == 'pending'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'description', 'price', 'phone', 'category', 'moderationStatus'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'description', 'price', 'phone', 'category', 'area', 'images', 'imageUrl'])
         )
         || (
           signedIn()
           && resource.data.featured == true
           && resource.data.featuredUntil < request.time
           && request.resource.data.featured == false
-        )
-        ;
+        );
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
-    // One deterministic document per normalized phone makes phone uniqueness enforceable
-    // without a paid backend or a privileged client-side query.
-    // The claiming user's own profile must list the same phone, so a user cannot reserve
-    // arbitrary phone numbers they do not own (anti-squatting). The users doc is therefore
-    // created before phoneIndex during signup.
     match /phoneIndex/{phoneId} {
       allow read: if false;
       allow create: if signedIn()
@@ -61,7 +60,8 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.role == 'user'
-        && request.resource.data.banned == false;
+        && request.resource.data.banned == false
+        && request.resource.data.blockedUids == [];
       allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow update: if isAdmin()
         || (
@@ -69,57 +69,63 @@ service cloud.firestore {
           && request.auth.uid == userId
           && request.resource.data.role == resource.data.role
           && request.resource.data.banned == resource.data.banned
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'phone', 'phoneNormalized'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])
         );
-      allow delete: if isAdmin()
-        || (signedIn() && request.auth.uid == userId && resource.data.role == 'user');
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == userId && resource.data.role == 'user');
 
       match /warnings/{warningId} {
         allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
-        allow update: if isAdmin()
-          || (signedIn() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']));
-        allow create: if isAdmin();
-        allow delete: if isAdmin();
+        allow update: if isAdmin() || (signedIn() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']));
+        allow create, delete: if isAdmin();
       }
     }
 
     match /chats/{chatId} {
       allow read: if isAdmin() || isParticipant() || (signedIn() && request.auth.uid in request.resource.data.participants);
-      allow create: if signedIn() && request.auth.uid in request.resource.data.participants;
+      allow create: if signedIn()
+        && request.resource.data.participants.size() == 2
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants[0] != request.resource.data.participants[1]
+        && !userBlocked(request.auth.uid, request.resource.data.participants[0] == request.auth.uid ? request.resource.data.participants[1] : request.resource.data.participants[0]);
       allow update: if isParticipant()
-        && request.resource.data.participants == resource.data.participants;
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastSenderId', 'lastMessageAt', 'participantNames', 'adTitle'])
+        && request.resource.data.lastSenderId == request.auth.uid;
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
         allow read: if isAdmin() || (signedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
         allow create: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
-          && request.resource.data.senderId == request.auth.uid;
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000
+          && request.resource.data.createdAt == request.time;
         allow update, delete: if isAdmin();
       }
     }
 
     match /featuredRequests/{requestId} {
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending';
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 500;
       allow read, update, delete: if isAdmin();
     }
 
     match /recoveryRequests/{requestId} {
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.status == 'pending';
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending';
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /settings/{settingId} {

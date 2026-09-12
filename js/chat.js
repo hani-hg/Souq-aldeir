@@ -51,7 +51,18 @@ function initChatsListener() {
   chatsListUnsub = db.collection('chats')
     .where('participants', 'array-contains', currentUser.uid)
     .onSnapshot(snap => {
+      const previous = new Map(chatsCache.map(c => [c.id, c]));
       chatsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      chatsCache.forEach(chat => {
+        const old = previous.get(chat.id);
+        const isNewIncoming = old && chat.lastMessageAt && chat.lastSenderId && chat.lastSenderId !== currentUser.uid
+          && (!old.lastMessageAt || chat.lastMessageAt.toMillis?.() > old.lastMessageAt.toMillis?.());
+        const chatOpen = document.getElementById('msgModal')?.classList.contains('active') && document.getElementById('msgTitle')?.textContent !== 'الرسائل';
+        if (isNewIncoming && !chatOpen) {
+          showToast(`رسالة جديدة من ${escapeHtml(chat.participantNames?.[chat.lastSenderId] || 'مستخدم')}`, 'ok');
+          if ('Notification' in window && Notification.permission === 'granted') new Notification('رسالة جديدة - سوق دير الزور', { body: chat.lastMessage || 'لديك رسالة جديدة' });
+        }
+      });
       chatsCache.sort((a, b) => {
         const ta = (a.lastMessageAt && a.lastMessageAt.toMillis) ? a.lastMessageAt.toMillis() : 0;
         const tb = (b.lastMessageAt && b.lastMessageAt.toMillis) ? b.lastMessageAt.toMillis() : 0;
@@ -118,7 +129,8 @@ function openChat(chatId, otherId, otherName, adTitle) {
   const content = document.getElementById('msgContent');
   content.innerHTML = `
     <button class="btn btn-outline btn-sm chat-back-btn" onclick="if(chatUnsub){chatUnsub();chatUnsub=null;}document.getElementById('msgTitle').textContent='الرسائل';renderChatList()"><i class="fa fa-arrow-right"></i> كل المحادثات</button>
-    <div style="font-size:.75em;color:var(--gray);margin:8px 0 10px;padding:6px 10px;background:var(--bg);border-radius:8px"><i class="fa fa-tag"></i> ${escapeHtml(adTitle)}</div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:.75em;color:var(--gray);margin:8px 0 10px;padding:6px 10px;background:var(--bg);border-radius:8px"><span><i class="fa fa-tag"></i> ${escapeHtml(adTitle)}</span><button class="btn btn-outline btn-sm" onclick="blockChatUser('${escapeHtml(otherId)}')"><i class="fa fa-ban"></i> حظر</button></div>
+
     <div class="chat-window">
       <div class="chat-msgs" id="chatMsgs"><div style="text-align:center;color:var(--gray);padding:20px"><i class="fa fa-spinner fa-spin"></i></div></div>
       <div class="chat-input-bar">
@@ -147,6 +159,17 @@ function openChat(chatId, otherId, otherName, adTitle) {
   });
 }
 
+async function blockChatUser(otherId) {
+  if (!currentUser || !otherId) return;
+  if (!confirm('حظر هذا المستخدم؟ لن تتمكن من بدء محادثة جديدة معه.')) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).update({ blockedUids: firebase.firestore.FieldValue.arrayUnion(otherId) });
+    showToast('تم حظر المستخدم', 'ok');
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    closeModal('msgModal');
+  } catch (_) { showToast('تعذر حظر المستخدم', 'bad'); }
+}
+
 async function sendMsg(chatId, otherId) {
   if (!currentUser || !otherId) return;
   const input = document.getElementById('chatInput');
@@ -161,6 +184,7 @@ async function sendMsg(chatId, otherId) {
     if (!chatDoc.exists || !(chatDoc.data().participants || []).includes(currentUser.uid)) throw new Error('not-participant');
     await chatRef.collection('messages').add({ text, senderId: currentUser.uid, senderName: currentUser.displayName || 'مستخدم', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     await chatRef.update({ lastMessage: text.slice(0, 180), lastSenderId: currentUser.uid, lastMessageAt: firebase.firestore.FieldValue.serverTimestamp() });
+    if (typeof sendPushNotification === 'function') sendPushNotification(otherId, 'chat', 'رسالة جديدة في سوق دير الزور', text.slice(0, 180), '/', chatId);
     input.value = '';
   } catch (e) { showToast('خطأ في إرسال الرسالة', 'bad'); }
   finally { input.disabled = false; if (btn) btn.disabled = false; input.focus(); }

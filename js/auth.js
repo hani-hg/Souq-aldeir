@@ -10,6 +10,18 @@ function normalizeAuthEmail(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function localAttemptLimit(key, maxAttempts, windowMs) {
+  try {
+    const now = Date.now();
+    const storageKey = `souq_rate_${key}`;
+    const entries = JSON.parse(localStorage.getItem(storageKey) || '[]').filter(t => now - t < windowMs);
+    if (entries.length >= maxAttempts) return false;
+    entries.push(now);
+    localStorage.setItem(storageKey, JSON.stringify(entries));
+    return true;
+  } catch (_) { return true; }
+}
+
 function normalizeArabicDigits(value) {
   return String(value || '').replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
 }
@@ -103,10 +115,12 @@ function initAuthListener() {
         document.getElementById('adminNavBtn').style.display = 'none';
         stopChatsListener(); updateUserBtn(); loadAds(); return;
       }
-      isAdmin = doc && doc.exists && doc.data().role === 'admin';
+      const tokenResult = await u.getIdTokenResult(true).catch(() => null);
+      isAdmin = tokenResult?.claims?.admin === true;
       document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
       if (isAdmin) checkAdminNotifs();
       initChatsListener(); checkMyWarnings();
+      if (typeof maybeOfferPushNotifications === 'function') maybeOfferPushNotifications();
     } else {
       isAdmin = false;
       document.getElementById('adminNavBtn').style.display = 'none';
@@ -207,6 +221,7 @@ async function doSignup() {
   if (pass.length > 128) { showAuthError('كلمة المرور طويلة جدًا'); return; }
   if (confirmPass && pass !== confirmPass) { showAuthError('كلمتا المرور غير متطابقتين'); return; }
   if (!agreed) { showAuthError('يجب الموافقة على شروط استخدام السوق'); return; }
+  if (!localAttemptLimit('signup', 3, 15 * 60 * 1000)) { showAuthError('تم تجاوز محاولات التسجيل مؤقتًا. حاول بعد 15 دقيقة'); return; }
 
   const btn = document.getElementById('signupBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ إنشاء الحساب';
@@ -222,7 +237,7 @@ async function doSignup() {
         name, email, phone, phoneNormalized: phone,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
-        role: 'user', banned: false
+        role: 'user', banned: false, blockedUids: []
       });
       // Firebase Web SDK v8 supports set(); Firestore rules reject an overwrite
       // of an existing phone index, preserving uniqueness without a paid backend.
@@ -424,6 +439,8 @@ async function openDashboard() {
         <i class="fa fa-star"></i> إبراز إعلان مميز</button>
       <button class="btn btn-outline" onclick="showChangePasswordForm()">
         <i class="fa fa-lock"></i> تغيير كلمة المرور</button>
+      <button class="btn btn-outline" id="pushPermissionBtn" style="display:none" onclick="enablePushNotifications()">
+        <i class="fa fa-bell"></i> تفعيل إشعارات الجهاز</button>
       <button class="btn btn-outline" onclick="openAboutModal()">
         <i class="fa fa-circle-info"></i> عن السوق والتواصل</button>
       ${isAdmin ? `

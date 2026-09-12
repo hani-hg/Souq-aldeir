@@ -14,6 +14,8 @@ const ADMIN_EMAIL = 'hg78@live.com';
 const ADMIN_PHONE = '+90 552 274 09 10';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
+// Paste only the public Web Push certificate from Firebase Console here.
+window.SOUQ_FCM_VAPID_KEY = '';
 
 /* ---- Firebase init ---- */
 firebase.initializeApp({

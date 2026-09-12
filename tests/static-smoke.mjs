@@ -97,14 +97,23 @@ if (!chat.includes('maxlength="1000"')) throw new Error('Chat message length gua
 
 const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
 const sw = readFileSync(join(root, 'sw.js'), 'utf8');
+const storage = readFileSync(join(root, 'storage.rules'), 'utf8');
+const fcm = readFileSync(join(root, 'js/fcm.js'), 'utf8');
+const notify = readFileSync(join(root, 'api/send-notification.js'), 'utf8');
+const privacy = readFileSync(join(root, 'privacy.html'), 'utf8');
 if (!rules.includes("allow write: if isAdmin();")) throw new Error('Admin-only settings rule is missing');
+if (!rules.includes('request.auth.token.admin == true')) throw new Error('Admin custom claim is missing');
+if (!storage.includes('allow read, write: if false')) throw new Error('Firebase Storage must remain closed');
+if (!privacy.includes('سياسة الخصوصية')) throw new Error('Privacy page is missing');
+if (!fcm.includes('Notification.requestPermission') || !fcm.includes('getToken')) throw new Error('FCM registration is missing');
+if (!notify.includes('verifyFirebaseIdToken') || !notify.includes('sendEachForMulticast')) throw new Error('Secure push endpoint is missing');
 if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
 if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phoneNormalized == phoneId')) {
   throw new Error('Phone index create must match the claiming user profile (anti-squatting)');
 }
-if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized'])")) throw new Error('User update fields are not restricted');
+if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v9-manus-icon") || !sw.includes("/js/share.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v10-security-fcm") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
@@ -124,5 +133,6 @@ if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requir
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
+if (firebaseConfig.storage?.rules !== 'storage.rules') throw new Error('Storage rules are not wired in firebase.json');
 
 console.log(`Static smoke checks passed (${requiredFiles.length} required files, ${scripts.length} scripts).`);

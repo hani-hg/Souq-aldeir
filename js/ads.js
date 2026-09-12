@@ -179,6 +179,9 @@ function openDetail(id) {
     closeModal('adminModal');
   }
   const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
+  const phoneValue = String(ad.phone || '').trim();
+  const phoneHref = phoneValue.replace(/[^+\d]/g, '');
+  const whatsappHref = phoneHref.replace(/^00/, '+');
   document.getElementById('detailContent').innerHTML = `
     ${images.length > 1
       ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `${safeMediaUrl(url) ? `<img src="${escapeHtml(safeMediaUrl(url))}" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${escapeHtml(ad.title)}">` : ''}`).join('')}</div>`
@@ -189,16 +192,14 @@ function openDetail(id) {
     <div class="detail-price">${formatPrice(ad)}</div>
     <p class="detail-desc">${escapeHtml(ad.description).replace(/\n/g, '<br>')}</p>
     <div class="info-box">
-      ${ad.phone ? `<div class="info-row"><i class="fa fa-phone"></i><span>${escapeHtml(ad.phone)}</span></div>` : ''}
+      ${phoneValue ? `<div class="info-row" id="phoneRow_${escapeHtml(ad.id)}"><i class="fa fa-phone"></i><span>رقم الهاتف مخفي حتى تضغط «إظهار الرقم»</span></div>` : ''}
       <div class="info-row"><i class="fa fa-map-marker-alt"></i><span>${escapeHtml(ad.area || 'دير الزور')}</span></div>
       <div class="info-row"><i class="fa fa-clock"></i><span>${timeAgo(ad.createdAt)}</span></div>
       <div class="info-row"><i class="fa fa-eye"></i><span>${(ad.views || 0) + 1} مشاهدة</span></div>
     </div>
-    ${ad.phone ? `
-      <a href="tel:${escapeHtml(String(ad.phone || '').replace(/[^+\d\s()-]/g, ''))}" class="call-btn"><i class="fa fa-phone-alt"></i> اتصل بالبائع</a>
-` : ''}
+    ${phoneValue ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-blue" onclick="revealAdPhone('${escapeHtml(ad.id)}','${escapeHtml(phoneValue)}')"><i class="fa fa-eye"></i> إظهار الرقم</button><a href="https://wa.me/${escapeHtml(whatsappHref.replace(/[^+\d]/g, '').replace(/^\+/, ''))}" target="_blank" rel="noopener noreferrer" class="btn btn-outline"><i class="fab fa-whatsapp"></i> واتساب</a></div>` : ''}
     <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${escapeHtml(ad.id)}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
-    ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="startChat('${escapeHtml(ad.id)}','${escapeHtml(ad.userId)}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${escapeHtml(ad.id)}')"><i class="fa fa-flag"></i> إبلاغ</button></div>` : ''}
+    ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-blue btn-sm" onclick="startChat('${escapeHtml(ad.id)}','${escapeHtml(ad.userId)}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${escapeHtml(ad.id)}')"><i class="fa fa-flag"></i> إبلاغ عن الإعلان</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportUser('${escapeHtml(ad.userId)}','${escapeHtml(ad.userName || '')}')"><i class="fa fa-user-slash"></i> إبلاغ عن المستخدم</button></div>` : ''}
     ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>` : ''}
     ${canAdmin && !isOwner ? `<div class="action-btns" style="margin-top:6px"><button class="btn btn-red btn-sm" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i> حذف (مدير)</button><button class="btn btn-outline btn-sm" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? 'إلغاء التمييز' : '⭐ تمييز'}</button></div>` : ''}
     ${renderSellerOtherAdsHtml(ad)}
@@ -301,6 +302,7 @@ async function doAddAd() {
   if (!title || !desc || !price || !phone || !cat) { errEl.textContent = 'يرجى ملء جميع الحقول المطلوبة *'; errEl.className = 'err show'; return; }
   if (areaSel === 'أخرى' && !areaOther) { errEl.textContent = 'يرجى كتابة اسم القرية/المنطقة'; errEl.className = 'err show'; return; }
   if (!agreed) { errEl.textContent = 'يجب الموافقة على شروط استخدام السوق أولاً'; errEl.className = 'err show'; return; }
+  if (typeof localAttemptLimit === 'function' && !localAttemptLimit('ad_create', 5, 15 * 60 * 1000)) { errEl.textContent = 'تم تجاوز عدد محاولات النشر مؤقتًا. حاول بعد 15 دقيقة'; errEl.className = 'err show'; return; }
   errEl.className = 'err';
   const btn = document.getElementById('addSubmit');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري النشر...';
@@ -415,6 +417,29 @@ async function requestFeatured() {
   } catch (error) {
     showToast('تعذر إرسال الطلب، حاول مرة أخرى', 'bad');
   }
+}
+
+function revealAdPhone(adId, phone) {
+  const row = document.getElementById(`phoneRow_${adId}`);
+  if (!row) return;
+  const safePhone = escapeHtml(phone);
+  const href = phone.replace(/[^+\d]/g, '');
+  row.innerHTML = `<i class="fa fa-phone"></i><a href="tel:${escapeHtml(href)}" style="color:inherit;font-weight:800">${safePhone}</a>`;
+}
+
+/* ============ REPORT AD / USER ============ */
+async function reportUser(userId, userName) {
+  if (!currentUser || !userId || currentUser.uid === userId) return;
+  const reason = prompt(`لماذا تُبلغ عن المستخدم ${userName || ''}؟`);
+  if (reason === null) return;
+  try {
+    await db.collection('reports').add({
+      targetType: 'user', targetUserId: userId, targetUserName: userName || '',
+      reporterId: currentUser.uid, reason: (reason || '').trim() || 'بدون سبب محدد',
+      status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('تم إرسال البلاغ للإدارة، شكرًا لك', 'ok');
+  } catch (_) { showToast('تعذر إرسال البلاغ', 'bad'); }
 }
 
 /* ============ REPORT AD ============ */

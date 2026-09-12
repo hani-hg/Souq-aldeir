@@ -1127,7 +1127,10 @@ async function adminSetAdModerationStatus(id, status) {
   adminConfirm(labels[status], async () => {
     await db.collection('ads').doc(id).update({ moderationStatus: status, moderationNote: note, moderationUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
     const ad = adminAdsAllCache.find(a => a.id === id);
-    if (ad) ad.moderationStatus = status;
+    if (ad) {
+      ad.moderationStatus = status;
+      if (typeof sendPushNotification === 'function' && ad.userId) sendPushNotification(ad.userId, 'ad_moderation', status === 'approved' ? 'تم قبول إعلانك' : status === 'rejected' ? 'تم رفض إعلانك' : 'تم إخفاء إعلانك', status === 'rejected' ? (note || 'يرجى مراجعة شروط النشر') : 'يمكنك الآن مراجعة حالة إعلانك في السوق.', '/', '');
+    }
     showToast(status === 'approved' ? 'تمت الموافقة على الإعلان' : status === 'rejected' ? 'تم رفض الإعلان' : 'تم إخفاء الإعلان', 'ok');
     loadAds(); applyAdsFilter(); checkAdminNotifs();
   });
@@ -1188,12 +1191,15 @@ async function approveFeature(reqId, adId) {
   const featuredUntil = firebase.firestore.Timestamp.fromDate(new Date(Date.now()+days*86400000));
   await db.collection('ads').doc(adId).update({featured:true, featuredUntil, featuredDurationDays:days}).catch(()=>{});
   await db.collection('featuredRequests').doc(reqId).update({status:'approved'}).catch(()=>{});
+  if (req?.userId && typeof sendPushNotification === 'function') sendPushNotification(req.userId, 'featured_request', 'تم قبول طلب تمييز إعلانك', `تمت الموافقة على التمييز لمدة ${days} أيام.`, '/', '');
   adminReqsCache = adminReqsCache.filter(r=>r.id!==reqId);
   showToast(`تم التمييز لمدة ${days} أيام ⭐`, 'ok');
   checkAdminNotifs(); loadAds(); openAdminPanel();
 }
 async function rejectFeature(reqId) {
   await db.collection('featuredRequests').doc(reqId).update({status:'rejected'}).catch(()=>{});
+  const req = adminReqsCache.find(r=>r.id===reqId);
+  if (req?.userId && typeof sendPushNotification === 'function') sendPushNotification(req.userId, 'featured_request', 'تم رفض طلب تمييز إعلانك', 'يمكنك التواصل مع الإدارة لمزيد من التفاصيل.', '/', '');
   adminReqsCache = adminReqsCache.filter(r=>r.id!==reqId);
   showToast('تم رفض الطلب', 'ok');
   checkAdminNotifs(); openAdminPanel();
