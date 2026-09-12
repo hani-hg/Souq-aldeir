@@ -15,7 +15,11 @@ function readServiceAccount() {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+    const account = typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+    if (!account || typeof account !== 'object' || !account.project_id || !account.client_email || !account.private_key) {
+      throw new Error('invalid_service_account_json_missing_fields');
+    }
+    return account;
   } catch (error) {
     throw new Error('invalid_service_account_json');
   }
