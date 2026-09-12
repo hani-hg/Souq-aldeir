@@ -279,27 +279,20 @@ async function doResetStep1() {
   const btn = document.getElementById('resetBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الإرسال';
   try {
-    /* الخادم ينشئ رابط Firebase ثم يرسله عبر SMTP الخاص بحساب Outlook */
-    const endpoint = window.SOUQ_PASSWORD_RESET_ENDPOINT || '/api/password-reset';
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'reset-service-unavailable');
+    /* Firebase يرسل رسالة الاستعادة الأصلية مباشرة؛ لا يعتمد هذا المسار على
+       Firebase Admin أو Service Account أو خادم SMTP. */
+    await auth.sendPasswordResetEmail(email);
     showAuthSuccess('تم إرسال رابط إعادة التعيين عبر البريد. تحقق من Inbox وSpam.');
   } catch(e) {
     const msgs = {
       'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
       'auth/too-many-requests': 'تم تجاوز عدد المحاولات. انتظر قليلًا ثم حاول مجددًا',
-      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا'
+      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
+      'auth/operation-not-allowed': 'استعادة كلمة المرور غير مفعّلة في إعدادات Firebase'
     };
     // Keep user enumeration-resistant behavior for unknown emails.
     if (e.code === 'auth/user-not-found') {
       showAuthSuccess('إذا كان هذا البريد مرتبطًا بحساب، فسيصل إليه رابط آمن لإعادة تعيين كلمة المرور.');
-    } else if (e.message === 'reset-service-unavailable' || e.message === 'Failed to fetch') {
-      showAuthError('تعذر إرسال البريد الآن. تحقق الإدارة من إعدادات SMTP في Vercel');
     } else {
       showAuthError(msgs[e.code] || 'تعذر إرسال رابط الاستعادة، حاول مجددًا');
     }
