@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import { admin, initFirebaseAdmin, hasIdentityToolkitConfig, envValue } from './_lib/firebase-admin.js';
 
 function present(name) {
@@ -20,35 +21,59 @@ function serviceAccountProjectId() {
   }
 }
 
-function safeError(error) {
-  const text = String(error?.code || error?.message || 'unknown').toLowerCase();
+function safeError(error, kind) {
+  const code = String(error?.code || '').toLowerCase();
+  const responseCode = String(error?.responseCode || '');
+  const text = [code, responseCode, error?.message, error?.response].filter(Boolean).join(' ').toLowerCase();
+  if (kind === 'smtp') {
+    if (code === 'eauth' || text.includes('auth') || responseCode === '535' || text.includes('535')) return 'smtp_auth_failed';
+    if (code === 'enotfound' || code === 'eai_again' || text.includes('enotfound') || text.includes('dns')) return 'smtp_dns_failed';
+    if (code === 'etimedout' || text.includes('timeout')) return 'smtp_timeout';
+    if (code === 'econnrefused' || code === 'econnreset' || text.includes('connection')) return 'smtp_connection_failed';
+    if (text.includes('tls') || text.includes('certificate')) return 'smtp_tls_failed';
+    return 'smtp_check_failed';
+  }
   if (text.includes('json')) return 'invalid_service_account_json';
-  if (text.includes('private key') || text.includes('credential') || text.includes('pem')) return 'invalid_firebase_credentials';
-  if (text.includes('project') || text.includes('project_id')) return 'firebase_project_mismatch';
-  if (text.includes('permission') || text.includes('unauthorized')) return 'firebase_permission_denied';
-  if (text.includes('invalid_grant') || text.includes('jwt')) return 'firebase_service_account_auth_failed';
-  if (text.includes('timeout') || text.includes('network') || text.includes('econn')) return 'firebase_network_failed';
+  if (text.includes('private key') || text.includes('credential') || text.includes('invalid_grant')) return 'invalid_firebase_credentials';
+  if (text.includes('incomplete')) return 'incomplete_firebase_admin_variables';
+  if (text.includes('permission')) return 'firebase_permission_denied';
+  if (code === 'enotfound' || code === 'eai_again' || code === 'etimedout' || text.includes('network') || text.includes('timeout')) return 'firebase_connection_failed';
   return 'firebase_connection_failed';
 }
 
-function safeErrorDetail(error) {
-  const code = String(error?.code || '').slice(0, 120);
-  const message = String(error?.message || '').replace(/[\r\n]+/g, ' ').replace(/(private_key|client_email|project_id|token|secret|password)\s*[:=][^,; ]+/gi, '$1=[redacted]').slice(0, 240);
-  return { code: code || 'unknown', message: message || 'unknown' };
+async function verifySmtp() {
+  const sender = envValue('SMTP_USER');
+  const password = envValue('SMTP_APP_PASSWORD');
+  const port = Number(envValue('SMTP_PORT') || 587);
+  const secure = envValue('SMTP_SECURE').toLowerCase() === 'true' || port === 465;
+  if (!sender) throw new Error('SMTP_USER is missing');
+  if (!password) throw new Error('SMTP_APP_PASSWORD is missing');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('SMTP_PORT is invalid');
+  const transporter = nodemailer.createTransport({
+    host: envValue('SMTP_HOST') || 'smtp-mail.outlook.com',
+    port,
+    secure,
+    requireTLS: true,
+    auth: { user: sender, pass: password },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: { minVersion: 'TLSv1.2' }
+  });
+  await transporter.verify();
 }
 
 export default async function handler(_req, res) {
   const firebaseJson = present('FIREBASE_SERVICE_ACCOUNT_JSON') || present('FIREBASE_SERVICE_ACCOUNT');
   const firebaseSplit = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
   const cloudinaryVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
-  const emailJsVars = ['EMAILJS_SERVICE_ID', 'EMAILJS_TEMPLATE_ID', 'EMAILJS_PUBLIC_KEY', 'EMAILJS_PRIVATE_KEY'];
   const status = {
     ok: false,
     service: 'souq-aldeir-backend',
     config: {
       firebaseAdmin: false,
       firebaseTokenVerification: hasIdentityToolkitConfig(),
-      emailjsConfigured: emailJsVars.every(present),
+      smtpConnection: false,
       cloudinarySigning: cloudinaryVars.every(present),
       appUrl: present('APP_URL') || present('VERCEL_URL')
     },
@@ -56,7 +81,6 @@ export default async function handler(_req, res) {
       firebaseCredentialSource: firebaseJson ? 'json' : (firebaseSplit.every(present) ? 'split' : 'missing'),
       firebaseMissing: firebaseJson ? [] : missing(firebaseSplit),
       cloudinaryMissing: missing(cloudinaryVars),
-      emailjsMissing: missing(emailJsVars),
       firebaseProjectId: present('FIREBASE_PROJECT_ID') ? envValue('FIREBASE_PROJECT_ID') : serviceAccountProjectId()
     }
   };
@@ -65,12 +89,19 @@ export default async function handler(_req, res) {
     await admin.auth().listUsers(1);
     status.config.firebaseAdmin = true;
   } catch (error) {
-    status.firebaseError = safeError(error);
-    status.firebaseErrorCode = String(error?.code || 'unknown');
-    status.firebaseErrorDetail = safeErrorDetail(error);
+    status.firebaseError = safeError(error, 'firebase');
+    status.firebaseErrorCode = String(error?.code || error?.name || 'unknown');
   }
-  status.passwordResetReady = status.config.firebaseAdmin && status.config.emailjsConfigured && status.config.appUrl;
+  try {
+    await verifySmtp();
+    status.config.smtpConnection = true;
+  } catch (error) {
+    status.smtpError = safeError(error, 'smtp');
+  }
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
-  status.ok = status.uploadReady && status.passwordResetReady;
+  status.passwordResetReady = status.config.firebaseAdmin
+    && status.config.smtpConnection
+    && status.config.appUrl;
+  status.ok = status.passwordResetReady;
   return res.status(status.ok ? 200 : 503).json(status);
 }
