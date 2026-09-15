@@ -7,6 +7,11 @@
     "start": "node server/index.js",
     "test": "node tests/static-smoke.mjs"
   },
+  "overrides": {
+    "jwks-rsa": {
+      "jose": "5.10.0"
+    }
+  },
   "dependencies": {
     "@emailjs/nodejs": "^5.0.2",
     "cors": "^2.8.5",
