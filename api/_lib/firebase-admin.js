@@ -1,4 +1,7 @@
-import admin from 'firebase-admin';
+import { cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 
 const DEFAULT_FIREBASE_WEB_API_KEY = 'AIzaSyAlFgTzlcbaS6NKKlqyOvrxYAnKmxXLTLQ';
 
@@ -26,7 +29,7 @@ function readServiceAccount() {
 }
 
 export function initFirebaseAdmin() {
-  if (admin.apps.length) return admin.app();
+  if (getApps().length) return getApp();
   let jsonError = null;
   try {
     const serviceAccount = readServiceAccount();
@@ -39,8 +42,7 @@ export function initFirebaseAdmin() {
       if (!normalizedAccount.projectId || !normalizedAccount.clientEmail || !normalizedAccount.privateKey) {
         throw new Error('invalid_service_account_json_missing_fields');
       }
-      admin.initializeApp({ credential: admin.credential.cert(normalizedAccount) });
-      return admin.app();
+      return initializeApp({ credential: cert(normalizedAccount) });
     }
   } catch (error) {
     jsonError = error;
@@ -51,18 +53,28 @@ export function initFirebaseAdmin() {
   const privateKey = envValue('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n').trim();
   if (!projectId || !clientEmail || !privateKey) throw (jsonError || new Error('incomplete_firebase_admin_variables'));
   try {
-    admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-    return admin.app();
+    return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
   } catch (splitError) {
     splitError.cause = jsonError || undefined;
     throw splitError;
   }
 }
 
+export function firebaseAuth() {
+  return getAuth(initFirebaseAdmin());
+}
+
+export function firebaseFirestore() {
+  return getFirestore(initFirebaseAdmin());
+}
+
+export function firebaseMessaging() {
+  return getMessaging(initFirebaseAdmin());
+}
+
 export async function verifyFirebaseIdToken(idToken) {
   try {
-    initFirebaseAdmin();
-    return await admin.auth().verifyIdToken(idToken);
+    return await firebaseAuth().verifyIdToken(idToken);
   } catch (adminError) {
     const apiKey = envValue('FIREBASE_WEB_API_KEY') || DEFAULT_FIREBASE_WEB_API_KEY;
     const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`, {
@@ -86,7 +98,13 @@ export async function verifyFirebaseIdToken(idToken) {
   }
 }
 
-export { admin };
+// Compatibility facade for existing API modules; all methods use the modular SDK above.
+export const admin = {
+  auth: firebaseAuth,
+  firestore: firebaseFirestore,
+  messaging: firebaseMessaging
+};
+
 export default admin;
 
 function hasServiceAccountEnv() {
