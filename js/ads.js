@@ -48,7 +48,7 @@ function loadNews() {
 /* ============ LOAD ADS ============ */
 let adsLoadSeq = 0;
 function isPublicAd(ad) {
-  return ad.moderationStatus !== 'pending' && ad.moderationStatus !== 'rejected' && ad.moderationStatus !== 'hidden';
+  return ad.moderationStatus === 'approved';
 }
 
 async function loadAds() {
@@ -58,13 +58,28 @@ async function loadAds() {
   g.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري تحميل الإعلانات...</p></div>';
 
   try {
-    const snap = await Promise.race([
-      db.collection('ads').orderBy('createdAt', 'desc').limit(40).get(),
+    const publicQuery = db.collection('ads')
+      .where('moderationStatus', '==', 'approved')
+      .limit(40)
+      .get();
+    const ownerQuery = currentUser
+      ? db.collection('ads').where('userId', '==', currentUser.uid).limit(40).get()
+      : Promise.resolve({ docs: [] });
+    const [publicSnap, ownerSnap] = await Promise.race([
+      Promise.all([publicQuery, ownerQuery]),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
     ]);
     if (loadSeq !== adsLoadSeq) return;
 
-    allAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const seen = new Set();
+    allAds = [...publicSnap.docs, ...ownerSnap.docs]
+      .filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true; })
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return bt - at;
+      });
     const now = Date.now();
     const expiredIds = allAds
       .filter(a => a.featured && a.featuredUntil && a.featuredUntil.toMillis && a.featuredUntil.toMillis() < now)

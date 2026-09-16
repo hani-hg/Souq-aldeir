@@ -1,6 +1,6 @@
-import fs from 'node:fs';
 import process from 'node:process';
-import admin from 'firebase-admin';
+import { cert, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 const uid = process.argv[2];
 if (!uid) {
@@ -22,11 +22,11 @@ try {
   process.exit(1);
 }
 
-admin.initializeApp({ credential: admin.credential.cert({
+const app = initializeApp({ credential: cert({
   projectId: serviceAccount.project_id,
   clientEmail: serviceAccount.client_email,
   privateKey: String(serviceAccount.private_key || '').replace(/\\n/g, '\n')
 }) });
 
-await admin.auth().setCustomUserClaims(uid, { admin: true });
+await getAuth(app).setCustomUserClaims(uid, { admin: true });
 console.log(`Admin claim set for ${uid}. The user must sign out/in again to refresh the token.`);
