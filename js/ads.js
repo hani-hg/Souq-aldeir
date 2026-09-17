@@ -4,6 +4,8 @@
    ad detail view, add/edit/delete ad, "featured ad" request flow.
    ============================================================ */
 
+let selectedAdImageFiles = [];
+
 /* ============ CATEGORIES ============ */
 const CATS = [
   { n: 'الكل', i: 'fa-th-large' }, { n: 'سيارات', i: 'fa-car' }, { n: 'عقارات', i: 'fa-home' },
@@ -259,14 +261,31 @@ function shareAd(adId, adTitle) {
 function initAddAdForm() {
   document.getElementById('fabBtn').onclick = function () {
     if (!currentUser) { openModal('authModal'); showToast('سجل دخولك أولاً', 'bad'); return; }
+    selectedAdImageFiles = [];
+    document.getElementById('adImg').value = '';
+    document.getElementById('imgPreview').innerHTML = '';
     document.getElementById('addErr').className = 'err';
     openModal('addModal');
   };
   document.getElementById('adImg').onchange = function () {
-    const files = Array.from(this.files || []).slice(0, 5);
+    const incomingFiles = Array.from(this.files || []);
+    const knownFiles = new Set(selectedAdImageFiles.map(file => `${file.name}:${file.size}:${file.lastModified}`));
+    for (const file of incomingFiles) {
+      const key = `${file.name}:${file.size}:${file.lastModified}`;
+      if (!knownFiles.has(key) && selectedAdImageFiles.length < 5) {
+        selectedAdImageFiles.push(file);
+        knownFiles.add(key);
+      }
+    }
+    const files = selectedAdImageFiles;
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    this.files = dataTransfer.files;
     const preview = document.getElementById('imgPreview');
     preview.innerHTML = '';
-    if (this.files.length > 5) showToast('حد أقصى 5 صور، تم أخذ أول 5 فقط', 'bad');
+    if (incomingFiles.length && selectedAdImageFiles.length === 5 && incomingFiles.some(file => !files.includes(file))) {
+      showToast('حد أقصى 5 صور', 'bad');
+    }
     files.forEach(f => {
       const r = new FileReader();
       r.onload = e => { const img = document.createElement('img'); img.src = e.target.result; preview.appendChild(img); };
@@ -323,17 +342,15 @@ async function doAddAd() {
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري النشر...';
   try {
     const imgFiles = Array.from(document.getElementById('adImg').files || []).slice(0, 5);
+    if (!imgFiles.length) throw new Error('يجب إضافة صورة واحدة على الأقل للإعلان');
     const invalidImage = imgFiles.find(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
     if (invalidImage) throw new Error('كل صورة يجب أن تكون JPG أو PNG أو WebP وحجمها أقل من 5MB');
     const images = [];
-    let imageUploadWarning = false;
-    if (imgFiles.length) {
-      try {
-        const imageSignature = await getSignedUpload('image');
-        for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
-      } catch (uploadError) {
-        throw new Error(uploadError?.message || 'فشل رفع الصور؛ لم يتم نشر الإعلان');
-      }
+    try {
+      const imageSignature = await getSignedUpload('image');
+      for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
+    } catch (uploadError) {
+      throw new Error(uploadError?.message || 'فشل رفع الصور؛ لم يتم نشر الإعلان');
     }
 
     const durationDays = 20;
@@ -355,7 +372,8 @@ async function doAddAd() {
     document.getElementById('adAgreeTerms').checked = false;
     document.getElementById('imgPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
-    showToast(imageUploadWarning ? 'تم إرسال الإعلان بدون صور، وسيظهر بعد موافقة الإدارة ✅' : 'تم إرسال إعلانك للمراجعة، وسيظهر بعد موافقة الإدارة ✅', 'ok');
+    selectedAdImageFiles = [];
+    showToast('تم إرسال إعلانك للمراجعة، وسيظهر بعد موافقة الإدارة ✅', 'ok');
     loadAds();
   } catch (ex) {
     errEl.textContent = ex.message || 'حدث خطأ أثناء النشر';
@@ -509,4 +527,3 @@ function countVisitOnce() {
     totalVisits: firebase.firestore.FieldValue.increment(1)
   }, { merge: true }).catch(() => {});
 }
-
