@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /server/
-Sitemap: https://souq-aldeir.vercel.app/sitemap.xml
+Sitemap: https://www.souqaldeir.com/sitemap.xml

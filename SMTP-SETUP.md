@@ -7,7 +7,7 @@
 تأكد من التالي في مشروع Firebase `souq-aldeir`:
 
 1. تفعيل **Email/Password** من Authentication → Sign-in method.
-2. إضافة `souq-aldeir.vercel.app` إلى Authentication → Settings → Authorized domains.
+2. إضافة `www.souqaldeir.com` و`souqaldeir.com` إلى Authentication → Settings → Authorized domains.
 3. التأكد من أن الحساب يملك بريدًا حقيقيًا، وليس عنوانًا داخليًا منتهيًا بـ `@souq-aldeir.local`.
 4. ضبط قالب رسالة Password reset من Authentication → Templates إذا أردت تغيير النص أو اسم المرسل.
 
@@ -16,7 +16,7 @@
 نفّذ:
 
 ```text
-https://souq-aldeir.vercel.app/api/health
+https://www.souqaldeir.com/api/health
 ```
 
 يجب أن يعيد `ok: true` مع `passwordResetDelivery: "firebase-client"`. قد تظهر حالة Firebase Admin أو SMTP بشكل منفصل لأن ملفات الخادم القديمة ما زالت موجودة للتوافق، لكنها ليست مطلوبة لمسار الاستعادة الجديد.
