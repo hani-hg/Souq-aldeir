@@ -29,8 +29,11 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.featured == false
         && request.resource.data.moderationStatus == 'pending'
+        && request.resource.data.images is list
+        && request.resource.data.images.size() >= 1
+        && request.resource.data.images.size() <= 5
         && request.resource.data.createdAt == request.time
-        && request.resource.data.keys().hasAll(['title', 'description', 'price', 'phone', 'category', 'userId', 'moderationStatus', 'createdAt'])
+        && request.resource.data.keys().hasAll(['title', 'description', 'price', 'phone', 'category', 'userId', 'moderationStatus', 'createdAt', 'images', 'imageUrl'])
         && !request.resource.data.keys().hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl']);
       allow update: if isAdmin()
         || (
