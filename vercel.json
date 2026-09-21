@@ -4,5 +4,11 @@
     "api/**/*.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cleanup-expired",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

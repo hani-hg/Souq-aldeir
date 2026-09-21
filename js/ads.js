@@ -197,6 +197,8 @@ function openDetail(id) {
   }
   const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
   const phoneValue = String(ad.phone || '').trim();
+  const expiresMs = ad.expiresAt?.toMillis ? ad.expiresAt.toMillis() : (ad.expiresAt?.seconds ? ad.expiresAt.seconds * 1000 : 0);
+  const renewalWindow = expiresMs > Date.now() && expiresMs - Date.now() <= 2 * 86400000;
   const phoneHref = phoneValue.replace(/[^+\d]/g, '');
   const whatsappHref = phoneHref.replace(/^00/, '+');
   document.getElementById('detailContent').innerHTML = `
@@ -217,11 +219,31 @@ function openDetail(id) {
     ${phoneValue ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-blue" onclick="revealAdPhone('${escapeHtml(ad.id)}','${escapeHtml(phoneValue)}')"><i class="fa fa-eye"></i> إظهار الرقم</button><a href="https://wa.me/${escapeHtml(whatsappHref.replace(/[^+\d]/g, '').replace(/^\+/, ''))}" target="_blank" rel="noopener noreferrer" class="btn btn-outline"><i class="fab fa-whatsapp"></i> واتساب</a></div>` : ''}
     <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${escapeHtml(ad.id)}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
     ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-blue btn-sm" onclick="startChat('${escapeHtml(ad.id)}','${escapeHtml(ad.userId)}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${escapeHtml(ad.id)}')"><i class="fa fa-flag"></i> إبلاغ عن الإعلان</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportUser('${escapeHtml(ad.userId)}','${escapeHtml(ad.userName || '')}')"><i class="fa fa-user-slash"></i> إبلاغ عن المستخدم</button></div>` : ''}
-    ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>` : ''}
+    ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>${renewalWindow ? `<button class="btn btn-orange btn-sm" style="margin-top:8px" onclick="renewAd('${escapeHtml(ad.id)}')"><i class="fa fa-rotate-right"></i> تجديد الإعلان 20 يومًا</button><small style="display:block;color:var(--gray);margin-top:5px">يمكن التجديد خلال آخر يومين فقط، وستبقى الصور كما هي.</small>` : ''}` : ''}
     ${canAdmin && !isOwner ? `<div class="action-btns" style="margin-top:6px"><button class="btn btn-red btn-sm" onclick="adminDeleteAd('${ad.id}')"><i class="fa fa-trash"></i> حذف (مدير)</button><button class="btn btn-outline btn-sm" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured ? 'إلغاء التمييز' : '⭐ تمييز'}</button></div>` : ''}
     ${renderSellerOtherAdsHtml(ad)}
   `;
   openModal('detailModal');
+}
+
+async function renewAd(adId) {
+  if (!currentUser || !adId) return;
+  if (!confirm('سيتم تمديد الإعلان 20 يومًا إضافية مع الإبقاء على صوره. هل تريد المتابعة؟')) return;
+  try {
+    const token = await currentUser.getIdToken(true);
+    const response = await fetch('/api/renew-ad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ adId })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'تعذر تجديد الإعلان');
+    closeModal('detailModal');
+    showToast('تم تجديد الإعلان 20 يومًا إضافية ✅', 'ok');
+    loadAds();
+  } catch (error) {
+    showToast(error.message || 'تعذر تجديد الإعلان', 'bad');
+  }
 }
 
 /* Surfaces a seller's other active listings — helps buyers browse
@@ -318,7 +340,7 @@ async function uploadToCloudinary(file, resourceType, signed) {
   const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signed.cloudName)}/${endpointType}/upload`, { method: 'POST', body: fd });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.secure_url) throw new Error(data.error?.message || 'فشل رفع الملف');
-  return data.secure_url;
+  return { url: data.secure_url, publicId: data.public_id || '' };
 }
 
 async function doAddAd() {
@@ -346,9 +368,14 @@ async function doAddAd() {
     const invalidImage = imgFiles.find(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
     if (invalidImage) throw new Error('كل صورة يجب أن تكون JPG أو PNG أو WebP وحجمها أقل من 5MB');
     const images = [];
+    const imageAssets = [];
     try {
       const imageSignature = await getSignedUpload('image');
-      for (const f of imgFiles) images.push(await uploadToCloudinary(f, 'image', imageSignature));
+      for (const f of imgFiles) {
+        const asset = await uploadToCloudinary(f, 'image', imageSignature);
+        images.push(asset.url);
+        if (asset.publicId) imageAssets.push({ publicId: asset.publicId, resourceType: 'image', type: 'upload' });
+      }
     } catch (uploadError) {
       throw new Error(uploadError?.message || 'فشل رفع الصور؛ لم يتم نشر الإعلان');
     }
@@ -357,7 +384,7 @@ async function doAddAd() {
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
     await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
-      images, imageUrl: images[0] || null, featured: false,
+      images, imageAssets, imageUrl: images[0] || null, featured: false,
       userId: currentUser.uid,
       userName: currentUser.displayName || 'مستخدم',
       moderationStatus: 'pending',
