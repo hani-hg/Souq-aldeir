@@ -13,6 +13,56 @@ function appUrl() {
   return (envValue('APP_URL') || (envValue('VERCEL_URL') ? `https://${envValue('VERCEL_URL')}` : '')).replace(/\/$/, '');
 }
 
+function continueUrls() {
+  const urls = [
+    'https://souq-aldeir.firebaseapp.com',
+    appUrl(),
+    appUrl().replace('://www.', '://')
+  ].filter(Boolean);
+  return [...new Set(urls)];
+}
+
+async function generateResetLink(email) {
+  try {
+    return await admin.auth().generatePasswordResetLink(email);
+  } catch (firstError) {
+    const retryable = ['auth/unauthorized-continue-uri', 'auth/invalid-continue-uri'];
+    if (!retryable.includes(firstError.code)) throw firstError;
+  }
+  let lastError;
+  for (const url of continueUrls()) {
+    try {
+      return await admin.auth().generatePasswordResetLink(email, {
+        url,
+        handleCodeInApp: false
+      });
+    } catch (error) {
+      lastError = error;
+      if (error.code === 'auth/unauthorized-continue-uri' || error.code === 'auth/invalid-continue-uri') continue;
+      throw error;
+    }
+  }
+  throw lastError || new Error('reset_link_failed');
+}
+
+function publicResetLink(firebaseLink, baseUrl) {
+  try {
+    const firebaseUrl = new URL(firebaseLink);
+    const oobCode = firebaseUrl.searchParams.get('oobCode');
+    if (!oobCode || !baseUrl) return firebaseLink;
+    const resetUrl = new URL('/reset-password.html', `${baseUrl}/`);
+    resetUrl.searchParams.set('mode', 'resetPassword');
+    resetUrl.searchParams.set('oobCode', oobCode);
+    return resetUrl.toString();
+  } catch {
+    return firebaseLink;
+  }
+}
+
+function mailFrom() {
+  return envValue('MAIL_FROM') || envValue('RESEND_FROM') || 'سوق دير الزور <noreply@souqaldeir.com>';
+}
+
 function limited(req, email) {
   const key = `${req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown'}:${email}`;
   const now = Date.now();
@@ -42,7 +92,7 @@ async function sendResetEmail(email, resetLink) {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: 'noreply@souqaldeir.com',
+      from: mailFrom(),
       to: [email],
       subject: 'إعادة تعيين كلمة المرور - سوق دير الزور',
       text: `مرحبًا،\n\nاضغط على الرابط التالي لتعيين كلمة مرور جديدة لحسابك:\n${resetLink}\n\nإذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.`,
@@ -64,20 +114,9 @@ export default async function handler(req, res) {
   if (!EMAIL_RE.test(email) || email.endsWith('@souq-aldeir.local') || limited(req, email)) return generic(res);
 
   try {
-    const baseUrl = appUrl();
-    if (!baseUrl) throw new Error('APP_URL or VERCEL_URL is required');
     initFirebaseAdmin();
-    const firebaseLink = await admin.auth().generatePasswordResetLink(email, {
-      url: baseUrl,
-      handleCodeInApp: false
-    });
-    const firebaseUrl = new URL(firebaseLink);
-    const oobCode = firebaseUrl.searchParams.get('oobCode');
-    if (!oobCode) throw new Error('firebase_reset_link_missing_code');
-    const resetUrl = new URL('/reset-password.html', `${baseUrl}/`);
-    resetUrl.searchParams.set('mode', 'resetPassword');
-    resetUrl.searchParams.set('oobCode', oobCode);
-    await sendResetEmail(email, resetUrl.toString());
+    const firebaseLink = await generateResetLink(email);
+    await sendResetEmail(email, publicResetLink(firebaseLink, appUrl()));
   } catch (error) {
     if (error.code === 'auth/user-not-found') return generic(res);
     console.error('password-reset:', JSON.stringify({

@@ -62,6 +62,38 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
+function continueUrls() {
+  const urls = [
+    'https://souq-aldeir.firebaseapp.com',
+    siteUrl,
+    siteUrl.replace('://www.', '://')
+  ].filter(Boolean);
+  return [...new Set(urls)];
+}
+
+async function generateResetLink(email) {
+  try {
+    return await admin.auth().generatePasswordResetLink(email);
+  } catch (firstError) {
+    const retryable = ['auth/unauthorized-continue-uri', 'auth/invalid-continue-uri'];
+    if (!retryable.includes(firstError.code)) throw firstError;
+  }
+  let lastError;
+  for (const url of continueUrls()) {
+    try {
+      return await admin.auth().generatePasswordResetLink(email, {
+        url,
+        handleCodeInApp: false
+      });
+    } catch (error) {
+      lastError = error;
+      if (error.code === 'auth/unauthorized-continue-uri' || error.code === 'auth/invalid-continue-uri') continue;
+      throw error;
+    }
+  }
+  throw lastError || new Error('reset_link_failed');
+}
+
 async function sendResetEmail(email, link) {
   const smtpPort = Number(process.env.SMTP_PORT || 587);
   const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || smtpPort === 465;
@@ -128,7 +160,7 @@ app.post('/api/password-reset', async (req, res) => {
   if (!emailPattern.test(email) || email.endsWith('@souq-aldeir.local') || isRateLimited(req, email)) return genericResponse(res);
   try {
     initFirebase();
-    const link = await admin.auth().generatePasswordResetLink(email, { url: siteUrl, handleCodeInApp: false });
+    const link = await generateResetLink(email);
     await sendResetEmail(email, link);
   } catch (error) {
     // Keep account existence private, but let the UI distinguish an infrastructure failure.

@@ -279,20 +279,35 @@ async function doResetStep1() {
   const btn = document.getElementById('resetBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الإرسال';
   try {
-    const response = await fetch('/api/password-reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.ok) throw new Error('reset_service_unavailable');
-    showAuthSuccess(data.message || 'تم إرسال رابط إعادة التعيين عبر البريد. تحقق من Inbox وSpam.');
+    let sent = false;
+    try {
+      const response = await fetch('/api/password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.ok) {
+        showAuthSuccess(data.message || 'تم إرسال رابط إعادة التعيين عبر البريد. تحقق من Inbox وSpam.');
+        sent = true;
+      }
+    } catch (_) {}
+    if (!sent) {
+      try {
+        await auth.sendPasswordResetEmail(email);
+      } catch (fallbackErr) {
+        if (fallbackErr.code !== 'auth/unauthorized-continue-uri' && fallbackErr.code !== 'auth/invalid-continue-uri') throw fallbackErr;
+        await auth.sendPasswordResetEmail(email, { url: 'https://souq-aldeir.firebaseapp.com/' });
+      }
+      showAuthSuccess('تم إرسال رابط إعادة التعيين عبر البريد. تحقق من Inbox وSpam.');
+    }
   } catch(e) {
     const msgs = {
       'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
       'auth/too-many-requests': 'تم تجاوز عدد المحاولات. انتظر قليلًا ثم حاول مجددًا',
       'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
       'auth/operation-not-allowed': 'استعادة كلمة المرور غير مفعّلة في إعدادات Firebase',
+      'auth/unauthorized-continue-uri': 'النطاق غير مصرّح في Firebase. أضف souqaldeir.com من Authentication > Settings > Authorized domains',
       'reset_service_unavailable': 'خدمة البريد غير متاحة مؤقتًا، حاول مجددًا'
     };
     // Keep user enumeration-resistant behavior for unknown emails.
