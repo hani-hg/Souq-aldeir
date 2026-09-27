@@ -2,6 +2,13 @@
 
 يستخدم الموقع endpoint الخادم `/api/password-reset` لإنشاء رابط Firebase آمن، ثم يرسل الرسالة عبر Resend من العنوان `noreply@souqaldeir.com`. صفحة `/reset-password.html` تتحقق من رمز الرابط وتعيّن كلمة المرور الجديدة عبر Firebase Web SDK.
 
+## متطلبات الأمان
+
+- يجب أن يكون `firebaseAdmin: true` في `/api/health` قبل اعتماد إرسال رسائل الاستعادة؛ الخادم يستخدم Firebase Admin لإنشاء رابط الإجراء، بينما تنفذ Firebase Web SDK عملية `confirmPasswordReset` النهائية. لا نستخدم `updateUser()` من المتصفح ولا نضع Service Account في الواجهة.
+- رمز Firebase الخاص بإعادة تعيين كلمة المرور محدود الصلاحية وفق Firebase (حوالي ساعة كحد أقصى) ويُستهلك مرة واحدة عند نجاح `confirmPasswordReset`. لا يمكن تمديد عمره من Resend؛ Resend ناقل للرسالة فقط.
+- تعالج الصفحة أخطاء `auth/expired-action-code` و`auth/invalid-action-code` وترفض الرمز المنتهي أو المستخدم سابقًا.
+- تعيد `/api/password-reset` رسالة عامة موحّدة ولا تكشف ما إذا كان البريد مسجلًا؛ وهذا يمنع كشف قائمة المستخدمين. كما توجد حماية من كثرة الطلبات.
+
 ## إعداد Firebase المطلوب
 
 تأكد من التالي في مشروع Firebase `souq-aldeir`:

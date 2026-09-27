@@ -41,6 +41,8 @@ async function loadResetLink() {
     return;
   }
   try {
+    // Firebase Auth enforces the action-code lifetime and one-time consumption.
+    // The browser never receives the Firebase Admin service-account credentials.
     await auth.verifyPasswordResetCode(resetCode);
   } catch (error) {
     resetError(resetErrorMessage(error.code));
