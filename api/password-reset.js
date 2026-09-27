@@ -42,7 +42,7 @@ async function sendResetEmail(email, resetLink) {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: 'سوق دير الزور <noreply@souqaldeir.com>',
+      from: 'noreply@souqaldeir.com',
       to: [email],
       subject: 'إعادة تعيين كلمة المرور - سوق دير الزور',
       text: `مرحبًا،\n\nاضغط على الرابط التالي لتعيين كلمة مرور جديدة لحسابك:\n${resetLink}\n\nإذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.`,
@@ -80,7 +80,12 @@ export default async function handler(req, res) {
     await sendResetEmail(email, resetUrl.toString());
   } catch (error) {
     if (error.code === 'auth/user-not-found') return generic(res);
-    console.error('password-reset:', error.resendName || error.code || error.message);
+    console.error('password-reset:', JSON.stringify({
+      stage: error.resendName ? 'resend' : (error.message?.includes('firebase_reset_link') ? 'firebase_link' : 'firebase_admin'),
+      resendStatus: error.resendStatus || undefined,
+      resendName: error.resendName || undefined,
+      code: error.code || undefined
+    }));
     return res.status(503).json({ ok: false, error: 'reset_service_unavailable' });
   }
   return generic(res);
