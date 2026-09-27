@@ -15,6 +15,8 @@ const requiredFiles = [
   'js/app.js',
   'server/index.js',
   'api/password-reset.js',
+  'reset-password.html',
+  'js/reset-password.js',
   'api/cloudinary-sign.js',
   'api/health.js',
   'package.json',
@@ -51,8 +53,8 @@ if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
 if (!auth.includes('id="resetEmail"') && !html.includes('id="resetEmail"')) {
   throw new Error('Email reset field is missing');
 }
-if (!auth.includes('sendPasswordResetEmail')) {
-  throw new Error('Password reset must use Firebase client email delivery');
+if (!auth.includes("fetch('/api/password-reset'") || !auth.includes('doResetStep1')) {
+  throw new Error('Password reset must use the Resend backend endpoint');
 }
 if (!auth.includes('phoneIndexRef.set(')) throw new Error('Signup phone index must use Firebase Web SDK set');
 if (!auth.includes("'permission-denied':") || !auth.includes("'unavailable':")) throw new Error('Signup Firebase error mapping is incomplete');
@@ -129,9 +131,9 @@ const vercelReset = readFileSync(join(root, 'api/password-reset.js'), 'utf8');
 const cloudinarySign = readFileSync(join(root, 'api/cloudinary-sign.js'), 'utf8');
 const vercelHealth = readFileSync(join(root, 'api/health.js'), 'utf8');
 if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('Local SMTP reset server is incomplete');
-if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('emailJsConfig') || !vercelReset.includes('reset_link') || !vercelReset.includes('export default')) throw new Error('Vercel EmailJS reset function is incomplete');
+if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('RESEND_API_KEY') || !vercelReset.includes('noreply@souqaldeir.com') || !vercelReset.includes('export default')) throw new Error('Vercel Resend reset function is incomplete');
 if (!vercelReset.includes('status(503)') || !vercelReset.includes("auth/user-not-found")) throw new Error('Vercel reset failure handling is incomplete');
-if (!vercelHealth.includes('status.ok ? 200 : 503') || !vercelHealth.includes('firebaseAdmin') || !vercelHealth.includes('passwordResetReady')) throw new Error('Vercel health function is missing');
+if (!vercelHealth.includes('status.ok ? 200 : 503') || !vercelHealth.includes('firebaseAdmin') || !vercelHealth.includes('passwordResetReady') || !vercelHealth.includes('RESEND_API_KEY')) throw new Error('Vercel health function is missing');
 if (!cloudinarySign.includes('verifyFirebaseIdToken') || !cloudinarySign.includes('createHash') || !cloudinarySign.includes('CLOUDINARY_API_SECRET')) throw new Error('Signed Cloudinary endpoint is incomplete');
 if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requireTLS: true')) throw new Error('SMTP TLS is not enforced');
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');

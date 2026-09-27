@@ -67,6 +67,7 @@ export default async function handler(_req, res) {
   const firebaseJson = present('FIREBASE_SERVICE_ACCOUNT_JSON') || present('FIREBASE_SERVICE_ACCOUNT');
   const firebaseSplit = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
   const cloudinaryVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+  const resendReady = present('RESEND_API_KEY');
   const status = {
     ok: false,
     service: 'souq-aldeir-backend',
@@ -74,6 +75,7 @@ export default async function handler(_req, res) {
       firebaseAdmin: false,
       firebaseTokenVerification: hasIdentityToolkitConfig(),
       smtpConnection: false,
+      resend: resendReady,
       cloudinarySigning: cloudinaryVars.every(present),
       appUrl: present('APP_URL') || present('VERCEL_URL')
     },
@@ -81,6 +83,7 @@ export default async function handler(_req, res) {
       firebaseCredentialSource: firebaseJson ? 'json' : (firebaseSplit.every(present) ? 'split' : 'missing'),
       firebaseMissing: firebaseJson ? [] : missing(firebaseSplit),
       cloudinaryMissing: missing(cloudinaryVars),
+      resendMissing: resendReady ? [] : ['RESEND_API_KEY'],
       firebaseProjectId: present('FIREBASE_PROJECT_ID') ? envValue('FIREBASE_PROJECT_ID') : serviceAccountProjectId()
     }
   };
@@ -99,8 +102,8 @@ export default async function handler(_req, res) {
     status.smtpError = safeError(error, 'smtp');
   }
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
-  status.passwordResetDelivery = 'firebase-client';
-  status.passwordResetReady = status.config.firebaseTokenVerification;
+  status.passwordResetDelivery = 'resend';
+  status.passwordResetReady = status.config.firebaseAdmin && status.config.appUrl && status.config.resend;
   status.ok = status.passwordResetReady;
   return res.status(status.ok ? 200 : 503).json(status);
 }
