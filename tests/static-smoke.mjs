@@ -17,6 +17,7 @@ const requiredFiles = [
   'api/password-reset.js',
   'reset-password.html',
   'js/reset-password.js',
+  'terms.html',
   'api/cloudinary-sign.js',
   'api/health.js',
   'package.json',
