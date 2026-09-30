@@ -523,11 +523,18 @@ async function reportAd(adId, adTitle) {
 function loadContactSettings() {
   db.collection('settings').doc('contact').get().then(doc => {
     if (doc.exists) contactSettings = { ...contactSettings, ...doc.data() };
+    if (!contactSettings.email || contactSettings.email === 'hg78@live.com') {
+      contactSettings.email = ADMIN_EMAIL;
+    }
   }).catch(() => {});
 }
 
 async function openAboutModal() {
-  document.getElementById('aboutEmail').textContent = contactSettings.email;
+  const email = contactSettings.email || ADMIN_EMAIL;
+  const emailEl = document.getElementById('aboutEmail');
+  if (emailEl) {
+    emailEl.innerHTML = `<a href="mailto:${email}">${email}</a>`;
+  }
   document.getElementById('aboutPhone').textContent = contactSettings.phone;
   const phoneLink = document.getElementById('aboutPhoneLink');
   if (phoneLink) phoneLink.href = `tel:${contactSettings.phone || ''}`;

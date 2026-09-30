@@ -10,7 +10,7 @@
    section lets the site owner change email/phone/WhatsApp any time
    without touching code, saved to Firestore (settings/contact) and
    read at boot into `contactSettings` (see below + ads.js/admin.js). */
-const ADMIN_EMAIL = 'hg78@live.com';
+const ADMIN_EMAIL = 'info@souqaldeir.com';
 const ADMIN_PHONE = '+90 552 274 09 10';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
