@@ -18,6 +18,7 @@ const requiredFiles = [
   'reset-password.html',
   'js/reset-password.js',
   'terms.html',
+  'favicon.ico',
   'api/cloudinary-sign.js',
   'api/health.js',
   'package.json',
@@ -41,6 +42,7 @@ if (!positions.every((position, index) => index === 0 || position > positions[in
   throw new Error('Application scripts are loaded in an unsafe order');
 }
 if (!html.includes('lang="ar"') || !html.includes('dir="rtl"')) throw new Error('Arabic RTL document metadata is missing');
+if (!html.includes('href="/favicon.ico"')) throw new Error('Stable favicon link is missing');
 if (!html.includes('serviceWorker.register')) throw new Error('PWA service worker registration is missing');
 if (!html.includes('id="siteShareBtn"') || !html.includes('qrcode.min.js')) throw new Error('QR sharing UI is missing');
 if (!html.includes('طلب تمييز مجاني') || html.includes('plan-price') || html.includes('إتمام الدفع')) throw new Error('Paid featured flow must be disabled');
