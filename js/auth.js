@@ -187,13 +187,21 @@ async function doLogin() {
     await auth.signInWithEmailAndPassword(email, pass);
     closeModal('authModal'); showToast('أهلاً بعودتك', 'ok');
   } catch(e) {
+    const firebaseMessage = String(e?.message || '').toUpperCase();
     const m = {
       'auth/user-not-found': 'الحساب غير موجود أو بيانات الدخول غير صحيحة',
       'auth/wrong-password': 'البريد أو كلمة المرور غير صحيحة',
       'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة',
+      'auth/internal-error': firebaseMessage.includes('INVALID_LOGIN_CREDENTIALS')
+        ? 'البريد أو كلمة المرور غير صحيحة'
+        : 'تعذر الاتصال بخدمة تسجيل الدخول، حاول مجددًا',
       'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
       'auth/invalid-identifier': 'أدخل رقم هاتف صالحًا أو بريدًا إلكترونيًا صحيحًا',
-      'auth/too-many-requests': 'محاولات كثيرة، انتظر قليلًا ثم حاول مجددًا'
+      'auth/too-many-requests': 'محاولات كثيرة، انتظر قليلًا ثم حاول مجددًا',
+      'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، تحقق من الاتصال وحاول مجددًا',
+      'auth/unauthorized-domain': 'هذا النطاق غير مصرح له بتسجيل الدخول. أضف www.souqaldeir.com في Authorized domains داخل Firebase',
+      'auth/operation-not-allowed': 'تسجيل الدخول بالبريد وكلمة المرور غير مفعّل في Firebase',
+      'auth/user-disabled': 'هذا الحساب موقوف، تواصل مع الإدارة'
     };
     showAuthError(m[e.code] || 'تعذر تسجيل الدخول، حاول مجددًا');
   } finally {
