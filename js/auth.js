@@ -107,6 +107,9 @@ function initAuthListener() {
   auth.onAuthStateChanged(async u => {
     currentUser = u;
     if (u) {
+      // Auth state can arrive after the sign-in promise on slower browsers;
+      // close any leftover overlay so the homepage remains scrollable.
+      closeModal('authModal');
       const doc = await db.collection('users').doc(u.uid).get().catch(() => null);
       if (doc && doc.exists && doc.data().banned) {
         await auth.signOut();
