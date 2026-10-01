@@ -9,7 +9,7 @@
   --radius:14px;--shadow:0 2px 14px rgba(21,101,192,.10);
 }
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Tajawal',sans-serif;}
-html,body{width:100%;max-width:100%;overflow-x:hidden;}
+html,body{width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto;}
 img,svg,canvas{max-width:100%;}
 body{background:var(--bg);color:var(--dark);padding-top:env(safe-area-inset-top);padding-bottom:72px;}
 
