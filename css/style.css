@@ -463,3 +463,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:380px){.site-share-dialog{padding:20px 14px}.site-share-actions{flex-direction:column}}
 
 .admin-feature-duration{text-align:center;max-width:390px;position:relative}.admin-feature-duration h3{margin:4px 0;color:var(--dark)}.admin-duration-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.admin-duration-options .btn{min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}.admin-duration-options strong{font-size:.86em}.admin-duration-options small{font-size:.68em;color:var(--gray)}.admin-duration-options .btn-gold small{color:#7a5000}@media(max-width:380px){.admin-duration-options{grid-template-columns:1fr}}
+
+/* Keep the featured showcase compact on wide screens so the normal ad grid is visible above the fold. */
+@media(min-width:720px){.slider-wrap{height:360px;padding-bottom:0;}}
