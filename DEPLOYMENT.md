@@ -2,7 +2,7 @@
 
 ## متطلبات الإنتاج
 
-يحتاج الخادم إلى إعدادات Firebase Admin وResend وCloudinary الموقّع للصور. انسخ `.env.example` إلى إعدادات بيئة الاستضافة، ولا ترفع ملف `.env` إلى GitHub. يجب ضبط `APP_URL` على النطاق النهائي، و`CORS_ORIGIN` على النطاق نفسه، وإضافة `RESEND_API_KEY` ومتغيرات Cloudinary الثلاثة: `CLOUDINARY_CLOUD_NAME` و`CLOUDINARY_API_KEY` و`CLOUDINARY_API_SECRET`. لا توجد في الموقع أي بوابة دفع إلكتروني أو تحصيل رسوم.
+يحتاج الخادم إلى إعدادات Firebase Admin وResend وCloudinary الموقّع للصور. انسخ `.env.example` إلى إعدادات بيئة الاستضافة، ولا ترفع ملف `.env` إلى GitHub. يجب ضبط `APP_URL` على النطاق النهائي، و`CORS_ORIGIN` على النطاق نفسه، وإضافة `RESEND_API_KEY` ومتغيرات Cloudinary الثلاثة: `CLOUDINARY_CLOUD_NAME` و`CLOUDINARY_API_KEY` و`CLOUDINARY_API_SECRET`. لإشعارات Telegram أضف `TELEGRAM_BOT_TOKEN` و`TELEGRAM_CHAT_ID` كمتغيري Production سريين في Vercel فقط؛ لا تضعهما في JavaScript أو GitHub. بعد حفظ المتغيرات أعد النشر. لا توجد في الموقع أي بوابة دفع إلكتروني أو تحصيل رسوم.
 
 ## Cloudinary
 
@@ -16,7 +16,7 @@
 
 ## فحص ما بعد النشر
 
-تحقق من أن `GET /api/health` يعيد الحالة 200 بعد تهيئة Firebase Admin وResend وCloudinary. يجب أن تظهر `passwordResetDelivery: "resend"` و`passwordResetReady: true`. اختبر التسجيل، تسجيل الدخول، إنشاء إعلان، رفع الصور، رفض الملفات غير المسموحة، التعديل والحذف، طلب التمييز المجاني، المحادثة، الإبلاغ، طلب إعادة تعيين كلمة المرور، وفتح `/reset-password.html` من الرابط المرسل وتعيين كلمة مرور جديدة. تحقق من عدم وجود أي زر أو رابط أو طلب شبكة للدفع الإلكتروني.
+تحقق من أن `GET /api/health` يعيد الحالة 200 بعد تهيئة Firebase Admin وResend وCloudinary. يجب أن تظهر `passwordResetDelivery: "resend"` و`passwordResetReady: true`. اختبر التسجيل، تسجيل الدخول، إنشاء إعلان، رفع الصور، رفض الملفات غير المسموحة، التعديل والحذف، طلب التمييز المجاني، المحادثة، الإبلاغ، طلب إعادة تعيين كلمة المرور، وفتح `/reset-password.html` من الرابط المرسل وتعيين كلمة مرور جديدة. بعد ضبط Telegram اختبر نشر إعلان تجريبي وتأكد من وصول عنوانه واسم ناشره ورابطه إلى المحادثة الخاصة. تحقق من عدم وجود أي زر أو رابط أو طلب شبكة للدفع الإلكتروني.
 
 اختبر أيضًا إدخال نص مثل `<img src=x onerror=alert(1)>` في عنوان ووصف إعلان. يجب أن يظهر النص حرفيًا دون تنفيذ. اختبر طلبات HTTP مخصصة تحاول إرسال `role` أو `views` أو `userEmail` أو `featured` عند إنشاء إعلان؛ يجب رفضها بقواعد Firestore.
 

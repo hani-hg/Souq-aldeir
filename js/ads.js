@@ -382,7 +382,7 @@ async function doAddAd() {
 
     const durationDays = 20;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
-    await db.collection('ads').add({
+    const adRef = await db.collection('ads').add({
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
       images, imageAssets, imageUrl: images[0] || null, featured: false,
       userId: currentUser.uid,
@@ -392,6 +392,17 @@ async function doAddAd() {
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
       durationDays: 20
     });
+    try {
+      const token = await currentUser.getIdToken();
+      await fetch('/api/notify-telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ adId: adRef.id })
+      });
+    } catch (notificationError) {
+      // Telegram is an optional admin alert and must never undo a saved ad.
+      console.warn('Telegram notification unavailable:', notificationError?.message || notificationError);
+    }
     closeModal('addModal');
     ['adTitle', 'adDesc', 'adPrice', 'adPhone', 'adAreaOther'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('adCat').value = '';

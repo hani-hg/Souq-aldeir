@@ -20,6 +20,7 @@ const requiredFiles = [
   'terms.html',
   'favicon.ico',
   'api/cloudinary-sign.js',
+  'api/notify-telegram.js',
   'api/health.js',
   'package.json',
   '.env.example',
@@ -132,12 +133,15 @@ const server = readFileSync(join(root, 'server/index.js'), 'utf8');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const vercelReset = readFileSync(join(root, 'api/password-reset.js'), 'utf8');
 const cloudinarySign = readFileSync(join(root, 'api/cloudinary-sign.js'), 'utf8');
+const telegramNotify = readFileSync(join(root, 'api/notify-telegram.js'), 'utf8');
 const vercelHealth = readFileSync(join(root, 'api/health.js'), 'utf8');
 if (!server.includes('generatePasswordResetLink') || !server.includes('SMTP_APP_PASSWORD')) throw new Error('Local SMTP reset server is incomplete');
 if (!vercelReset.includes('generatePasswordResetLink') || !vercelReset.includes('RESEND_API_KEY') || !vercelReset.includes('noreply@souqaldeir.com') || !vercelReset.includes('export default')) throw new Error('Vercel Resend reset function is incomplete');
 if (!vercelReset.includes('status(503)') || !vercelReset.includes("auth/user-not-found")) throw new Error('Vercel reset failure handling is incomplete');
-if (!vercelHealth.includes('status.ok ? 200 : 503') || !vercelHealth.includes('firebaseAdmin') || !vercelHealth.includes('passwordResetReady') || !vercelHealth.includes('RESEND_API_KEY')) throw new Error('Vercel health function is missing');
+if (!vercelHealth.includes('status.ok ? 200 : 503') || !vercelHealth.includes('firebaseAdmin') || !vercelHealth.includes('passwordResetReady') || !vercelHealth.includes('RESEND_API_KEY') || !vercelHealth.includes('TELEGRAM_BOT_TOKEN')) throw new Error('Vercel health function is missing');
 if (!cloudinarySign.includes('verifyFirebaseIdToken') || !cloudinarySign.includes('createHash') || !cloudinarySign.includes('CLOUDINARY_API_SECRET')) throw new Error('Signed Cloudinary endpoint is incomplete');
+if (!telegramNotify.includes('verifyFirebaseIdToken') || !telegramNotify.includes('TELEGRAM_BOT_TOKEN') || !telegramNotify.includes('TELEGRAM_CHAT_ID') || !telegramNotify.includes('api.telegram.org')) throw new Error('Telegram notification endpoint is incomplete');
+if (telegramNotify.includes('TELEGRAM_BOT_TOKEN') && !telegramNotify.includes('authorization')) throw new Error('Telegram endpoint must require authentication');
 if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requireTLS: true')) throw new Error('SMTP TLS is not enforced');
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));

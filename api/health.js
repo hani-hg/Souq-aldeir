@@ -68,6 +68,7 @@ export default async function handler(_req, res) {
   const firebaseSplit = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
   const cloudinaryVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
   const resendReady = present('RESEND_API_KEY');
+  const telegramReady = present('TELEGRAM_BOT_TOKEN') && present('TELEGRAM_CHAT_ID');
   const status = {
     ok: false,
     service: 'souq-aldeir-backend',
@@ -77,13 +78,15 @@ export default async function handler(_req, res) {
       smtpConnection: false,
       resend: resendReady,
       cloudinarySigning: cloudinaryVars.every(present),
-      appUrl: present('APP_URL') || present('VERCEL_URL')
+      appUrl: present('APP_URL') || present('VERCEL_URL'),
+      telegram: telegramReady
     },
     diagnostics: {
       firebaseCredentialSource: firebaseJson ? 'json' : (firebaseSplit.every(present) ? 'split' : 'missing'),
       firebaseMissing: firebaseJson ? [] : missing(firebaseSplit),
       cloudinaryMissing: missing(cloudinaryVars),
       resendMissing: resendReady ? [] : ['RESEND_API_KEY'],
+      telegramMissing: telegramReady ? [] : ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'].filter(name => !present(name)),
       firebaseProjectId: present('FIREBASE_PROJECT_ID') ? envValue('FIREBASE_PROJECT_ID') : serviceAccountProjectId()
     }
   };
