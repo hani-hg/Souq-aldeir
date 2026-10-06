@@ -63,6 +63,20 @@ async function verifySmtp() {
   await transporter.verify();
 }
 
+async function verifyTelegram() {
+  const token = envValue('TELEGRAM_BOT_TOKEN');
+  const chatId = envValue('TELEGRAM_CHAT_ID');
+  if (!token || !chatId) throw new Error('telegram_variables_missing');
+  const options = { signal: AbortSignal.timeout(8000) };
+  const meResponse = await fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/getMe`, options);
+  const me = await meResponse.json().catch(() => ({}));
+  if (!meResponse.ok || me.ok !== true) throw new Error('telegram_token_invalid');
+  const chatResponse = await fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/getChat?chat_id=${encodeURIComponent(chatId)}`, options);
+  const chat = await chatResponse.json().catch(() => ({}));
+  if (!chatResponse.ok || chat.ok !== true) throw new Error('telegram_chat_unavailable');
+  return { botUsername: me.result?.username || null, chatType: chat.result?.type || null };
+}
+
 export default async function handler(_req, res) {
   const firebaseJson = present('FIREBASE_SERVICE_ACCOUNT_JSON') || present('FIREBASE_SERVICE_ACCOUNT');
   const firebaseSplit = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
@@ -103,6 +117,21 @@ export default async function handler(_req, res) {
     status.config.smtpConnection = true;
   } catch (error) {
     status.smtpError = safeError(error, 'smtp');
+  }
+  if (telegramReady) {
+    try {
+      const telegram = await verifyTelegram();
+      status.config.telegram = true;
+      status.diagnostics.telegramBotUsername = telegram.botUsername;
+      status.diagnostics.telegramChatType = telegram.chatType;
+    } catch (error) {
+      status.config.telegram = false;
+      status.telegramError = error?.message === 'telegram_token_invalid'
+        ? 'telegram_token_invalid'
+        : error?.message === 'telegram_chat_unavailable'
+          ? 'telegram_chat_unavailable'
+          : 'telegram_connection_failed';
+    }
   }
   status.uploadReady = status.config.firebaseTokenVerification && status.config.cloudinarySigning;
   status.passwordResetDelivery = 'resend';

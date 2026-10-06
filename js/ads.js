@@ -394,11 +394,15 @@ async function doAddAd() {
     });
     try {
       const token = await currentUser.getIdToken();
-      await fetch('/api/notify-telegram', {
+      const notificationResponse = await fetch('/api/notify-telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ adId: adRef.id })
       });
+      if (!notificationResponse.ok) {
+        const notificationData = await notificationResponse.json().catch(() => ({}));
+        console.warn('Telegram notification failed:', notificationData.error || notificationResponse.status);
+      }
     } catch (notificationError) {
       // Telegram is an optional admin alert and must never undo a saved ad.
       console.warn('Telegram notification unavailable:', notificationError?.message || notificationError);
