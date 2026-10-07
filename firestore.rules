@@ -33,7 +33,9 @@ service cloud.firestore {
         && request.resource.data.images.size() >= 1
         && request.resource.data.images.size() <= 5
         && request.resource.data.createdAt == request.time
-        && request.resource.data.keys().hasAll(['title', 'description', 'price', 'phone', 'category', 'userId', 'moderationStatus', 'createdAt', 'images', 'imageUrl'])
+        && request.resource.data.keys().hasAll(['title', 'description', 'price', 'category', 'userId', 'hidePhone', 'moderationStatus', 'createdAt', 'images', 'imageUrl'])
+        && (request.resource.data.hidePhone == true || request.resource.data.keys().hasAll(['phone']))
+        && (!request.resource.data.hidePhone || !request.resource.data.keys().hasAny(['phone']))
         && !request.resource.data.keys().hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl']);
       allow update: if isAdmin()
         || (
@@ -50,6 +52,16 @@ service cloud.firestore {
           && resource.data.featuredUntil < request.time
           && request.resource.data.featured == false
         );
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    match /adPrivateContacts/{adId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.adId == adId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.phone is string;
+      allow update: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid);
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
 

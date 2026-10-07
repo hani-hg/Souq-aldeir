@@ -218,6 +218,10 @@
       </div>
     </div>
     <div class="fg"><label>رقم الهاتف *</label><input type="text" id="adPhone" placeholder="09xxxxxxxx"></div>
+    <div class="fg" style="display:flex;align-items:flex-start;gap:8px">
+      <input type="checkbox" id="adHidePhone" style="width:auto;margin-top:3px">
+      <label for="adHidePhone" style="font-weight:400;font-size:.82em;color:var(--dark);margin-bottom:0">إخفاء رقم الهاتف عن زوار الإعلان لمزيد من الخصوصية</label>
+    </div>
     <div class="fg"><label>الفئة *</label><select id="adCat"><option value="">اختر الفئة...</option></select></div>
     <div class="fg"><label>المنطقة</label>
       <select id="adArea" onchange="document.getElementById('adAreaOther').style.display=(this.value==='أخرى'?'block':'none')">

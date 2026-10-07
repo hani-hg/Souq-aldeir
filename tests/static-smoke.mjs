@@ -93,6 +93,8 @@ if (adCreateBlock.includes('userEmail')) throw new Error('Public ad must not sto
 if (ads.includes('upload_preset') || !ads.includes('getSignedUpload')) throw new Error('Uploads must use authenticated signed upload');
 if (ads.includes('videoUrl') || ads.includes('adVideo')) throw new Error('Video support must be removed from ad logic');
 if (!ads.includes("moderationStatus: 'pending'")) throw new Error('New ads must enter moderation');
+if (!ads.includes('adHidePhone') || !ads.includes('adPrivateContacts')) throw new Error('Private phone option is missing');
+if (!html.includes('id="adHidePhone"')) throw new Error('Ad phone privacy checkbox is missing');
 if (!ads.includes('isPublicAd')) throw new Error('Public ad visibility filter is missing');
 if (!ads.includes("where('moderationStatus', '==', 'approved')")) throw new Error('Public ads query must require approved moderation status');
 if (!ads.includes("where('userId', '==', currentUser.uid)")) throw new Error('Owner ads query is missing');
@@ -126,6 +128,7 @@ if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/ch
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
 if (!rules.includes("request.resource.data.moderationStatus == 'pending'")) throw new Error('Firestore must block direct ad publication');
+if (!rules.includes('match /adPrivateContacts/{adId}') || !rules.includes('request.resource.data.hidePhone == true')) throw new Error('Private phone rules are missing');
 if (rules.includes('match /ads/{adId} {\n      allow read: if true;')) throw new Error('Public ads read rule must not allow all documents');
 if (!rules.includes("resource.data.moderationStatus == 'approved'")) throw new Error('Public ads read rule must require approved status');
 if (!admin.includes('featuredDurationDays:days')) throw new Error('Featured duration is not persisted');

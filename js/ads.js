@@ -196,7 +196,8 @@ function openDetail(id) {
     closeModal('adminModal');
   }
   const images = (ad.images && ad.images.length) ? ad.images : (ad.imageUrl ? [ad.imageUrl] : []);
-  const phoneValue = String(ad.phone || '').trim();
+  const phoneHidden = ad.hidePhone === true;
+  const phoneValue = phoneHidden ? '' : String(ad.phone || '').trim();
   const expiresMs = ad.expiresAt?.toMillis ? ad.expiresAt.toMillis() : (ad.expiresAt?.seconds ? ad.expiresAt.seconds * 1000 : 0);
   const renewalWindow = expiresMs > Date.now() && expiresMs - Date.now() <= 2 * 86400000;
   const phoneHref = phoneValue.replace(/[^+\d]/g, '');
@@ -216,7 +217,7 @@ function openDetail(id) {
       <div class="info-row"><i class="fa fa-clock"></i><span>${timeAgo(ad.createdAt)}</span></div>
       <div class="info-row"><i class="fa fa-eye"></i><span>${(ad.views || 0) + 1} مشاهدة</span></div>
     </div>
-    ${phoneValue ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-blue" onclick="revealAdPhone('${escapeHtml(ad.id)}','${escapeHtml(phoneValue)}')"><i class="fa fa-eye"></i> إظهار الرقم</button><a href="https://wa.me/${escapeHtml(whatsappHref.replace(/[^+\d]/g, '').replace(/^\+/, ''))}" target="_blank" rel="noopener noreferrer" class="btn btn-outline"><i class="fab fa-whatsapp"></i> واتساب</a></div>` : ''}
+      ${phoneHidden ? `<div class="info-row" style="color:var(--gray)"><i class="fa fa-user-shield"></i><span>اختار المعلن إخفاء رقم الهاتف لخصوصية أكبر</span></div>` : (phoneValue ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-blue" onclick="revealAdPhone('${escapeHtml(ad.id)}','${escapeHtml(phoneValue)}')"><i class="fa fa-eye"></i> إظهار الرقم</button><a href="https://wa.me/${escapeHtml(whatsappHref.replace(/[^+\d]/g, '').replace(/^\+/, ''))}" target="_blank" rel="noopener noreferrer" class="btn btn-outline"><i class="fab fa-whatsapp"></i> واتساب</a></div>` : '')}
     <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="shareAd('${escapeHtml(ad.id)}')"><i class="fa fa-share-nodes"></i> مشاركة الإعلان</button></div>
     ${!isOwner && currentUser ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-blue btn-sm" onclick="startChat('${escapeHtml(ad.id)}','${escapeHtml(ad.userId)}')"><i class="fa fa-comment-dots"></i> راسل البائع</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportAd('${escapeHtml(ad.id)}')"><i class="fa fa-flag"></i> إبلاغ عن الإعلان</button><button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="reportUser('${escapeHtml(ad.userId)}','${escapeHtml(ad.userName || '')}')"><i class="fa fa-user-slash"></i> إبلاغ عن المستخدم</button></div>` : ''}
     ${isOwner ? `<div class="action-btns"><button class="btn btn-blue btn-sm" onclick="closeModal('detailModal');openEdit('${ad.id}')"><i class="fa fa-edit"></i> تعديل</button><button class="btn btn-red btn-sm" onclick="confirmDelete('${ad.id}')"><i class="fa fa-trash"></i> حذف</button></div>${renewalWindow ? `<button class="btn btn-orange btn-sm" style="margin-top:8px" onclick="renewAd('${escapeHtml(ad.id)}')"><i class="fa fa-rotate-right"></i> تجديد الإعلان 20 يومًا</button><small style="display:block;color:var(--gray);margin-top:5px">يمكن التجديد خلال آخر يومين فقط، وستبقى الصور كما هي.</small>` : ''}` : ''}
@@ -354,6 +355,7 @@ async function doAddAd() {
   const areaOther = document.getElementById('adAreaOther').value.trim();
   const area = (areaSel === 'أخرى' && areaOther) ? areaOther : areaSel;
   const agreed = document.getElementById('adAgreeTerms').checked;
+  const hidePhone = document.getElementById('adHidePhone').checked;
   const errEl = document.getElementById('addErr');
   if (!title || !desc || !price || !phone || !cat) { errEl.textContent = 'يرجى ملء جميع الحقول المطلوبة *'; errEl.className = 'err show'; return; }
   if (areaSel === 'أخرى' && !areaOther) { errEl.textContent = 'يرجى كتابة اسم القرية/المنطقة'; errEl.className = 'err show'; return; }
@@ -382,16 +384,26 @@ async function doAddAd() {
 
     const durationDays = 20;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
-    const adRef = await db.collection('ads').add({
+    const adRef = db.collection('ads').doc();
+    const adData = {
       title, description: desc, price: parseFloat(price) || 0, currency, phone, category: cat, area,
       images, imageAssets, imageUrl: images[0] || null, featured: false,
       userId: currentUser.uid,
       userName: currentUser.displayName || 'مستخدم',
+      hidePhone,
       moderationStatus: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
       durationDays: 20
-    });
+    };
+    if (hidePhone) delete adData.phone;
+    await adRef.set(adData);
+    if (hidePhone) {
+      await db.collection('adPrivateContacts').doc(adRef.id).set({
+        adId: adRef.id, userId: currentUser.uid, phone,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
     try {
       const token = await currentUser.getIdToken();
       const notificationResponse = await fetch('/api/notify-telegram', {
@@ -412,6 +424,7 @@ async function doAddAd() {
     document.getElementById('adCat').value = '';
     document.getElementById('adAreaOther').style.display = 'none';
     document.getElementById('adAgreeTerms').checked = false;
+    document.getElementById('adHidePhone').checked = false;
     document.getElementById('imgPreview').innerHTML = '';
     document.getElementById('adImg').value = '';
     selectedAdImageFiles = [];
@@ -451,7 +464,10 @@ async function doEditAd() {
   const btn = document.getElementById('editSubmit');
   btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
   try {
-    await db.collection('ads').doc(id).update({ title, description: desc, price: parseFloat(price) || 0, phone, category: cat, moderationStatus: 'pending' });
+    const existingAd = allAds.find(a => a.id === id);
+    const updateData = { title, description: desc, price: parseFloat(price) || 0, category: cat, moderationStatus: 'pending' };
+    if (!existingAd?.hidePhone) updateData.phone = phone;
+    await db.collection('ads').doc(id).update(updateData);
     closeModal('editModal'); showToast('تم حفظ التعديلات ✅', 'ok'); loadAds();
   } catch (e) { errEl.textContent = 'حدث خطأ'; errEl.className = 'err show'; }
   finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-save"></i> حفظ التعديلات'; }
@@ -459,8 +475,11 @@ async function doEditAd() {
 
 /* ============ DELETE AD ============ */
 function confirmDelete(id) {
-  if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
-  db.collection('ads').doc(id).delete().then(() => { closeModal('detailModal'); showToast('تم حذف الإعلان', 'ok'); loadAds(); })
+  if (!confirm('هل أنت متأكد من حذف الإعلان؟')) return;
+  Promise.all([
+    db.collection('ads').doc(id).delete(),
+    db.collection('adPrivateContacts').doc(id).delete().catch(() => {})
+  ]).then(() => { closeModal('detailModal'); showToast('تم حذف الإعلان', 'ok'); loadAds(); })
     .catch(() => showToast('خطأ أثناء الحذف', 'bad'));
 }
 
