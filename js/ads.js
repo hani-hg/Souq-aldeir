@@ -397,13 +397,15 @@ async function doAddAd() {
       durationDays: 20
     };
     if (hidePhone) delete adData.phone;
-    await adRef.set(adData);
+    const batch = db.batch();
+    batch.set(adRef, adData);
     if (hidePhone) {
-      await db.collection('adPrivateContacts').doc(adRef.id).set({
+      batch.set(db.collection('adPrivateContacts').doc(adRef.id), {
         adId: adRef.id, userId: currentUser.uid, phone,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
+    await batch.commit();
     try {
       const token = await currentUser.getIdToken();
       const notificationResponse = await fetch('/api/notify-telegram', {
