@@ -15,7 +15,7 @@ const ADMIN_PHONE = '+90 552 274 09 10';
 const CLOUDINARY_CLOUD = 'dzjy5tubx';
 const CLOUDINARY_PRESET = 'souq_ads';
 // Paste only the public Web Push certificate from Firebase Console here.
-window.SOUQ_FCM_VAPID_KEY = '';
+window.SOUQ_FCM_VAPID_KEY = 'BEqQemtKwXHrTF4d5cjd4oCTLlixkH-zV06kmnPxBHI5YGjeUuvYBQw9zFJy0Ao7yVjUZfRAJ4V2suHWcQoKyNA';
 
 /* ---- Firebase init ---- */
 firebase.initializeApp({
@@ -49,5 +49,4 @@ let myWarnings = []; // unread admin warnings for the signed-in user
 /* Editable contact info: admin can change these from the panel without
    touching code (see admin.js saveContactSettings / loadContactSettings). */
 let contactSettings = { email: ADMIN_EMAIL, phone: ADMIN_PHONE };
-
 
