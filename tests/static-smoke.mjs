@@ -85,6 +85,17 @@ if (usersSetIdx < 0 || phoneIdxCreateIdx < 0 || usersSetIdx > phoneIdxCreateIdx)
 const ads = readFileSync(join(root, 'js/ads.js'), 'utf8');
 const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
+const app = readFileSync(join(root, 'js/app.js'), 'utf8');
+if (!ads.includes('window.CATS = CATS') || !ads.includes('async function loadCategoriesFromFirestore')) {
+  throw new Error('Category list must be shared with admin and loaded from Firestore');
+}
+if (!app.includes('loadCategoriesFromFirestore()')) throw new Error('Saved categories are not loaded at startup');
+if (!admin.includes('window.CATS.push({ n: name, i: icon })') || !admin.includes('هذه الفئة موجودة بالفعل')) {
+  throw new Error('Admin category creation or duplicate guard is missing');
+}
+if (!admin.includes('تعذر حفظ الفئات. تحقق من الاتصال وصلاحيات المدير')) {
+  throw new Error('Category save failures must be visible to the admin');
+}
 if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
 if (!ads.includes('escapeHtml(ad.description)') || !ads.includes('safeMediaUrl(images[0])')) throw new Error('Ad detail media/text sanitization is missing');
 const adCreateStart = ads.indexOf("db.collection('ads').add({");

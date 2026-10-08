@@ -17,6 +17,7 @@ function initSearch() {
 /* ============ BOOT ============ */
 function initApp() {
   renderCats();
+  loadCategoriesFromFirestore();
   loadNews();
   loadContactSettings();
   initModals();
@@ -29,4 +30,3 @@ function initApp() {
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
-

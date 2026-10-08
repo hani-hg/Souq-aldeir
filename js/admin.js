@@ -1010,21 +1010,29 @@ function deleteCatItem(i) {
   });
 }
 
-function addNewCat() {
+async function addNewCat() {
   const name = document.getElementById('newCatName')?.value.trim();
   const icon = document.getElementById('newCatIcon')?.value.trim() || 'fa-box';
   if (!name) { showToast('أدخل اسم الفئة', 'bad'); return; }
-  if (!window.CATS) return;
+  if (!window.CATS) { showToast('تعذر تحميل الفئات، أعد تحميل الصفحة', 'bad'); return; }
+  if (window.CATS.some(c => c.n.trim() === name)) { showToast('هذه الفئة موجودة بالفعل', 'bad'); return; }
   window.CATS.push({ n: name, i: icon });
   renderCats && renderCats();
   switchSettingsTab('cats');
-  saveCatsToFirestore();
+  await saveCatsToFirestore();
 }
 
 async function saveCatsToFirestore() {
   const list = (window.CATS||[]).filter(c=>c.n!=='الكل');
-  await db.collection('settings').doc('categories').set({ list }).catch(()=>{});
-  showToast('تم حفظ الفئات ✅', 'ok');
+  try {
+    await db.collection('settings').doc('categories').set({ list }, { merge: true });
+    showToast('تم حفظ الفئات ✅', 'ok');
+    return true;
+  } catch (error) {
+    console.error('تعذر حفظ الفئات:', error);
+    showToast('تعذر حفظ الفئات. تحقق من الاتصال وصلاحيات المدير ثم أعد المحاولة', 'bad');
+    return false;
+  }
 }
 
 /* ── إدارة المناطق ── */

@@ -15,6 +15,26 @@ const CATS = [
   { n: 'رياضة', i: 'fa-futbol' }, { n: 'طعام', i: 'fa-utensils' }, { n: 'أخرى', i: 'fa-box' }
 ];
 
+// The admin module accesses this shared list through window.CATS.
+window.CATS = CATS;
+async function loadCategoriesFromFirestore() {
+  try {
+    const doc = await db.collection('settings').doc('categories').get();
+    const list = doc.exists && doc.data().list;
+    if (!Array.isArray(list)) return;
+    const seen = new Set(['الكل']);
+    const categories = list.filter(c => {
+      if (!c || typeof c.n !== 'string' || !c.n.trim() || seen.has(c.n.trim())) return false;
+      seen.add(c.n.trim());
+      return true;
+    }).map(c => ({ n: c.n.trim(), i: typeof c.i === 'string' && c.i.trim() ? c.i.trim() : 'fa-box' }));
+    CATS.splice(1, CATS.length - 1, ...categories);
+    renderCats();
+  } catch (error) {
+    console.error('تعذر تحميل الفئات المحفوظة:', error);
+  }
+}
+
 function renderCats() {
   document.getElementById('catsScroll').innerHTML = CATS.map(c => `
     <div class="cat-chip ${(activeCat === c.n) || (activeCat === null && c.n === 'الكل') ? 'active' : ''}"
