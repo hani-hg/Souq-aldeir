@@ -147,6 +147,17 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Private accounting data: never expose cashboxes or movements to users.
+    match /accountingCashboxes/{entryId} {
+      allow read, write: if isAdmin();
+    }
+    match /accountingMovements/{entryId} {
+      allow read, write: if isAdmin();
+    }
+    match /shamCashMovements/{entryId} {
+      allow read, write: if isAdmin();
+    }
+
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();

@@ -130,6 +130,7 @@ async function openAdminPanel() {
       <button class="adm-tab" data-tab="reports"   onclick="switchAdminTab('reports')">
         🚩 البلاغات ${pendingAll ? `<span class="adm-tab-badge">${pendingAll}</span>` : ''}
       </button>
+      <button class="adm-tab" data-tab="ledger"    onclick="switchAdminTab('ledger')">💵 الصناديق والحركات</button>
       <button class="adm-tab" data-tab="settings"  onclick="switchAdminTab('settings')">⚙️ الإعدادات</button>
     </div>
     <div id="adminTabContent" style="padding-top:14px"></div>`;
@@ -150,6 +151,7 @@ function switchAdminTab(tab) {
     case 'users':     renderUsersTab(ct);  break;
     case 'recovery':  renderRecoveryTab(ct); break;
     case 'reports':   renderReportsTab(ct);break;
+    case 'ledger':    renderLedgerTab(ct); break;
     case 'settings':  renderSettingsTab(ct);break;
   }
 }
@@ -1358,4 +1360,125 @@ function clearAdsUserFilter() {
   adminUserFilter     = null;
   adminUserFilterName = '';
   applyAdsFilter();
+}
+
+
+/* ══════════════════════════════════════════
+   المحاسبة: صناديق يومية وحركات الدولار وشام كاش
+   المبالغ مدخلة يدويًا؛ لا يوجد احتساب لسعر الصرف.
+══════════════════════════════════════════ */
+let currentLedgerTab = 'usdBox';
+
+function ledgerToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+function ledgerEscape(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function ledgerMoney(value, currency = '') {
+  const n = Number(value || 0);
+  return `${n.toLocaleString('ar-SY', {maximumFractionDigits: 2})} ${currency}`.trim();
+}
+function ledgerDate(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('ar-EG');
+}
+function renderLedgerTab(ct) {
+  ct.innerHTML = `
+    <div class="section-label">💵 الدفتر المحاسبي</div>
+    <div class="adm-stabs" id="ledgerTabs">
+      <button class="adm-stab" data-ledger-tab="usdBox" onclick="switchLedgerTab('usdBox')">صندوق الدولار</button>
+      <button class="adm-stab" data-ledger-tab="sypBox" onclick="switchLedgerTab('sypBox')">صندوق الليرة</button>
+      <button class="adm-stab" data-ledger-tab="usdMoves" onclick="switchLedgerTab('usdMoves')">حركات الدولار</button>
+      <button class="adm-stab" data-ledger-tab="shamCash" onclick="switchLedgerTab('shamCash')">حركات شام كاش</button>
+    </div>
+    <div id="ledgerTabContent" style="padding-top:14px"></div>`;
+  switchLedgerTab(currentLedgerTab);
+}
+function switchLedgerTab(tab) {
+  currentLedgerTab = tab;
+  document.querySelectorAll('#ledgerTabs .adm-stab').forEach(b => b.classList.toggle('active', b.dataset.ledgerTab === tab));
+  const ct = document.getElementById('ledgerTabContent');
+  if (!ct) return;
+  if (tab === 'usdBox' || tab === 'sypBox') return renderLedgerBox(ct, tab === 'usdBox' ? 'USD' : 'SYP');
+  if (tab === 'usdMoves') return renderDollarMovements(ct);
+  renderShamCashMovements(ct);
+}
+function renderLedgerBox(ct, currency) {
+  const label = currency === 'USD' ? 'الدولار' : 'الليرة السورية';
+  ct.innerHTML = `
+    <div class="adm-section-card">
+      <div class="adm-section-head">صندوق ${label}</div>
+      <p class="adm-report-sub">أدخل رصيد كل يوم يدويًا. لا يتم تحويل الدولار إلى ليرة تلقائيًا.</p>
+      <div class="row2">
+        <div class="fg"><label for="ledgerBoxDate">التاريخ *</label><input type="date" id="ledgerBoxDate" value="${ledgerToday()}"></div>
+        <div class="fg"><label for="ledgerBoxBalance">الرصيد (${currency}) *</label><input type="number" id="ledgerBoxBalance" min="0" step="0.01" placeholder="0"></div>
+      </div>
+      <div class="fg"><label for="ledgerBoxNote">ملاحظة</label><textarea id="ledgerBoxNote" rows="2" placeholder="ملاحظة اختيارية"></textarea></div>
+      <button class="btn btn-blue btn-sm" onclick="saveLedgerBox('${currency}')"><i class="fa fa-save"></i> حفظ رصيد اليوم</button>
+    </div>
+    <div id="ledgerBoxList" class="adm-section-card"><div class="loading">جاري تحميل الأرصدة...</div></div>`;
+  db.collection('accountingCashboxes').where('currency', '==', currency).limit(100).get().then(snap => {
+    const rows = snap.docs.map(d => ({id:d.id, ...d.data()})).sort((a,b) => String(b.date||'').localeCompare(String(a.date||'')));
+    const el = document.getElementById('ledgerBoxList');
+    if (!el) return;
+    el.innerHTML = `<div class="adm-section-head">الأرصدة اليومية</div>${rows.length ? `<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>التاريخ</th><th>الرصيد</th><th>ملاحظة</th></tr></thead><tbody>${rows.map(r => `<tr><td>${ledgerEscape(r.date)}</td><td>${ledgerMoney(r.balance,currency)}</td><td>${ledgerEscape(r.note||'—')}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><p>لا توجد أرصدة مسجلة بعد</p></div>'}`;
+  }).catch(() => { const el=document.getElementById('ledgerBoxList'); if(el) el.innerHTML='<div class="empty-state"><p>تعذر تحميل الأرصدة</p></div>'; });
+}
+async function saveLedgerBox(currency) {
+  const date = document.getElementById('ledgerBoxDate')?.value;
+  const balance = Number(document.getElementById('ledgerBoxBalance')?.value);
+  const note = document.getElementById('ledgerBoxNote')?.value.trim() || '';
+  if (!date || !Number.isFinite(balance) || balance < 0) return showToast('أدخل التاريخ ورصيدًا صحيحًا', 'bad');
+  await db.collection('accountingCashboxes').doc(`${currency}_${date}`).set({currency, date, balance, note, updatedBy: currentUser.uid, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+  showToast('تم حفظ الرصيد اليومي ✅', 'ok');
+  renderLedgerBox(document.getElementById('ledgerTabContent'), currency);
+}
+function renderDollarMovements(ct) {
+  ct.innerHTML = `
+    <div class="adm-section-card">
+      <div class="adm-section-head">حركة بيع أو شراء الدولار</div>
+      <p class="adm-report-sub">أدخل مبلغ الدولار ومبلغ الليرة يدويًا. سعر الصرف لا يُحسب تلقائيًا.</p>
+      <div class="row2"><div class="fg"><label>التاريخ *</label><input type="date" id="usdMoveDate" value="${ledgerToday()}"></div><div class="fg"><label>نوع الحركة *</label><select id="usdMoveType"><option value="sell_usd">بيع دولار</option><option value="buy_usd">شراء دولار</option></select></div></div>
+      <div class="row2"><div class="fg"><label>مبلغ الدولار *</label><input type="number" id="usdMoveAmount" min="0" step="0.01" placeholder="0"></div><div class="fg"><label>مبلغ الليرة المقابل *</label><input type="number" id="sypMoveAmount" min="0" step="1" placeholder="0"></div></div>
+      <div class="row2"><div class="fg"><label>العمولة (اختياري)</label><input type="number" id="usdMoveCommission" min="0" step="0.01" placeholder="0"></div><div class="fg"><label>عملة العمولة</label><select id="usdMoveCommissionCurrency"><option value="SYP">ليرة سورية</option><option value="USD">دولار</option></select></div></div>
+      <div class="fg"><label>ملاحظات</label><textarea id="usdMoveNote" rows="2" placeholder="ملاحظة اختيارية"></textarea></div>
+      <button class="btn btn-blue btn-sm" onclick="saveDollarMovement()"><i class="fa fa-plus"></i> تسجيل الحركة</button>
+    </div>
+    <div id="usdMoveList" class="adm-section-card"><div class="loading">جاري تحميل الحركات...</div></div>`;
+  db.collection('accountingMovements').where('kind','==','usd_exchange').limit(100).get().then(snap => {
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    const el=document.getElementById('usdMoveList'); if(!el)return;
+    el.innerHTML=`<div class="adm-section-head">آخر الحركات</div>${rows.length?`<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>التاريخ</th><th>الحركة</th><th>الدولار</th><th>الليرة</th><th>العمولة</th><th>ملاحظات</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${ledgerEscape(r.date)}</td><td>${r.type==='sell_usd'?'بيع دولار':'شراء دولار'}</td><td>${ledgerMoney(r.usdAmount,'USD')}</td><td>${ledgerMoney(r.sypAmount,'SYP')}</td><td>${r.commission?ledgerMoney(r.commission,r.commissionCurrency):'—'}</td><td>${ledgerEscape(r.note||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><p>لا توجد حركات مسجلة بعد</p></div>'}`;
+  }).catch(()=>{const el=document.getElementById('usdMoveList');if(el)el.innerHTML='<div class="empty-state"><p>تعذر تحميل الحركات</p></div>';});
+}
+async function saveDollarMovement() {
+  const date=document.getElementById('usdMoveDate')?.value, type=document.getElementById('usdMoveType')?.value;
+  const usdAmount=Number(document.getElementById('usdMoveAmount')?.value), sypAmount=Number(document.getElementById('sypMoveAmount')?.value);
+  const commission=Number(document.getElementById('usdMoveCommission')?.value||0), commissionCurrency=document.getElementById('usdMoveCommissionCurrency')?.value;
+  const note=document.getElementById('usdMoveNote')?.value.trim()||'';
+  if(!date||!['sell_usd','buy_usd'].includes(type)||!Number.isFinite(usdAmount)||usdAmount<=0||!Number.isFinite(sypAmount)||sypAmount<=0||!Number.isFinite(commission)||commission<0)return showToast('أدخل بيانات الحركة والمبالغ يدويًا بشكل صحيح','bad');
+  await db.collection('accountingMovements').add({kind:'usd_exchange',type,date,usdAmount,sypAmount,commission,commissionCurrency,note,createdBy:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  showToast('تم تسجيل حركة الدولار ✅','ok'); renderDollarMovements(document.getElementById('ledgerTabContent'));
+}
+function renderShamCashMovements(ct) {
+  ct.innerHTML=`
+    <div class="adm-section-card"><div class="adm-section-head">حركة شام كاش</div><p class="adm-report-sub">اختر الاتجاه بوضوح: التحويل إلى شام كاش ينقص صندوق الليرة، والاستلام من شام كاش يزيده.</p>
+      <div class="row2"><div class="fg"><label>التاريخ *</label><input type="date" id="shamDate" value="${ledgerToday()}"></div><div class="fg"><label>نوع الحركة *</label><select id="shamType"><option value="to_sham_cash">تحويل إلى شام كاش (ينقص الليرة)</option><option value="from_sham_cash">استلام من شام كاش (يزيد الليرة)</option></select></div></div>
+      <div class="fg"><label>المبلغ بالليرة *</label><input type="number" id="shamAmount" min="0" step="1" placeholder="0"></div>
+      <div class="fg"><label>ملاحظات</label><textarea id="shamNote" rows="2" placeholder="ملاحظة اختيارية"></textarea></div>
+      <button class="btn btn-blue btn-sm" onclick="saveShamCashMovement()"><i class="fa fa-plus"></i> تسجيل الحركة</button>
+    </div><div id="shamList" class="adm-section-card"><div class="loading">جاري تحميل الحركات...</div></div>`;
+  db.collection('shamCashMovements').limit(100).get().then(snap=>{
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    const el=document.getElementById('shamList');if(!el)return;
+    el.innerHTML=`<div class="adm-section-head">آخر حركات شام كاش</div>${rows.length?`<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>التاريخ</th><th>الحركة</th><th>المبلغ</th><th>أثر صندوق الليرة</th><th>ملاحظات</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${ledgerEscape(r.date)}</td><td>${r.type==='to_sham_cash'?'تحويل إلى شام كاش':'استلام من شام كاش'}</td><td>${ledgerMoney(r.amount,'SYP')}</td><td style="color:${r.type==='to_sham_cash'?'var(--red)':'var(--green)'}">${r.type==='to_sham_cash'?'−':'+'}${ledgerMoney(r.amount,'SYP')}</td><td>${ledgerEscape(r.note||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><p>لا توجد حركات مسجلة بعد</p></div>'}`;
+  }).catch(()=>{const el=document.getElementById('shamList');if(el)el.innerHTML='<div class="empty-state"><p>تعذر تحميل الحركات</p></div>';});
+}
+async function saveShamCashMovement(){
+  const date=document.getElementById('shamDate')?.value,type=document.getElementById('shamType')?.value,amount=Number(document.getElementById('shamAmount')?.value),note=document.getElementById('shamNote')?.value.trim()||'';
+  if(!date||!['to_sham_cash','from_sham_cash'].includes(type)||!Number.isFinite(amount)||amount<=0)return showToast('أدخل تاريخًا ومبلغًا صحيحًا','bad');
+  await db.collection('shamCashMovements').add({date,type,amount,note,createdBy:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  showToast('تم تسجيل حركة شام كاش ✅','ok'); renderShamCashMovements(document.getElementById('ledgerTabContent'));
 }
