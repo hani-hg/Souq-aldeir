@@ -466,3 +466,58 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Keep the featured showcase compact on wide screens so the normal ad grid is visible above the fold. */
 @media(min-width:720px){.slider-wrap{height:360px;padding-bottom:0;}}
+
+/* ═══════════════════════════════════════════════
+   DARK MODE
+   Selected theme is stored by js/theme.js on <html data-theme="dark">.
+═══════════════════════════════════════════════ */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:#111827;
+  --white:#1f2937;
+  --border:#374151;
+  --gray:#aab4c3;
+  --dark:#f3f4f6;
+  --blue-light:#1e3a5f;
+  --orange-light:#4a2b0b;
+  --green-light:#163d25;
+  --red-light:#451c24;
+  --gold-light:#47390d;
+  --shadow:0 2px 14px rgba(0,0,0,.28);
+}
+
+html[data-theme="dark"] body { background:var(--bg); color:var(--dark); }
+html[data-theme="dark"] .search-wrap,
+html[data-theme="dark"] .cats-scroll,
+html[data-theme="dark"] .filter-bar,
+html[data-theme="dark"] .sort-btn,
+html[data-theme="dark"] .bottomnav,
+html[data-theme="dark"] .sheet,
+html[data-theme="dark"] .admin-dialog,
+html[data-theme="dark"] .dash-profile,
+html[data-theme="dark"] .dash-stats-strip,
+html[data-theme="dark"] .recovery-card,
+html[data-theme="dark"] .chat-input-bar { background:var(--white); color:var(--dark); }
+html[data-theme="dark"] .search-wrap input,
+html[data-theme="dark"] .sort-btn,
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select { background:#111827; color:var(--dark); border-color:var(--border); }
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color:#8290a3; }
+html[data-theme="dark"] .cat-chip { background:#182334; border-color:var(--border); }
+html[data-theme="dark"] .cat-chip i { color:#7db7f1; }
+html[data-theme="dark"] .cat-chip.active,
+html[data-theme="dark"] .cat-chip:hover { background:var(--blue); border-color:var(--blue); color:#fff; }
+html[data-theme="dark"] .section-label,
+html[data-theme="dark"] .dash-profile-name,
+html[data-theme="dark"] .site-share-dialog h3,
+html[data-theme="dark"] .recovery-title,
+html[data-theme="dark"] .admin-dialog-msg { color:var(--dark); }
+html[data-theme="dark"] .handle { background:#526174; }
+html[data-theme="dark"] .recovery-explainer { background:linear-gradient(120deg,#153b3b,#172d46); color:#c9f4f0; }
+html[data-theme="dark"] .recovery-explainer p { color:#a8c6ce; }
+html[data-theme="dark"] .chat-row:hover { background:#253348; }
+html[data-theme="dark"] .chat-input-bar input { background:#111827; }
+html[data-theme="dark"] .warn-card { border-color:#71333c; }
+html[data-theme="dark"] .theme-toggle { font-size:1.05em; }
