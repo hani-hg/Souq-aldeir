@@ -145,7 +145,7 @@ function renderAds(list) {
     <div class="ad-card ${ad.featured ? 'featured' : ''}" onclick="openDetail('${ad.id}')">
       ${ad.featured ? '<div class="featured-badge">⭐ مميز</div>' : ''}
       <div style="position:relative">
-        ${cover ? `<img class="ad-img" src="${escapeHtml(cover)}" alt="${escapeHtml(ad.title)}" loading="lazy">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
+        ${cover ? `<img class="ad-img" src="${escapeHtml(optimizedMediaUrl(cover, 640, 420))}" alt="${escapeHtml(ad.title)}" loading="lazy" decoding="async">` : `<div class="ad-no-img"><i class="fa fa-image"></i></div>`}
         <button class="ad-fav ${favorites.has(ad.id) ? 'liked' : ''}" onclick="event.stopPropagation();toggleFav('${ad.id}',this)"><i class="fa fa-heart"></i></button>
         ${ad.category ? `<span class="ad-cat-badge">${escapeHtml(ad.category)}</span>` : ''}
         ${photoCount > 1 ? `<span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.62em;font-weight:700;padding:2px 7px;border-radius:20px">${photoCount}</span>` : ''}
@@ -204,8 +204,8 @@ function openDetail(id) {
   const whatsappHref = phoneHref.replace(/^00/, '+');
   document.getElementById('detailContent').innerHTML = `
     ${images.length > 1
-      ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `${safeMediaUrl(url) ? `<img src="${escapeHtml(safeMediaUrl(url))}" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${escapeHtml(ad.title)}">` : ''}`).join('')}</div>`
-      : (images.length === 1 ? `${safeMediaUrl(images[0]) ? `<img class="detail-img" src="${escapeHtml(safeMediaUrl(images[0]))}" alt="${escapeHtml(ad.title)}">` : ''}` : '')}
+      ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory">${images.map(url => `${optimizedMediaUrl(url, 900, 600) ? `<img src="${escapeHtml(optimizedMediaUrl(url, 900, 600))}" loading="lazy" decoding="async" style="width:85%;flex-shrink:0;height:220px;object-fit:cover;border-radius:14px;scroll-snap-align:start" alt="${escapeHtml(ad.title)}">` : ''}`).join('')}</div>`
+      : (images.length === 1 ? `${/* safeMediaUrl(images[0]) is enforced inside optimizedMediaUrl */ optimizedMediaUrl(images[0], 1200) ? `<img class="detail-img" src="${escapeHtml(optimizedMediaUrl(images[0], 1200))}" decoding="async" alt="${escapeHtml(ad.title)}">` : ''}` : '')}
     ${ad.featured ? '<div style="color:var(--gold);font-weight:800;margin-bottom:6px">⭐ إعلان مميز</div>' : ''}
     <span style="background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:.78em;font-weight:700">${escapeHtml(ad.category)}</span>
     <h3 style="font-size:1.1em;font-weight:800;margin:10px 0 4px">${escapeHtml(ad.title)}</h3>
@@ -259,7 +259,7 @@ function renderSellerOtherAdsHtml(ad) {
       ${others.map(o => {
         const cover = (o.images && o.images.length) ? o.images[0] : o.imageUrl;
         return `<div onclick="openDetail('${o.id}')" style="flex-shrink:0;width:110px;cursor:pointer">
-          ${safeMediaUrl(cover) ? `<img src="${escapeHtml(safeMediaUrl(cover))}" style="width:110px;height:90px;object-fit:cover;border-radius:10px">` : `<div style="width:110px;height:90px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:#aab"><i class="fa fa-image"></i></div>`}
+          ${optimizedMediaUrl(cover, 220, 180) ? `<img src="${escapeHtml(optimizedMediaUrl(cover, 220, 180))}" loading="lazy" decoding="async" style="width:110px;height:90px;object-fit:cover;border-radius:10px">` : `<div style="width:110px;height:90px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:#aab"><i class="fa fa-image"></i></div>`}
           <div style="font-size:.72em;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(o.title)}</div>
           <div style="font-size:.7em;color:var(--green);font-weight:700">${formatPrice(o)}</div>
         </div>`;
@@ -310,11 +310,31 @@ function initAddAdForm() {
       showToast('حد أقصى 5 صور', 'bad');
     }
     files.forEach(f => {
-      const r = new FileReader();
-      r.onload = e => { const img = document.createElement('img'); img.src = e.target.result; preview.appendChild(img); };
-      r.readAsDataURL(f);
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      img.onload = () => URL.revokeObjectURL(img.src);
+      preview.appendChild(img);
     });
   };
+}
+
+// Resize very large photos in the browser before upload. This preserves the
+// original Cloudinary asset workflow while reducing mobile upload time/data.
+async function prepareImageForUpload(file) {
+  if (!file || !file.type.startsWith('image/') || (file.size <= 1.5 * 1024 * 1024 && file.type !== 'image/png')) return file;
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) return file;
+  const maxSide = 1800;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const outputType = file.type === 'image/png' && file.size < 3 * 1024 * 1024 ? 'image/png' : 'image/jpeg';
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, outputType, 0.82));
+  if (!blob || blob.size >= file.size) return file;
+  return new File([blob], file.name.replace(/\.[^.]+$/, outputType === 'image/png' ? '.png' : '.jpg'), { type: outputType, lastModified: file.lastModified });
 }
 
 async function getSignedUpload(resourceType) {
@@ -373,11 +393,12 @@ async function doAddAd() {
     const imageAssets = [];
     try {
       const imageSignature = await getSignedUpload('image');
-      for (const f of imgFiles) {
-        const asset = await uploadToCloudinary(f, 'image', imageSignature);
+      const preparedFiles = await Promise.all(imgFiles.map(prepareImageForUpload));
+      const assets = await Promise.all(preparedFiles.map(file => uploadToCloudinary(file, 'image', imageSignature)));
+      assets.forEach(asset => {
         images.push(asset.url);
         if (asset.publicId) imageAssets.push({ publicId: asset.publicId, resourceType: 'image', type: 'upload' });
-      }
+      });
     } catch (uploadError) {
       throw new Error(uploadError?.message || 'فشل رفع الصور؛ لم يتم نشر الإعلان');
     }

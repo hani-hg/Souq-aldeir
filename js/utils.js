@@ -44,3 +44,18 @@ function safeMediaUrl(value) {
     return '';
   }
 }
+
+// Serve responsive, modern Cloudinary variants without changing the stored
+// original URL/public ID used by cleanup and renewal.
+function optimizedMediaUrl(value, width = 800, height = 0) {
+  const safe = safeMediaUrl(value);
+  if (!safe) return '';
+  try {
+    const url = new URL(safe);
+    if (!url.hostname.endsWith('res.cloudinary.com') || !url.pathname.includes('/image/upload/')) return safe;
+    const transform = height
+      ? `f_auto,q_auto:good,w_${Math.round(width)},h_${Math.round(height)},c_fill,g_auto`
+      : `f_auto,q_auto:good,w_${Math.round(width)},c_limit`;
+    return safe.replace('/image/upload/', `/image/upload/${transform}/`);
+  } catch (_) { return safe; }
+}
