@@ -463,7 +463,7 @@ async function openDashboard() {
         <i class="fa fa-star"></i> إبراز إعلان مميز</button>
       <button class="btn btn-outline" onclick="showChangePasswordForm()">
         <i class="fa fa-lock"></i> تغيير كلمة المرور</button>
-      <button class="btn btn-outline" id="pushPermissionBtn" style="display:none" onclick="enablePushNotifications()">
+      <button class="btn btn-outline" id="pushPermissionBtn" style="display:inline-flex" onclick="enablePushNotifications()">
         <i class="fa fa-bell"></i> تفعيل إشعارات الجهاز</button>
       <button class="btn btn-outline" onclick="openAboutModal()">
         <i class="fa fa-circle-info"></i> عن السوق والتواصل</button>
@@ -476,6 +476,10 @@ async function openDashboard() {
 
     <p style="text-align:center;font-size:.7em;color:var(--border);margin-top:18px">v2.2</p>
   `;
+
+  // Keep the notification action visible in the account panel. The click handler
+  // provides the browser-specific permission/support message when needed.
+  if (typeof maybeOfferPushNotifications === 'function') maybeOfferPushNotifications();
 }
 
 /* ── Change password (inline form) ── */
