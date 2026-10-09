@@ -459,6 +459,7 @@ function applyAdsFilter() {
                 <div style="display:flex;gap:4px">
                   <button class="icon-btn" title="عرض" onclick="openDetail('${ad.id}')"
                     style="background:#e3f2fd;color:var(--blue)"><i class="fa fa-eye"></i></button>
+                  ${moderation === 'approved' && ad.userId ? `<button class="icon-btn" title="تجديد 20 يومًا" style="background:#fff3e0;color:#ef6c00" onclick="adminRenewAd('${ad.id}')"><i class="fa fa-rotate-right"></i></button>` : ''}
                   ${moderation === 'pending' ? `<button class="icon-btn" title="موافقة" style="background:#e8f5e9;color:#2e7d32" onclick="adminSetAdModerationStatus('${ad.id}','approved')"><i class="fa fa-check"></i></button><button class="icon-btn" title="رفض" style="background:#ffebee;color:#c62828" onclick="adminSetAdModerationStatus('${ad.id}','rejected')"><i class="fa fa-ban"></i></button>` : `<button class="icon-btn ${ad.featured?'':'edit'}" title="${ad.featured?'إلغاء التمييز':'تمييز'}" style="${ad.featured?'background:var(--gold-light);color:#7a5000':''}" onclick="adminToggleFeatured('${ad.id}',${!!ad.featured})">${ad.featured?'★':'☆'}</button>`}
                   <button class="icon-btn del" title="حذف" onclick="adminDeleteAdConfirm('${ad.id}')">
                     <i class="fa fa-trash"></i></button>
@@ -472,6 +473,37 @@ function applyAdsFilter() {
 
   /* ربط filteredAdsForExport للتصدير */
   window._filteredAdsForExport = list;
+}
+
+async function adminRenewAd(adId) {
+  if (!isAdmin || !adId) return;
+  const ad = adminAdsAllCache.find(item => item.id === adId);
+  if (!ad || !ad.userId || (ad.moderationStatus || 'approved') !== 'approved') {
+    showToast('يمكن تجديد إعلانات المستخدمين المعتمدة فقط', 'bad');
+    return;
+  }
+  if (!confirm('سيُمدَّد الإعلان 20 يومًا إضافية. وإذا كان منتهيًا فسيبدأ التمديد من اليوم. هل تريد المتابعة؟')) return;
+  const oldExpiry = ad.expiresAt?.toMillis
+    ? ad.expiresAt.toMillis()
+    : (ad.expiresAt?.seconds ? ad.expiresAt.seconds * 1000 : 0);
+  const nextExpiry = firebase.firestore.Timestamp.fromDate(
+    new Date(Math.max(Date.now(), oldExpiry) + 20 * 86400000)
+  );
+  try {
+    await db.collection('ads').doc(adId).update({
+      expiresAt: nextExpiry,
+      durationDays: 20,
+      renewedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    ad.expiresAt = nextExpiry;
+    ad.durationDays = 20;
+    applyAdsFilter();
+    loadAds();
+    showToast('تم تجديد الإعلان 20 يومًا للمستخدم ✅', 'ok');
+  } catch (error) {
+    console.error('تعذر تجديد إعلان المستخدم:', error);
+    showToast('تعذر تجديد الإعلان. تحقق من صلاحيات المدير والاتصال.', 'bad');
+  }
 }
 
 /* تصدير CSV */

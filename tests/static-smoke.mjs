@@ -122,6 +122,9 @@ if (!ads.includes('isPublicAd')) throw new Error('Public ad visibility filter is
 if (!ads.includes("where('moderationStatus', '==', 'approved')")) throw new Error('Public ads query must require approved moderation status');
 if (!ads.includes("where('userId', '==', currentUser.uid)")) throw new Error('Owner ads query is missing');
 if (!admin.includes('adminSetAdModerationStatus')) throw new Error('Admin moderation controls are missing');
+if (!admin.includes('function adminRenewAd') || !admin.includes('title="تجديد 20 يومًا"') || !admin.includes('renewedAt: firebase.firestore.FieldValue.serverTimestamp()')) {
+  throw new Error('Admin user-ad renewal controls are missing');
+}
 if (ads.includes("doc(id).update({ views:") || ads.includes('countVisitOnce();')) throw new Error('Client-side view/visit counters must not write directly');
 if (!admin.includes('function deleteUserAccount')) throw new Error('Admin user deletion is missing');
 if (!admin.includes('sendPasswordResetEmail')) throw new Error('Admin reset must use Firebase client email delivery');
