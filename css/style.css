@@ -521,3 +521,20 @@ html[data-theme="dark"] .chat-row:hover { background:#253348; }
 html[data-theme="dark"] .chat-input-bar input { background:#111827; }
 html[data-theme="dark"] .warn-card { border-color:#71333c; }
 html[data-theme="dark"] .theme-toggle { font-size:1.05em; }
+
+/* Full-screen celebratory announcements */
+.celebration-modal{display:none;position:fixed;inset:0;z-index:12000;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at top,#244f91 0%,#101a3a 65%,#090f24 100%);overflow:hidden;}
+.celebration-modal.active{display:flex;animation:celebrationFadeIn .24s ease-out;}
+.celebration-card{position:relative;width:min(100%,480px);max-height:calc(100dvh - 40px);overflow:auto;text-align:center;padding:36px 26px 28px;border:1px solid rgba(255,255,255,.22);border-radius:28px;background:linear-gradient(155deg,rgba(255,255,255,.98),rgba(244,248,255,.96));box-shadow:0 28px 90px rgba(0,0,0,.38);animation:celebrationPop .38s cubic-bezier(.2,.85,.25,1.15);}
+.celebration-close{position:absolute;top:13px;inset-inline-end:13px;width:38px;height:38px;border:0;border-radius:50%;background:#eef2f8;color:#33445a;font-size:1.25rem;cursor:pointer;display:grid;place-items:center;z-index:1;}
+.celebration-close:hover{background:#dfe7f2;}
+.celebration-logo{display:block;width:82px;height:82px;object-fit:cover;border-radius:24px;margin:4px auto 15px;box-shadow:0 8px 26px rgba(21,101,192,.2);}
+.celebration-star{display:grid;place-items:center;background:linear-gradient(135deg,#fff4c2,#ffd54f);font-size:2.8rem;}
+.celebration-kicker{font-size:.82rem;font-weight:800;color:#1565c0;letter-spacing:.02em;margin-bottom:8px;}
+.celebration-card h2{margin:0 auto 12px;color:#17263b;font-size:clamp(1.35rem,5vw,1.85rem);line-height:1.45;font-weight:800;}
+.celebration-card p{margin:0 auto 20px;max-width:360px;color:#526176;font-size:.98rem;line-height:1.85;}
+.celebration-action{max-width:310px;margin:0 auto;border-radius:16px;min-height:48px;}
+@keyframes celebrationFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes celebrationPop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:480px){.celebration-modal{padding:14px}.celebration-card{padding:34px 20px 23px;border-radius:24px}.celebration-logo{width:72px;height:72px;border-radius:21px}}
+@media(prefers-reduced-motion:reduce){.celebration-modal.active,.celebration-card{animation:none}}

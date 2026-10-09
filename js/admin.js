@@ -1173,11 +1173,16 @@ async function applyAdminFeatureDuration(adId, days) {
   if (![3, 7, 15, 30].includes(days)) return;
   const until = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + days * 86400000));
   try {
-    await db.collection('ads').doc(adId).update({featured:true, featuredUntil:until, featuredDurationDays:days});
-    const ad = adminAdsAllCache.find(a => a.id === adId);
+    const ad = adminAdsAllCache.find(a => a.id === adId) || allAds.find(a => a.id === adId);
+    if (!ad?.userId) throw new Error('تعذر العثور على صاحب الإعلان');
+    const batch = db.batch();
+    batch.update(db.collection('ads').doc(adId), {featured:true, featuredUntil:until, featuredDurationDays:days});
+    addFeatureNoticeToBatch(batch, ad.userId, adId, days);
+    await batch.commit();
+    if (typeof sendPushNotification === 'function') sendPushNotification(ad.userId, 'featured_request', 'هدية تمييز من سوق دير الزور', `تم تمييز إعلانك، هدية من سوق دير الزور، لمدة ${days} يومًا.`, `/?ad=${encodeURIComponent(adId)}`, '');
     if (ad) { ad.featured = true; ad.featuredUntil = until; ad.featuredDurationDays = days; }
     document.querySelector('.admin-feature-duration')?.closest('.admin-overlay')?.remove();
-    showToast(`تم تمييز الإعلان لمدة ${days === 30 ? 'شهر' : days + ' أيام'} ⭐`, 'ok');
+    showToast(`تم منح التمييز كهدية لمدة ${days === 30 ? 'شهر' : days + ' أيام'} ⭐`, 'ok');
     loadAds(); applyAdsFilter();
   } catch (error) { showToast('تعذر تمييز الإعلان، حاول مرة أخرى', 'bad'); }
 }
@@ -1185,18 +1190,29 @@ async function applyAdminFeatureDuration(adId, days) {
 /* ══════════════════════════════════════════
    إجراءات طلبات التمييز
 ══════════════════════════════════════════ */
-const PLAN_DAYS = {'3 أيام':3,'7 أيام':7,'15 يومًا':15,'30 يومًا':30,'30 يوماً':30,'15 يوم':15,'مجاني':7};
+const PLAN_DAYS = {'3 أيام':3,'7 أيام':7,'15 يومًا':15,'30 يومًا':30,'30 يوماً':30,'15 يوم':15,'هدية من سوق دير الزور':7};
 async function approveFeature(reqId, adId) {
   const req  = adminReqsCache.find(r=>r.id===reqId);
-  const plan = req ? req.plan : '';
-  const days = Number(req?.durationDays) || PLAN_DAYS[plan] || 7;
-  const featuredUntil = firebase.firestore.Timestamp.fromDate(new Date(Date.now()+days*86400000));
-  await db.collection('ads').doc(adId).update({featured:true, featuredUntil, featuredDurationDays:days}).catch(()=>{});
-  await db.collection('featuredRequests').doc(reqId).update({status:'approved'}).catch(()=>{});
-  if (req?.userId && typeof sendPushNotification === 'function') sendPushNotification(req.userId, 'featured_request', 'تم قبول طلب تمييز إعلانك', `تمت الموافقة على التمييز لمدة ${days} أيام.`, '/', '');
-  adminReqsCache = adminReqsCache.filter(r=>r.id!==reqId);
-  showToast(`تم التمييز لمدة ${days} أيام ⭐`, 'ok');
-  checkAdminNotifs(); loadAds(); openAdminPanel();
+  if (!req) { showToast('تعذر العثور على طلب التمييز', 'bad'); return; }
+  const days = Number(req.durationDays) || PLAN_DAYS[req.plan] || 7;
+  try {
+    const adRef = db.collection('ads').doc(adId);
+    const adSnap = await adRef.get();
+    if (!adSnap.exists || adSnap.data().userId !== req.userId) throw new Error('بيانات الإعلان والطلب غير متطابقة');
+    const until = firebase.firestore.Timestamp.fromDate(new Date(Date.now()+days*86400000));
+    const batch = db.batch();
+    batch.update(adRef, {featured:true, featuredUntil:until, featuredDurationDays:days});
+    batch.update(db.collection('featuredRequests').doc(reqId), {status:'approved'});
+    addFeatureNoticeToBatch(batch, req.userId, adId, days);
+    await batch.commit();
+    if (typeof sendPushNotification === 'function') sendPushNotification(req.userId, 'featured_request', 'هدية تمييز من سوق دير الزور', `تم تمييز إعلانك، هدية من سوق دير الزور، لمدة ${days} يومًا.`, `/?ad=${encodeURIComponent(adId)}`, '');
+    adminReqsCache = adminReqsCache.filter(r=>r.id!==reqId);
+    showToast(`تم التمييز لمدة ${days} أيام ⭐`, 'ok');
+    checkAdminNotifs(); loadAds(); openAdminPanel();
+  } catch (error) {
+    console.error('تعذر اعتماد تمييز الإعلان:', error);
+    showToast('تعذر منح التمييز، حاول مرة أخرى', 'bad');
+  }
 }
 async function rejectFeature(reqId) {
   await db.collection('featuredRequests').doc(reqId).update({status:'rejected'}).catch(()=>{});

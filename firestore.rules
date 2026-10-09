@@ -131,6 +131,26 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /featureNotices/{noticeId} {
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['userId', 'adId', 'durationDays', 'shown', 'createdAt'])
+        && request.resource.data.userId is string
+        && request.resource.data.adId is string
+        && request.resource.data.durationDays in [3, 7, 15, 30]
+        && request.resource.data.shown == false
+        && request.resource.data.createdAt == request.time;
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin() || (
+        signedIn()
+        && resource.data.userId == request.auth.uid
+        && resource.data.shown == false
+        && request.resource.data.shown == true
+        && request.resource.data.shownAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shown', 'shownAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
     match /reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.reporterId == request.auth.uid

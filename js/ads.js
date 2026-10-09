@@ -57,13 +57,21 @@ function filterCat(n) {
 }
 
 /* ============ NEWS TICKER ============ */
+function marketGiftWording(value) {
+  return String(value || '')
+    .replace(/النشر\s+مجان(?:ي|اً|ًا|ا)(?:\s+للجميع)?/g, 'النشر، هدية من سوق دير الزور')
+    .replace(/انشر\s+إعلانك\s+مجان(?:ي|اً|ًا|ا)/g, 'انشر إعلانك، هدية من سوق دير الزور')
+    .replace(/نشر\s+إعلانك\s+مجان(?:ي|اً|ًا|ا)/g, 'نشر إعلانك، هدية من سوق دير الزور')
+    .replace(/تمييز(?:\s+إعلانك)?\s+مجان(?:ي|اً|ًا|ا)/g, 'تمييز، هدية من سوق دير الزور')
+    .replace(/(?:موقع|منصة|سوق إلكتروني)\s+مجان(?:ي|اً|ًا|ا)/g, 'سوق دير الزور المفتوح');
+}
 function loadNews() {
   db.collection('settings').doc('news').get().then(doc => {
-    let items = ['مرحباً بكم في سوق دير الزور المفتوح 🛒', 'أول سوق إلكتروني في دير الزور', 'النشر مجاني للجميع', 'للإعلانات المميزة تواصل مع الإدارة'];
-    if (doc.exists && doc.data().items) items = doc.data().items;
-    document.getElementById('newsTicker').innerHTML = items.map(i => `<span>📌 ${i}</span>`).join('');
+    let items = ['مرحباً بكم في سوق دير الزور المفتوح 🛒', 'أول سوق إلكتروني في دير الزور', 'النشر، هدية من سوق دير الزور للجميع', 'للإعلانات المميزة تواصل مع الإدارة'];
+    if (doc.exists && Array.isArray(doc.data().items)) items = doc.data().items;
+    document.getElementById('newsTicker').innerHTML = items.map(i => `<span>📌 ${escapeHtml(marketGiftWording(i))}</span>`).join('');
   }).catch(() => {
-    document.getElementById('newsTicker').innerHTML = '<span>📌 مرحباً بكم في سوق دير الزور المفتوح 🛒</span><span>📌 النشر مجاني للجميع</span>';
+    document.getElementById('newsTicker').innerHTML = '<span>📌 مرحباً بكم في سوق دير الزور المفتوح 🛒</span><span>📌 النشر، هدية من سوق دير الزور للجميع</span>';
   });
 }
 
@@ -545,12 +553,12 @@ async function requestFeatured() {
   try {
     await db.collection('featuredRequests').add({
       adId, adTitle: ad ? ad.title : '', userId: currentUser.uid,
-      userEmail: currentUser.email || '', plan: 'مجاني',
+      userEmail: currentUser.email || '', plan: 'هدية من سوق دير الزور',
       durationDays: 0,
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     closeModal('featuredModal');
-    showToast('تم إرسال طلبك، ستتواصل معك الإدارة هاتفياً ✅', 'ok');
+    showToast('تم إرسال طلب التمييز، هدية من سوق دير الزور، وستراجعه الإدارة ✅', 'ok');
   } catch (error) {
     showToast('تعذر إرسال الطلب، حاول مرة أخرى', 'bad');
   }

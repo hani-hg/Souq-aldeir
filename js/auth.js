@@ -124,10 +124,12 @@ function initAuthListener() {
       if (isAdmin) checkAdminNotifs();
       initChatsListener(); checkMyWarnings();
       if (typeof maybeOfferPushNotifications === 'function') maybeOfferPushNotifications();
+      if (typeof startFeatureNoticeListener === 'function') startFeatureNoticeListener(u.uid);
     } else {
       isAdmin = false;
       document.getElementById('adminNavBtn').style.display = 'none';
       stopChatsListener();
+      if (typeof stopFeatureNoticeListener === 'function') stopFeatureNoticeListener();
     }
     updateUserBtn(); loadAds();
   });
@@ -248,7 +250,7 @@ async function doSignup() {
         name, email, phone, phoneNormalized: phone,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
-        role: 'user', banned: false, blockedUids: []
+        role: 'user', banned: false, blockedUids: [], welcomeModalShown: true
       });
       // Firebase Web SDK v8 supports set(); Firestore rules reject an overwrite
       // of an existing phone index, preserving uniqueness without a paid backend.
@@ -261,6 +263,7 @@ async function doSignup() {
       throw setupError;
     }
     closeModal('authModal'); showToast('مرحبًا ' + name + '! تم إنشاء حسابك', 'ok');
+    if (typeof showWelcomeCelebration === 'function') showWelcomeCelebration(name);
   } catch(e) {
     const m = {
       'auth/email-already-in-use': 'البريد الإلكتروني مسجل مسبقًا',
@@ -460,7 +463,7 @@ async function openDashboard() {
     <!-- ── Action buttons ── -->
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
       <button class="btn btn-gold" onclick="openModal('featuredModal')">
-        <i class="fa fa-star"></i> إبراز إعلان مميز</button>
+        <i class="fa fa-star"></i> تمييز، هدية من سوق دير الزور</button>
       <button class="btn btn-outline" onclick="showChangePasswordForm()">
         <i class="fa fa-lock"></i> تغيير كلمة المرور</button>
       <button class="btn btn-outline" id="pushPermissionBtn" style="display:inline-flex" onclick="enablePushNotifications()">

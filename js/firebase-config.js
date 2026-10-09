@@ -36,7 +36,7 @@ let isAdmin = false;
 let allAds = [];
 let favorites = new Set();
 let activeCat = null;
-let selectedPlan = 'مجاني';
+let selectedPlan = 'هدية من سوق دير الزور';
 let chatUnsub = null;        // unsubscribes the currently open chat's messages listener
 let chatsListUnsub = null;   // unsubscribes the live "all my chats" listener (list + badge)
 let chatsCache = [];         // latest snapshot of the user's chats, sorted client-side (no composite index needed)
@@ -49,4 +49,3 @@ let myWarnings = []; // unread admin warnings for the signed-in user
 /* Editable contact info: admin can change these from the panel without
    touching code (see admin.js saveContactSettings / loadContactSettings). */
 let contactSettings = { email: ADMIN_EMAIL, phone: ADMIN_PHONE };
-

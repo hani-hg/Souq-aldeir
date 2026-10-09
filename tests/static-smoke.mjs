@@ -12,6 +12,7 @@ const requiredFiles = [
   'js/chat.js',
   'js/share.js',
   'js/admin.js',
+  'js/celebrations.js',
   'js/app.js',
   'server/index.js',
   'api/password-reset.js',
@@ -36,7 +37,7 @@ for (const file of requiredFiles) {
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]);
-const order = ['js/firebase-config.js', 'js/utils.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/share.js', 'js/admin.js', 'js/app.js'];
+const order = ['js/firebase-config.js', 'js/utils.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/share.js', 'js/admin.js', 'js/celebrations.js', 'js/app.js'];
 const positions = order.map(file => scripts.indexOf(file));
 if (positions.some(position => position < 0)) throw new Error('A required script is not loaded by index.html');
 if (!positions.every((position, index) => index === 0 || position > positions[index - 1])) {
@@ -46,11 +47,13 @@ if (!html.includes('lang="ar"') || !html.includes('dir="rtl"')) throw new Error(
 if (!html.includes('href="/favicon.ico"')) throw new Error('Stable favicon link is missing');
 if (!html.includes('serviceWorker.register')) throw new Error('PWA service worker registration is missing');
 if (!html.includes('id="siteShareBtn"') || !html.includes('qrcode.min.js')) throw new Error('QR sharing UI is missing');
-if (!html.includes('طلب تمييز مجاني') || html.includes('plan-price') || html.includes('إتمام الدفع')) throw new Error('Paid featured flow must be disabled');
+if (!html.includes('طلب تمييز، هدية من سوق دير الزور') || html.includes('plan-price') || html.includes('إتمام الدفع')) throw new Error('Gift featured flow or no-payment UI is missing');
+if (!html.includes('canvas-confetti@1.9.3') || !html.includes('id="welcomeGiftModal"') || !html.includes('id="featureAwardModal"')) throw new Error('Celebration modals or confetti library are missing');
 if (html.includes('id="adVideo"') || html.includes('videoHelp')) throw new Error('Video upload UI must be removed');
 if (html.includes('id="adDuration"')) throw new Error('Ad duration selector should be removed');
 
 const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
+const celebrations = readFileSync(join(root, 'js/celebrations.js'), 'utf8');
 if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
   throw new Error('Client-side admin escalation path is still present');
 }
@@ -76,6 +79,12 @@ if (!auth.includes('togglePassword')) {
 }
 if (!auth.includes('initAuthWiring')) {
   throw new Error('Auth keyboard/hint wiring is missing');
+}
+if (!auth.includes('welcomeModalShown: true') || !auth.includes('showWelcomeCelebration(name)')) {
+  throw new Error('New account welcome state/modal is missing');
+}
+if (!celebrations.includes('setTimeout(() => closeCelebrationModal(id), 5500)') || !celebrations.includes('function addFeatureNoticeToBatch')) {
+  throw new Error('Celebration timeout or durable feature-award notice is missing');
 }
 const usersSetIdx = auth.indexOf("collection('users').doc(cred.user.uid).set");
 const phoneIdxCreateIdx = auth.indexOf('phoneIndexRef.set');
@@ -133,8 +142,9 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
   throw new Error('Phone index create must match the claiming user profile (anti-squatting)');
 }
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
+if (!rules.includes('match /featureNotices/{noticeId}') || !rules.includes("affectedKeys().hasOnly(['shown', 'shownAt'])")) throw new Error('Feature notice access rules are missing or too broad');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v10-security-fcm") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v11-celebrations-categories") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
