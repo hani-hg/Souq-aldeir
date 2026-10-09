@@ -83,8 +83,11 @@ if (!auth.includes('initAuthWiring')) {
 if (!auth.includes('welcomeModalShown: true') || !auth.includes('showWelcomeCelebration(name)')) {
   throw new Error('New account welcome state/modal is missing');
 }
-if (!celebrations.includes('setTimeout(() => closeCelebrationModal(id), 5500)') || !celebrations.includes('function addFeatureNoticeToBatch')) {
-  throw new Error('Celebration timeout or durable feature-award notice is missing');
+if (celebrations.includes('setTimeout(() => closeCelebrationModal(id), 5500)') || !celebrations.includes('function closeCelebrationModal')) {
+  throw new Error('Celebration messages must remain open until manually dismissed');
+}
+if (!html.includes('>إزالة الرسالة</button>') || !celebrations.includes('function addFeatureNoticeToBatch')) {
+  throw new Error('Manual remove buttons or durable feature-award notice are missing');
 }
 const usersSetIdx = auth.indexOf("collection('users').doc(cred.user.uid).set");
 const phoneIdxCreateIdx = auth.indexOf('phoneIndexRef.set');

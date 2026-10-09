@@ -418,7 +418,7 @@
     <div class="celebration-kicker">أهلًا بك في السوق</div>
     <h2 id="welcomeGiftTitle"><span id="welcomeGreeting">أهلًا بك،</span> نورت سوق دير الزور!</h2>
     <p>يسعدنا انضمامك إلى مجتمع سوق دير الزور المفتوح. نتمنى لك تجربة موفقة في البيع والشراء.</p>
-    <button type="button" class="btn btn-blue celebration-action" onclick="closeCelebrationModal('welcomeGiftModal')">ابدأ التصفح</button>
+    <button type="button" class="btn btn-blue celebration-action" onclick="closeCelebrationModal('welcomeGiftModal')">إزالة الرسالة</button>
   </section>
 </div>
 <div class="celebration-modal" id="featureAwardModal" role="presentation" aria-hidden="true" onclick="if(event.target===this)closeCelebrationModal('featureAwardModal')">
@@ -429,6 +429,7 @@
     <h2 id="featureAwardMessage">مبروك! تم منحك إعلانًا مميزًا.</h2>
     <p>أصبح إعلانك المميز جاهزًا للظهور في السوق.</p>
     <button type="button" class="btn btn-gold celebration-action" id="featureAwardAdButton" onclick="openFeaturedAwardAd()">شاهد إعلانك الآن</button>
+    <button type="button" class="btn btn-outline celebration-dismiss" onclick="closeCelebrationModal('featureAwardModal')">إزالة الرسالة</button>
   </section>
 </div>
 

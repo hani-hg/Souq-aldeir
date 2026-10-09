@@ -534,6 +534,7 @@ html[data-theme="dark"] .theme-toggle { font-size:1.05em; }
 .celebration-card h2{margin:0 auto 12px;color:#17263b;font-size:clamp(1.35rem,5vw,1.85rem);line-height:1.45;font-weight:800;}
 .celebration-card p{margin:0 auto 20px;max-width:360px;color:#526176;font-size:.98rem;line-height:1.85;}
 .celebration-action{max-width:310px;margin:0 auto;border-radius:16px;min-height:48px;}
+.celebration-dismiss{max-width:310px;margin:9px auto 0;border-radius:16px;min-height:44px;}
 @keyframes celebrationFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes celebrationPop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:480px){.celebration-modal{padding:14px}.celebration-card{padding:34px 20px 23px;border-radius:24px}.celebration-logo{width:72px;height:72px;border-radius:21px}}

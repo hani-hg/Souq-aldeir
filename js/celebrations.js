@@ -1,6 +1,5 @@
 /* Celebration modals and one-time user notices. */
 let featureNoticeUnsubscribe = null;
-let celebrationAutoCloseTimer = null;
 let activeCelebrationId = null;
 let featureNoticeQueue = [];
 let queuedFeatureNoticeIds = new Set();
@@ -30,8 +29,6 @@ function openCelebrationModal(id) {
   activeCelebrationId = id;
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
-  clearTimeout(celebrationAutoCloseTimer);
-  celebrationAutoCloseTimer = setTimeout(() => closeCelebrationModal(id), 5500);
   launchCelebration();
   modal.querySelector('.celebration-close')?.focus({ preventScroll: true });
 }
@@ -42,7 +39,6 @@ function closeCelebrationModal(id) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
   }
-  clearTimeout(celebrationAutoCloseTimer);
   if (activeCelebrationId === id) activeCelebrationId = null;
   if (id === 'featureAwardModal') processingFeatureNotice = false;
   setTimeout(processFeatureNoticeQueue, 80);
