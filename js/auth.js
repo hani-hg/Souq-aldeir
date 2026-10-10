@@ -5,6 +5,9 @@
    ============================================================ */
 
 const AUTH_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const GOOGLE_PROFILE_PENDING_KEY = 'souq_google_profile_pending';
+let googleProfilePending = false;
+let googleAuthBusy = false;
 
 function normalizeAuthEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -107,16 +110,27 @@ function initAuthListener() {
   auth.onAuthStateChanged(async u => {
     currentUser = u;
     if (u) {
-      // Auth state can arrive after the sign-in promise on slower browsers;
-      // close any leftover overlay so the homepage remains scrollable.
-      closeModal('authModal');
+      googleProfilePending = localStorage.getItem(GOOGLE_PROFILE_PENDING_KEY) === '1';
       const doc = await db.collection('users').doc(u.uid).get().catch(() => null);
       if (doc && doc.exists && doc.data().banned) {
+        googleProfilePending = false;
+        localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
         await auth.signOut();
         showToast('تم حظر هذا الحساب من قبل الإدارة', 'bad');
         currentUser = null; isAdmin = false;
         document.getElementById('adminNavBtn').style.display = 'none';
         stopChatsListener(); updateUserBtn(); loadAds(); return;
+      }
+      if (googleProfilePending && (!doc || !doc.exists)) {
+        showGoogleProfileSetup(u);
+      } else {
+        if (googleProfilePending) {
+          googleProfilePending = false;
+          localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+        }
+        // Auth state can arrive after the sign-in promise on slower browsers;
+        // close any leftover overlay so the homepage remains scrollable.
+        closeModal('authModal');
       }
       const tokenResult = await u.getIdTokenResult(true).catch(() => null);
       isAdmin = tokenResult?.claims?.admin === true;
@@ -150,6 +164,10 @@ function updateUserBtn() {
 }
 
 function switchAuth(tab) {
+  const googleForm = document.getElementById('formGoogleProfile');
+  if (googleForm) googleForm.style.display = 'none';
+  const tabBar = document.querySelector('#authModal .tab-bar');
+  if (tabBar) tabBar.style.display = '';
   ['login','signup','reset'].forEach(t => {
     document.getElementById('form' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab'  + t.charAt(0).toUpperCase() + t.slice(1)).className = 'tab-item' + (t === tab ? ' active' : '');
@@ -212,6 +230,166 @@ async function doLogin() {
   } finally {
     btn.disabled = false; btn.innerHTML = '<i class="fa fa-sign-in-alt"></i> دخول';
   }
+}
+
+function showGoogleProfileSetup(user) {
+  const form = document.getElementById('formGoogleProfile');
+  if (!form) return;
+  const alreadyVisible = form.style.display === 'block';
+  googleProfilePending = true;
+  localStorage.setItem(GOOGLE_PROFILE_PENDING_KEY, '1');
+  ['formLogin', 'formSignup', 'formReset'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const tabBar = document.querySelector('#authModal .tab-bar');
+  if (tabBar) tabBar.style.display = 'none';
+  form.style.display = 'block';
+  if (!alreadyVisible) {
+    document.getElementById('googleProfileName').value = user?.displayName || '';
+    document.getElementById('googleProfileEmail').value = user?.email || '';
+    document.getElementById('googleProfilePhone').value = '';
+    document.getElementById('googleProfileTerms').checked = false;
+  }
+  openModal('authModal');
+}
+
+function hideGoogleProfileSetup() {
+  const form = document.getElementById('formGoogleProfile');
+  if (form) form.style.display = 'none';
+  const tabBar = document.querySelector('#authModal .tab-bar');
+  if (tabBar) tabBar.style.display = '';
+  ['formLogin', 'formSignup', 'formReset'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === 'formLogin' ? 'block' : 'none';
+  });
+  document.getElementById('tabLogin')?.classList.add('active');
+  document.getElementById('tabSignup')?.classList.remove('active');
+  document.getElementById('tabReset')?.classList.remove('active');
+}
+
+async function doGoogleSignIn(button) {
+  if (googleAuthBusy) return;
+  googleAuthBusy = true;
+  const originalLabel = button?.innerHTML;
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ الاتصال بـ Google';
+  }
+  googleProfilePending = true;
+  localStorage.setItem(GOOGLE_PROFILE_PENDING_KEY, '1');
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      await auth.signInWithRedirect(provider);
+      return;
+    }
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    const profile = await db.collection('users').doc(user.uid).get();
+    if (profile.exists) {
+      if (profile.data().banned) {
+        await auth.signOut();
+        throw { code: 'auth/user-disabled' };
+      }
+      googleProfilePending = false;
+      localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+      hideGoogleProfileSetup();
+      closeModal('authModal');
+      showToast('أهلًا بعودتك عبر Google', 'ok');
+    } else {
+      showGoogleProfileSetup(user);
+      showAuthSuccess('تم التحقق من Google. أكمل رقم الهاتف والموافقة على الشروط لإنشاء ملفك.');
+    }
+  } catch (error) {
+    if (auth.currentUser) {
+      showGoogleProfileSetup(auth.currentUser);
+      showAuthError('تم تسجيل الدخول، لكن تعذر تحميل ملف الحساب. تحقق من الاتصال ثم أعد المحاولة.');
+    } else {
+      googleProfilePending = false;
+      localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+      hideGoogleProfileSetup();
+      const messages = {
+        'auth/operation-not-allowed': 'تسجيل Google غير مفعّل بعد في إعدادات Firebase',
+        'auth/unauthorized-domain': 'النطاق غير مصرح له في Firebase. أضف souqaldeir.com وwww.souqaldeir.com إلى Authorized domains',
+        'auth/account-exists-with-different-credential': 'هذا البريد مرتبط بطريقة دخول أخرى. سجّل بالطريقة الأصلية أولًا',
+        'auth/popup-blocked': 'حظر المتصفح نافذة Google. اسمح بالنوافذ المنبثقة ثم أعد المحاولة',
+        'auth/popup-closed-by-user': 'أُغلقت نافذة Google قبل إتمام تسجيل الدخول',
+        'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
+        'auth/user-disabled': 'هذا الحساب موقوف، تواصل مع الإدارة'
+      };
+      showAuthError(messages[error?.code] || 'تعذر تسجيل الدخول عبر Google، حاول مجددًا');
+    }
+  } finally {
+    googleAuthBusy = false;
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = originalLabel;
+    }
+  }
+}
+
+async function completeGoogleProfile() {
+  const user = auth.currentUser || currentUser;
+  const name = document.getElementById('googleProfileName').value.trim();
+  const phone = normalizePhone(document.getElementById('googleProfilePhone').value);
+  const email = normalizeAuthEmail(user?.email || document.getElementById('googleProfileEmail').value);
+  const button = document.getElementById('googleProfileCompleteBtn');
+  if (!user) { showAuthError('انتهت جلسة Google، سجّل الدخول مرة أخرى'); return; }
+  if (name.length < 2 || name.length > 80) { showAuthError('أدخل اسمًا كاملًا صحيحًا'); return; }
+  if (phoneDigits(phone).length < 7 || phoneDigits(phone).length > 15) { showAuthError('أدخل رقم هاتف صالحًا'); return; }
+  if (!AUTH_EMAIL_RE.test(email)) { showAuthError('تعذر قراءة بريد Google، حاول بحساب آخر'); return; }
+  if (!document.getElementById('googleProfileTerms').checked) { showAuthError('يجب الموافقة على شروط استخدام السوق'); return; }
+  button.disabled = true;
+  button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ حفظ البيانات';
+  const userRef = db.collection('users').doc(user.uid);
+  const phoneIndexRef = db.collection('phoneIndex').doc(phoneDigits(phone));
+  let profileCreated = false;
+  try {
+    const existing = await userRef.get();
+    if (!existing.exists) {
+      await userRef.set({
+        name, email, phone, phoneNormalized: phone,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        agreedTermsAt: firebase.firestore.FieldValue.serverTimestamp(),
+        role: 'user', banned: false, blockedUids: [], welcomeModalShown: true
+      });
+      profileCreated = true;
+      try {
+        await phoneIndexRef.set({ userId: user.uid, phoneNormalized: phone });
+      } catch (indexError) {
+        await phoneIndexRef.delete().catch(() => {});
+        await userRef.delete().catch(() => {});
+        profileCreated = false;
+        throw indexError;
+      }
+    }
+    await user.updateProfile({ displayName: name }).catch(() => {});
+    googleProfilePending = false;
+    localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+    closeModal('authModal');
+    showToast('مرحبًا ' + name + '! تم إنشاء حسابك عبر Google', 'ok');
+    if (profileCreated && typeof showWelcomeCelebration === 'function') showWelcomeCelebration(name);
+    loadAds();
+  } catch (error) {
+    console.error('تعذر إكمال ملف Google:', error);
+    const message = error?.code === 'permission-denied' || error?.code === 'already-exists'
+      ? 'رقم الهاتف مسجل مسبقًا أو لا يمكن استخدامه'
+      : 'تعذر حفظ بيانات الحساب. تحقق من الاتصال وحاول مجددًا';
+    showAuthError(message);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = '<i class="fa fa-check"></i> إكمال التسجيل';
+  }
+}
+
+async function cancelGoogleProfileSetup() {
+  googleProfilePending = false;
+  localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+  hideGoogleProfileSetup();
+  closeModal('authModal');
+  await auth.signOut().catch(() => {});
 }
 
 /* ── Signup ── */

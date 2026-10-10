@@ -89,8 +89,14 @@ if (celebrations.includes('setTimeout(() => closeCelebrationModal(id), 5500)') |
 if (!html.includes('>إزالة الرسالة</button>') || !celebrations.includes('function addFeatureNoticeToBatch')) {
   throw new Error('Manual remove buttons or durable feature-award notice are missing');
 }
-const usersSetIdx = auth.indexOf("collection('users').doc(cred.user.uid).set");
-const phoneIdxCreateIdx = auth.indexOf('phoneIndexRef.set');
+if (!html.includes('id="loginGoogleBtn"') || !html.includes('id="signupGoogleBtn"') || !auth.includes('async function doGoogleSignIn') || !auth.includes('async function completeGoogleProfile') || !auth.includes('new firebase.auth.GoogleAuthProvider()') || !auth.includes('signInWithRedirect')) {
+  throw new Error('Google sign-in buttons or profile completion flow are missing');
+}
+const signupStartIdx = auth.indexOf('async function doSignup');
+const signupEndIdx = auth.indexOf('/* ── Reset password ── */', signupStartIdx);
+const signupFlow = auth.slice(signupStartIdx, signupEndIdx);
+const usersSetIdx = signupFlow.indexOf("collection('users').doc(cred.user.uid).set");
+const phoneIdxCreateIdx = signupFlow.indexOf('phoneIndexRef.set');
 if (usersSetIdx < 0 || phoneIdxCreateIdx < 0 || usersSetIdx > phoneIdxCreateIdx) {
   throw new Error('Signup must create the users doc before phoneIndex (anti-squatting)');
 }
@@ -150,7 +156,7 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /featureNotices/{noticeId}') || !rules.includes("affectedKeys().hasOnly(['shown', 'shownAt'])")) throw new Error('Feature notice access rules are missing or too broad');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v13-admin-renewal") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v14-google-auth") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');

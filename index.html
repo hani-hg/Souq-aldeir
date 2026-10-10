@@ -166,6 +166,7 @@
         </div>
       </div>
       <button class="btn btn-blue" id="loginBtn" type="button" onclick="doLogin()"><i class="fa fa-sign-in-alt"></i> دخول</button>
+      <button class="btn btn-outline" id="loginGoogleBtn" type="button" style="width:100%;margin-top:10px;border-color:#dadce0;color:#202124" onclick="doGoogleSignIn(this)"><i class="fab fa-google" style="color:#4285f4"></i> تسجيل الدخول عبر Google</button>
     </div>
     <!-- SIGNUP -->
     <div id="formSignup" style="display:none">
@@ -192,12 +193,25 @@
         <label for="signupAgreeTerms" style="font-weight:400;font-size:.82em;color:var(--dark);margin-bottom:0">أوافق على <a href="#" onclick="openModal('termsModal');return false;" style="color:var(--blue);font-weight:700">شروط استخدام السوق</a></label>
       </div>
       <button class="btn btn-blue" id="signupBtn" onclick="doSignup()"><i class="fa fa-user-plus"></i> إنشاء الحساب</button>
+      <button class="btn btn-outline" id="signupGoogleBtn" type="button" style="width:100%;margin-top:10px;border-color:#dadce0;color:#202124" onclick="doGoogleSignIn(this)"><i class="fab fa-google" style="color:#4285f4"></i> المتابعة عبر Google</button>
     </div>
     <!-- RESET -->
     <div id="formReset" style="display:none">
       <p style="font-size:.85em;color:var(--gray);margin-bottom:14px;line-height:1.6">أدخل البريد الإلكتروني المرتبط بحسابك، وسنرسل لك رابطًا آمنًا لإعادة تعيين كلمة المرور. الحسابات القديمة المسجّلة برقم هاتف فقط تحتاج إلى تسجيل الدخول بالرقم ثم إضافة بريد إلكتروني من صفحة الحساب.</p>
       <div class="fg"><label for="resetEmail">البريد الإلكتروني المسجّل</label><input type="email" id="resetEmail" autocomplete="email" maxlength="254" placeholder="example@mail.com"></div>
       <button class="btn btn-outline" id="resetBtn" type="button" onclick="doResetStep1()"><i class="fa fa-envelope"></i> إرسال رابط الاستعادة</button>
+    </div>
+    <div id="formGoogleProfile" style="display:none">
+      <p style="font-size:.86em;color:var(--gray);line-height:1.6">أكمل بيانات حسابك للمتابعة. رقم الهاتف مطلوب، واسمك وبريدك مأخوذان من Google ويمكنك تعديل الاسم.</p>
+      <div class="fg"><label for="googleProfileName">الاسم الكامل *</label><input type="text" id="googleProfileName" maxlength="80" autocomplete="name"></div>
+      <div class="fg"><label for="googleProfileEmail">البريد الإلكتروني</label><input type="email" id="googleProfileEmail" readonly autocomplete="email"></div>
+      <div class="fg"><label for="googleProfilePhone">رقم الهاتف *</label><input type="tel" id="googleProfilePhone" maxlength="20" autocomplete="tel" placeholder="09xxxxxxxx"></div>
+      <div class="fg" style="display:flex;align-items:flex-start;gap:8px">
+        <input type="checkbox" id="googleProfileTerms" style="width:auto;margin-top:3px">
+        <label for="googleProfileTerms" style="font-weight:400;font-size:.82em;color:var(--dark);margin-bottom:0">أوافق على <a href="#" onclick="openModal('termsModal');return false;" style="color:var(--blue);font-weight:700">شروط استخدام السوق</a></label>
+      </div>
+      <button class="btn btn-blue" id="googleProfileCompleteBtn" type="button" onclick="completeGoogleProfile()"><i class="fa fa-check"></i> إكمال التسجيل</button>
+      <button class="btn btn-outline" type="button" style="width:100%;margin-top:8px" onclick="cancelGoogleProfileSetup()">إلغاء</button>
     </div>
   </div>
 </div>
