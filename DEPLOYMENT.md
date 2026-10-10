@@ -4,6 +4,10 @@
 
 يحتاج الخادم إلى إعدادات Firebase Admin وResend وCloudinary الموقّع للصور. انسخ `.env.example` إلى إعدادات بيئة الاستضافة، ولا ترفع ملف `.env` إلى GitHub. يجب ضبط `APP_URL` على النطاق النهائي، و`CORS_ORIGIN` على النطاق نفسه، وإضافة `RESEND_API_KEY` ومتغيرات Cloudinary الثلاثة: `CLOUDINARY_CLOUD_NAME` و`CLOUDINARY_API_KEY` و`CLOUDINARY_API_SECRET`. لإشعارات Telegram أضف `TELEGRAM_BOT_TOKEN` و`TELEGRAM_CHAT_ID` كمتغيري Production سريين في Vercel فقط؛ لا تضعهما في JavaScript أو GitHub. بعد حفظ المتغيرات أعد النشر. لا توجد في الموقع أي بوابة دفع إلكتروني أو تحصيل رسوم.
 
+## Supabase Realtime Presence
+
+تحتاج مؤشرات «متصل الآن» إلى `SUPABASE_URL` و`SUPABASE_ANON_KEY` في Vercel Production. يعيد `/api/supabase-config` عنوان Supabase ومفتاح anon/publishable العام فقط دون تخزين مؤقت، ويرفض مفاتيح service-role/secret. يستخدم العميل رمز Firebase ID للتحقق عبر تكامل Firebase Third-party Auth في Supabase، ثم قنوات Presence خاصة لكل مستخدم. احفظ وافحص الملف `supabase/presence_policies.sql` في Supabase SQL Editor؛ سياسة الكتابة تسمح للمستخدم بنشر الحالة في قناة UID الخاصة به فقط، وسياسة القراءة تتحقق من `iss` و`aud` لمشروع Firebase `souq-aldeir`. في Supabase Dashboard أضف مشروع Firebase `souq-aldeir` ضمن Authentication → Third-party Auth، ثم عطّل خيار Realtime → Allow public access حتى تُفرض القنوات الخاصة. هذا الخيار عام على المشروع وقد يؤثر في أي قنوات Realtime عامة أخرى؛ راجعها قبل تعطيله. الحالة مؤقتة وغير محفوظة في قاعدة بيانات، وتظهر النقطة الخضراء بجوار الطرف الآخر في قائمة المحادثات ورأسها. لا ترسل بيانات الاسم أو الهاتف ضمن Presence.
+
 ## Cloudinary
 
 لم يعد العميل يستخدم unsigned upload preset. نقطة `/api/cloudinary-sign` تتحقق من رمز Firebase ثم تصدر توقيعًا محدودًا بمجلد الصور. يجب تعطيل أو تقييد الـ unsigned preset القديم `souq_ads` في لوحة Cloudinary، ووضع حدود الحساب على حجم الصور وأنواعها ومعدل الرفع. لا تشارك `CLOUDINARY_API_SECRET` مع المتصفح أو داخل المستودع. رفع الفيديو معطّل من الواجهة والخادم وقواعد Firestore.

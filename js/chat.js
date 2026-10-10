@@ -83,7 +83,11 @@ function stopChatsListener() {
 }
 
 function renderChatList() {
-  if (!chatsCache.length) { document.getElementById('msgContent').innerHTML = '<div class="empty-state"><i class="fa fa-comment-slash"></i><p>لا توجد محادثات بعد</p></div>'; return; }
+  if (!chatsCache.length) {
+    document.getElementById('msgContent').innerHTML = '<div class="empty-state"><i class="fa fa-comment-slash"></i><p>لا توجد محادثات بعد</p></div>';
+    if (typeof watchOnlinePresence === 'function') watchOnlinePresence([]);
+    return;
+  }
   const rows = chatsCache.map(data => {
     const otherId = (data.participants || []).find(p => p !== currentUser.uid) || '';
     const names = data.participantNames || {};
@@ -94,13 +98,17 @@ function renderChatList() {
     return `<div class="chat-row" onclick="openChat('${data.id}','${otherId}','${otherName}','${(data.adTitle || '').replace(/'/g, '')}')">
       <div class="chat-avatar">${escapeHtml(otherName.charAt(0).toUpperCase())}</div>
       <div class="chat-info">
-        <div class="chat-name">${escapeHtml(otherName)}${isUnread ? ' 🔵' : ''}</div>
+        <div class="chat-name">${escapeHtml(otherName)}<span class="presence-dot" data-presence-user="${escapeHtml(otherId)}" hidden></span>${isUnread ? ' 🔵' : ''}</div>
         <div class="chat-msg">${escapeHtml(data.lastMessage || 'ابدأ المحادثة')}</div>
         <div class="chat-msg" style="font-size:.68em;margin-top:2px">${escapeHtml(data.adTitle || '')}</div>
       </div>
     </div>`;
   });
   document.getElementById('msgContent').innerHTML = '<div class="chat-list">' + rows.join('') + '</div>';
+  if (typeof watchOnlinePresence === 'function') {
+    watchOnlinePresence(chatsCache.flatMap(chat => (chat.participants || []).filter(uid => uid !== currentUser.uid)));
+  }
+  if (typeof renderPresenceIndicators === 'function') renderPresenceIndicators();
 }
 
 function openMessages() {
@@ -124,8 +132,11 @@ function startChat(adId, sellerId, adTitle) {
 
 function openChat(chatId, otherId, otherName, adTitle) {
   openModal('msgModal');
+  if (typeof watchOnlinePresence === 'function') {
+    watchOnlinePresence([...chatsCache.flatMap(chat => (chat.participants || []).filter(uid => uid !== currentUser.uid)), otherId]);
+  }
   markChatSeen(chatId);
-  document.getElementById('msgTitle').textContent = otherName;
+  document.getElementById('msgTitle').innerHTML = `${escapeHtml(otherName)} <span class="presence-label" data-presence-user="${escapeHtml(otherId)}" hidden><span class="presence-dot" aria-hidden="true"></span><span>متصل الآن</span></span>`;
   const content = document.getElementById('msgContent');
   content.innerHTML = `
     <button class="btn btn-outline btn-sm chat-back-btn" onclick="if(chatUnsub){chatUnsub();chatUnsub=null;}document.getElementById('msgTitle').textContent='الرسائل';renderChatList()"><i class="fa fa-arrow-right"></i> كل المحادثات</button>
@@ -189,5 +200,3 @@ async function sendMsg(chatId, otherId) {
   } catch (e) { showToast('خطأ في إرسال الرسالة', 'bad'); }
   finally { input.disabled = false; if (btn) btn.disabled = false; input.focus(); }
 }
-
-

@@ -9,6 +9,7 @@ function openModal(id) {
 
 function closeModal(id) {
   document.getElementById(id).classList.remove('active');
+  if (id === 'msgModal' && typeof stopObservedOnlinePresence === 'function') stopObservedOnlinePresence();
 }
 
 function initModals() {
@@ -20,9 +21,9 @@ function initModals() {
           chatUnsub();
           chatUnsub = null;
         }
+        if (m.id === 'msgModal' && typeof stopObservedOnlinePresence === 'function') stopObservedOnlinePresence();
       }
     });
   });
 }
-
 

@@ -132,6 +132,8 @@ function initAuthListener() {
         // close any leftover overlay so the homepage remains scrollable.
         closeModal('authModal');
       }
+      if (doc && doc.exists && typeof startOnlinePresence === 'function') startOnlinePresence(u.uid);
+      else if (typeof stopOnlinePresence === 'function') stopOnlinePresence();
       const tokenResult = await u.getIdTokenResult(true).catch(() => null);
       isAdmin = tokenResult?.claims?.admin === true;
       document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
@@ -140,6 +142,7 @@ function initAuthListener() {
       if (typeof maybeOfferPushNotifications === 'function') maybeOfferPushNotifications();
       if (typeof startFeatureNoticeListener === 'function') startFeatureNoticeListener(u.uid);
     } else {
+      if (typeof stopOnlinePresence === 'function') stopOnlinePresence();
       isAdmin = false;
       document.getElementById('adminNavBtn').style.display = 'none';
       stopChatsListener();
@@ -371,6 +374,7 @@ async function completeGoogleProfile() {
     closeModal('authModal');
     showToast('مرحبًا ' + name + '! تم إنشاء حسابك عبر Google', 'ok');
     if (profileCreated && typeof showWelcomeCelebration === 'function') showWelcomeCelebration(name);
+    if (typeof startOnlinePresence === 'function') startOnlinePresence(user.uid);
     loadAds();
   } catch (error) {
     console.error('تعذر إكمال ملف Google:', error);
@@ -434,6 +438,7 @@ async function doSignup() {
       // of an existing phone index, preserving uniqueness without a paid backend.
       await phoneIndexRef.set({ userId: cred.user.uid, phoneNormalized: phone });
       await cred.user.updateProfile({ displayName: name });
+      if (typeof startOnlinePresence === 'function') startOnlinePresence(cred.user.uid);
     } catch (setupError) {
       await phoneIndexRef.delete().catch(() => {});
       await db.collection('users').doc(cred.user.uid).delete().catch(() => {});

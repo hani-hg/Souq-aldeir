@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
 
 const root = new URL('..', import.meta.url).pathname;
 const requiredFiles = [
@@ -10,6 +11,8 @@ const requiredFiles = [
   'js/ads.js',
   'js/auth.js',
   'js/chat.js',
+  'js/modal.js',
+  'js/presence.js',
   'js/share.js',
   'js/admin.js',
   'js/celebrations.js',
@@ -23,6 +26,9 @@ const requiredFiles = [
   'api/cloudinary-sign.js',
   'api/notify-telegram.js',
   'api/health.js',
+  'api/supabase-config.js',
+  'supabase/presence_policies.sql',
+  'supabase/README.md',
   'package.json',
   '.env.example',
   'manifest.json',
@@ -36,8 +42,13 @@ for (const file of requiredFiles) {
 }
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
+const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
+const celebrations = readFileSync(join(root, 'js/celebrations.js'), 'utf8');
+const presence = readFileSync(join(root, 'js/presence.js'), 'utf8');
+const supabaseConfig = readFileSync(join(root, 'api/supabase-config.js'), 'utf8');
+const presencePolicies = readFileSync(join(root, 'supabase/presence_policies.sql'), 'utf8');
 const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]);
-const order = ['js/firebase-config.js', 'js/utils.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/share.js', 'js/admin.js', 'js/celebrations.js', 'js/app.js'];
+const order = ['js/firebase-config.js', 'js/utils.js', 'js/modal.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/presence.js', 'js/share.js', 'js/admin.js', 'js/celebrations.js', 'js/app.js'];
 const positions = order.map(file => scripts.indexOf(file));
 if (positions.some(position => position < 0)) throw new Error('A required script is not loaded by index.html');
 if (!positions.every((position, index) => index === 0 || position > positions[index - 1])) {
@@ -46,14 +57,82 @@ if (!positions.every((position, index) => index === 0 || position > positions[in
 if (!html.includes('lang="ar"') || !html.includes('dir="rtl"')) throw new Error('Arabic RTL document metadata is missing');
 if (!html.includes('href="/favicon.ico"')) throw new Error('Stable favicon link is missing');
 if (!html.includes('serviceWorker.register')) throw new Error('PWA service worker registration is missing');
+if (!html.includes('@supabase/supabase-js@2.117.3') || !html.includes('js/presence.js')) throw new Error('Supabase Realtime client or Presence module is missing');
+if (!presence.includes('private: true') || presence.includes('private: false') || !presence.includes('accessToken: async ()') || !presence.includes('firebaseUser.getIdToken()') || !presence.includes('souq-presence:${userId}')) throw new Error('Private Firebase-authenticated Presence channel is missing');
+if (!presencePolicies.includes("extension = 'presence'") || !presencePolicies.includes("'https://securetoken.google.com/souq-aldeir'") || !presencePolicies.includes("'aud') = 'souq-aldeir'") || !presencePolicies.includes("'souq-presence:' || (SELECT auth.jwt() ->> 'sub')")) throw new Error('Presence RLS policies do not validate Firebase issuer/audience and own-topic publishing');
+if (!supabaseConfig.includes('SUPABASE_URL') || !supabaseConfig.includes('SUPABASE_ANON_KEY') || !supabaseConfig.includes('isServiceRoleKey') || !supabaseConfig.includes('no-store')) throw new Error('Supabase config endpoint must return public keys only without caching');
+if (!auth.includes('startOnlinePresence(u.uid)') || !auth.includes('stopOnlinePresence()')) throw new Error('Presence lifecycle is not connected to Firebase auth');
+if (!readFileSync(join(root, '.env.example'), 'utf8').includes('SUPABASE_ANON_KEY=')) throw new Error('Supabase public environment variables are undocumented');
+const dot = { dataset: { presenceUser: 'user-online' }, hidden: true, title: '', attrs: {}, classList: { contains: () => false }, setAttribute(k, v) { this.attrs[k] = v; } };
+const label = { dataset: { presenceUser: 'user-online' }, hidden: true, attrs: {}, classList: { contains: name => name === 'presence-label' }, setAttribute(k, v) { this.attrs[k] = v; } };
+const presenceContext = { document: { querySelectorAll: () => [dot, label] }, console, window: {} };
+runInNewContext(`${presence}\nconst testPresenceChannel = { presenceState: () => ({ 'tab-1': [{}] }) };\nsouqPresenceChannels.set('user-online', testPresenceChannel);\nglobalThis.syncTestPresence = () => updatePresenceUser('user-online', testPresenceChannel, souqPresenceGeneration);`, presenceContext);
+presenceContext.syncTestPresence();
+if (dot.hidden || label.hidden || dot.title !== 'متصل الآن') throw new Error('Online user must receive a visible green presence indicator');
+presenceContext.syncTestPresence = runInNewContext("() => { globalThis.testPresenceChannel = { presenceState: () => ({}) }; souqPresenceChannels.set('user-online', globalThis.testPresenceChannel); updatePresenceUser('user-online', globalThis.testPresenceChannel, souqPresenceGeneration); }", presenceContext);
+presenceContext.syncTestPresence();
+if (!dot.hidden || !label.hidden) throw new Error('Presence indicator must hide after a user leaves');
+const fakeChannels = [];
+let supabaseClientOptions;
+const fakeClient = {
+  channel(topic, options) {
+    const fakeChannel = {
+      topic, options, handlers: {}, state: {}, trackCalls: 0, trackedPayload: null,
+      on(_type, filter, callback) { this.handlers[filter.event] = callback; return this; },
+      subscribe(callback) { callback('SUBSCRIBED'); return this; },
+      track(payload) { this.trackCalls += 1; this.trackedPayload = payload; return Promise.resolve('ok'); },
+      presenceState() { return this.state; }
+    };
+    fakeChannels.push(fakeChannel);
+    return fakeChannel;
+  },
+  removeChannel() { return Promise.resolve('ok'); }
+};
+const secureContext = {
+  document: { querySelectorAll: () => [] }, console,
+  URL,
+  window: { supabase: { createClient: (_url, _key, options) => { supabaseClientOptions = options; return fakeClient; } } },
+  auth: { currentUser: { uid: 'current-user', getIdToken: async () => 'firebase-id-token' } },
+  chatsCache: [{ participants: ['current-user', 'peer-user'] }],
+  fetch: async () => ({ ok: true, json: async () => ({ url: 'https://test-project.supabase.co', anonKey: 'public-key' }) })
+};
+runInNewContext(`${presence}\nglobalThis.startPresenceForTest = startOnlinePresence;`, secureContext);
+await secureContext.startPresenceForTest('current-user');
+await new Promise(resolve => setImmediate(resolve));
+if (await supabaseClientOptions.accessToken() !== 'firebase-id-token') throw new Error('Supabase Realtime must receive the Firebase ID token');
+if (fakeChannels.length !== 2 || fakeChannels.some(channel => channel.options.config.private !== true || channel.options.config.presence.enabled !== true)) throw new Error('All Presence topics must use private Realtime channels with Presence enabled');
+if (fakeChannels[0].topic !== 'souq-presence:current-user' || fakeChannels[0].trackCalls !== 1 || fakeChannels[1].trackCalls !== 0) throw new Error('A Firebase user may publish Presence only to their own UID topic');
 if (!html.includes('id="siteShareBtn"') || !html.includes('qrcode.min.js')) throw new Error('QR sharing UI is missing');
 if (!html.includes('طلب تمييز، هدية من سوق دير الزور') || html.includes('plan-price') || html.includes('إتمام الدفع')) throw new Error('Gift featured flow or no-payment UI is missing');
 if (!html.includes('canvas-confetti@1.9.3') || !html.includes('id="welcomeGiftModal"') || !html.includes('id="featureAwardModal"')) throw new Error('Celebration modals or confetti library are missing');
 if (html.includes('id="adVideo"') || html.includes('videoHelp')) throw new Error('Video upload UI must be removed');
 if (html.includes('id="adDuration"')) throw new Error('Ad duration selector should be removed');
 
-const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
-const celebrations = readFileSync(join(root, 'js/celebrations.js'), 'utf8');
+const supabaseConfigHandler = (await import(new URL('../api/supabase-config.js', import.meta.url))).default;
+function mockApiResponse() {
+  return {
+    headers: {}, statusCode: 200, body: null,
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    json(value) { this.body = value; return this; }
+  };
+}
+const oldSupabaseUrl = process.env.SUPABASE_URL;
+const oldSupabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const oldSupabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+process.env.SUPABASE_ANON_KEY = 'public-anon-test-key';
+delete process.env.SUPABASE_PUBLISHABLE_KEY;
+const publicConfigResponse = mockApiResponse();
+supabaseConfigHandler({ method: 'GET' }, publicConfigResponse);
+if (publicConfigResponse.statusCode !== 200 || publicConfigResponse.body?.anonKey !== 'public-anon-test-key' || publicConfigResponse.headers['Cache-Control']?.includes('no-store') !== true) throw new Error('Supabase endpoint must serve the anon key without caching');
+process.env.SUPABASE_ANON_KEY = 'sb_secret_test_key';
+const secretConfigResponse = mockApiResponse();
+supabaseConfigHandler({ method: 'GET' }, secretConfigResponse);
+if (secretConfigResponse.statusCode !== 503 || secretConfigResponse.body?.anonKey) throw new Error('Supabase endpoint must never return a secret key');
+if (oldSupabaseUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = oldSupabaseUrl;
+if (oldSupabaseAnonKey === undefined) delete process.env.SUPABASE_ANON_KEY; else process.env.SUPABASE_ANON_KEY = oldSupabaseAnonKey;
+if (oldSupabasePublishableKey === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY; else process.env.SUPABASE_PUBLISHABLE_KEY = oldSupabasePublishableKey;
 if (auth.includes('SOUQ2025ADMIN') || auth.includes('secretAdminTap')) {
   throw new Error('Client-side admin escalation path is still present');
 }
@@ -156,7 +235,7 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /featureNotices/{noticeId}') || !rules.includes("affectedKeys().hasOnly(['shown', 'shownAt'])")) throw new Error('Feature notice access rules are missing or too broad');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v14-google-auth") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v15-supabase-presence") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');

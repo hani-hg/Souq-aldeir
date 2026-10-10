@@ -199,6 +199,10 @@ body{background:var(--bg);color:var(--dark);padding-top:env(safe-area-inset-top)
 .chat-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1em;flex-shrink:0;}
 .chat-info{flex:1;}
 .chat-name{font-size:.9em;font-weight:700;}
+.presence-dot{display:inline-block;width:9px;height:9px;margin-inline-start:6px;border-radius:50%;background:#20a464;box-shadow:0 0 0 2px var(--white);vertical-align:middle;flex:0 0 auto;}
+.presence-dot[hidden],.presence-label[hidden]{display:none!important;}
+.presence-label{display:inline-flex;align-items:center;gap:4px;margin-inline-start:8px;color:#16834e;font-size:.62em;font-weight:700;vertical-align:middle;white-space:nowrap;}
+.presence-label .presence-dot{width:8px;height:8px;margin:0;box-shadow:none;}
 .chat-msg{font-size:.78em;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .chat-unread{background:var(--blue);color:#fff;font-size:.65em;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
 .chat-window{display:flex;flex-direction:column;height:58vh;}
