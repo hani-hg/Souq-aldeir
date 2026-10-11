@@ -222,12 +222,14 @@ const storage = readFileSync(join(root, 'storage.rules'), 'utf8');
 const fcm = readFileSync(join(root, 'js/fcm.js'), 'utf8');
 const notify = readFileSync(join(root, 'api/send-notification.js'), 'utf8');
 const privacy = readFileSync(join(root, 'privacy.html'), 'utf8');
+const styles = readFileSync(join(root, 'css/style.css'), 'utf8');
 if (!rules.includes("allow write: if isAdmin();")) throw new Error('Admin-only settings rule is missing');
 if (!rules.includes('request.auth.token.admin == true')) throw new Error('Admin custom claim is missing');
 if (!storage.includes('allow read, write: if false')) throw new Error('Firebase Storage must remain closed');
 if (!privacy.includes('سياسة الخصوصية')) throw new Error('Privacy page is missing');
 if (!fcm.includes('Notification.requestPermission') || !fcm.includes('getToken')) throw new Error('FCM registration is missing');
 if (!notify.includes('verifyFirebaseIdToken') || !notify.includes('sendEachForMulticast')) throw new Error('Secure push endpoint is missing');
+if (!styles.includes('html[data-theme="dark"] .fg input:focus') || !styles.includes('input:-webkit-autofill:focus') || !styles.includes('-webkit-text-fill-color:#f3f4f6!important')) throw new Error('Dark mode focused/autofilled form contrast is missing');
 if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
 if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phoneNormalized == phoneId')) {
   throw new Error('Phone index create must match the claiming user profile (anti-squatting)');
@@ -235,7 +237,7 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /featureNotices/{noticeId}') || !rules.includes("affectedKeys().hasOnly(['shown', 'shownAt'])")) throw new Error('Feature notice access rules are missing or too broad');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v15-supabase-presence") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v16-dark-input-contrast") || !sw.includes("/css/style.css") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
