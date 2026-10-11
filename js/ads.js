@@ -520,7 +520,15 @@ async function doEditAd() {
     if (!existingAd?.hidePhone) updateData.phone = phone;
     await db.collection('ads').doc(id).update(updateData);
     closeModal('editModal'); showToast('تم حفظ التعديلات ✅', 'ok'); loadAds();
-  } catch (e) { errEl.textContent = 'حدث خطأ'; errEl.className = 'err show'; }
+  } catch (e) {
+    console.error('Ad edit failed:', e?.code || e?.message || e);
+    errEl.textContent = e?.code === 'permission-denied'
+      ? 'رفضت صلاحيات قاعدة البيانات حفظ التعديل. حدّث قواعد Firestore ثم أعد المحاولة.'
+      : e?.code === 'unavailable'
+        ? 'تعذر الاتصال بقاعدة البيانات. تحقق من الإنترنت وحاول مجددًا.'
+        : 'تعذر حفظ التعديلات. تحقق من الاتصال وحاول مجددًا.';
+    errEl.className = 'err show';
+  }
   finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-save"></i> حفظ التعديلات'; }
 }
 

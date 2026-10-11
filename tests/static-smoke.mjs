@@ -182,6 +182,7 @@ if (usersSetIdx < 0 || phoneIdxCreateIdx < 0 || usersSetIdx > phoneIdxCreateIdx)
   throw new Error('Signup must create the users doc before phoneIndex (anti-squatting)');
 }
 const ads = readFileSync(join(root, 'js/ads.js'), 'utf8');
+const firestoreRules = readFileSync(join(root, 'firestore.rules'), 'utf8');
 const admin = readFileSync(join(root, 'js/admin.js'), 'utf8');
 const chat = readFileSync(join(root, 'js/chat.js'), 'utf8');
 const app = readFileSync(join(root, 'js/app.js'), 'utf8');
@@ -203,6 +204,9 @@ if (adCreateBlock.includes('userEmail')) throw new Error('Public ad must not sto
 if (ads.includes('upload_preset') || !ads.includes('getSignedUpload')) throw new Error('Uploads must use authenticated signed upload');
 if (ads.includes('videoUrl') || ads.includes('adVideo')) throw new Error('Video support must be removed from ad logic');
 if (!ads.includes("moderationStatus: 'pending'")) throw new Error('New ads must enter moderation');
+if (!firestoreRules.includes("'imageUrl', 'moderationStatus'") || !ads.includes("updateData = { title, description: desc, price: parseFloat(price) || 0, category: cat, moderationStatus: 'pending' }")) {
+  throw new Error('Owner ad edits must be allowed to set moderationStatus to pending');
+}
 if (!ads.includes('adHidePhone') || !ads.includes('adPrivateContacts')) throw new Error('Private phone option is missing');
 if (!html.includes('id="adHidePhone"')) throw new Error('Ad phone privacy checkbox is missing');
 if (!ads.includes('isPublicAd')) throw new Error('Public ad visibility filter is missing');

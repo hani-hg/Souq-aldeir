@@ -44,7 +44,7 @@ service cloud.firestore {
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.featured == resource.data.featured
           && request.resource.data.moderationStatus == 'pending'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'description', 'price', 'phone', 'category', 'area', 'images', 'imageUrl'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'description', 'price', 'phone', 'category', 'area', 'images', 'imageUrl', 'moderationStatus'])
         )
         || (
           signedIn()
