@@ -3,7 +3,7 @@
    Strategy: Cache-first for static assets, network-first for data.
    ============================================================ */
 
-const CACHE = 'souq-aldeir-v16-dark-input-contrast';
+const CACHE = 'souq-aldeir-v17-admin-messaging';
 const STATIC = [
   '/',
   '/index.html',

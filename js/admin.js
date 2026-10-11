@@ -11,6 +11,7 @@ let adminAdsAllCache  = [];
 let adminUserFilter   = null;
 let adminUserFilterName = '';
 let currentAdminTab   = 'dashboard';
+let adminMessageSelectedUserIds = new Set();
 
 /* يتيح لواجهة تفاصيل الإعلان الوصول إلى إعلانات الإدارة، بما فيها pending */
 window.adminGetAdById = function (id) {
@@ -126,6 +127,7 @@ async function openAdminPanel() {
       <button class="adm-tab" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 نظرة عامة</button>
       <button class="adm-tab" data-tab="ads"       onclick="switchAdminTab('ads')">📋 الإعلانات ${pendingAdsCount ? `<span class="adm-tab-badge">${pendingAdsCount}</span>` : ''}</button>
       <button class="adm-tab" data-tab="users"     onclick="switchAdminTab('users')">👥 المستخدمون</button>
+      <button class="adm-tab" data-tab="messages"  onclick="switchAdminTab('messages')">✉️ الرسائل</button>
       <button class="adm-tab" data-tab="recovery"  onclick="switchAdminTab('recovery')">🔐 استعادة الحساب ${adminRecoveryCache.length ? `<span class="adm-tab-badge">${adminRecoveryCache.length}</span>` : ''}</button>
       <button class="adm-tab" data-tab="reports"   onclick="switchAdminTab('reports')">
         🚩 البلاغات ${pendingAll ? `<span class="adm-tab-badge">${pendingAll}</span>` : ''}
@@ -148,6 +150,7 @@ function switchAdminTab(tab) {
     case 'dashboard': renderDashboard(ct); break;
     case 'ads':       renderAdsTab(ct);    break;
     case 'users':     renderUsersTab(ct);  break;
+    case 'messages':  renderMessagesTab(ct); break;
     case 'recovery':  renderRecoveryTab(ct); break;
     case 'reports':   renderReportsTab(ct);break;
     case 'settings':  renderSettingsTab(ct);break;
@@ -529,6 +532,240 @@ function exportAdsCSV() {
   a.download= 'ads_export_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
   showToast('تم تصدير الإعلانات ✅', 'ok');
+}
+
+/* ══════════════════════════════════════════
+   مركز رسائل المستخدمين
+══════════════════════════════════════════ */
+function renderMessagesTab(ct) {
+  adminMessageSelectedUserIds = new Set();
+  ct.innerHTML = `
+    <div class="admin-section-heading">
+      <div><div class="admin-eyebrow">التواصل مع المجتمع</div><h3>مركز الرسائل</h3></div>
+    </div>
+    <div class="admin-message-notice"><i class="fa fa-shield-halved"></i> تحفظ الرسائل في صندوق المستخدم داخل حسابه. الإرسال الجماعي محدود بـ500 مستلم في المرة، ولا يُرسل إشعار جهاز إلا عند تفعيل الخيار.</div>
+    <div class="admin-message-composer">
+      <div class="fg"><label for="adminMessageKind">نوع الرسالة</label>
+        <select id="adminMessageKind" onchange="updateAdminMessageComposer()">
+          <option value="welcome">رسالة ترحيب تلقائية للمستخدمين الجدد</option>
+          <option value="gift">هدية أو عرض خاص</option>
+          <option value="general">رسالة عامة</option>
+          <option value="private">رسالة خاصة لمستخدم واحد</option>
+        </select>
+      </div>
+      <div id="adminWelcomeHint" class="admin-message-hint" hidden>سيُحفظ النص كقالب ترحيب نشط، ويُضاف مرة واحدة إلى صندوق كل حساب جديد بعد اكتمال تسجيله. لا يُرسل للمستخدمين الحاليين.</div>
+      <div id="adminMessageAudienceWrap" class="fg"><label for="adminMessageAudience">المستلمون</label>
+        <select id="adminMessageAudience" onchange="updateAdminMessageComposer()">
+          <option value="all">جميع المستخدمين (بما فيهم المحظورون)</option>
+          <option value="active">المستخدمون غير المحظورين</option>
+          <option value="banned">المستخدمون المحظورون</option>
+          <option value="selected">اختيار مستخدمين يدويًا</option>
+        </select>
+      </div>
+      <div id="adminMessageRecipientPicker" class="admin-message-recipient-picker" hidden>
+        <label for="adminMessageSearch">ابحث بالاسم أو البريد أو رقم الهاتف</label>
+        <input id="adminMessageSearch" type="search" autocomplete="off" placeholder="ابدأ بكتابة اسم أو بريد أو رقم...">
+        <div id="adminMessageSearchResults" class="admin-message-search-results" role="listbox"></div>
+        <div id="adminMessageSelected" class="admin-message-selected"></div>
+      </div>
+      <div class="fg"><label for="adminMessageTitle">عنوان الرسالة</label><input id="adminMessageTitle" maxlength="120" value="رسالة من سوق دير الزور" placeholder="اكتب عنوانًا واضحًا" oninput="updateAdminMessagePreview()"></div>
+      <div class="fg"><label for="adminMessageBody">محتوى الرسالة</label>
+        <div class="admin-message-toolbar" role="toolbar" aria-label="تنسيق الرسالة">
+          <button type="button" title="خط عريض" onclick="wrapAdminMessageSelection('**','**')"><strong>B</strong></button>
+          <button type="button" title="إضافة رابط" onclick="insertAdminMessageLink()"><i class="fa fa-link"></i></button>
+          <button type="button" title="إضافة رمز تعبيري" onclick="insertAdminMessageText(' 😊')">😊</button>
+        </div>
+        <textarea id="adminMessageBody" rows="6" maxlength="2000" placeholder="اكتب الرسالة هنا..." oninput="updateAdminMessagePreview()"></textarea>
+        <small class="field-help">يدعم **النص العريض** والروابط بصيغة [عنوان الرابط](https://...). الحد الأقصى 2000 حرف.</small>
+      </div>
+      <div id="adminMessagePushWrap" class="admin-message-push"><label><input type="checkbox" id="adminMessageSendPush"> أرسل إشعارًا للأجهزة التي فعّل أصحابها الإشعارات</label></div>
+      <div class="admin-message-preview-wrap"><strong>معاينة الرسالة</strong><div id="adminMessagePreview" class="admin-message-preview">ستظهر المعاينة هنا</div></div>
+      <button type="button" id="adminMessageSubmit" class="btn btn-blue" onclick="submitAdminMessage()"><i class="fa fa-floppy-disk"></i> حفظ قالب الترحيب</button>
+      <div id="adminMessageStatus" class="admin-message-status" aria-live="polite"></div>
+    </div>`;
+
+  const search = document.getElementById('adminMessageSearch');
+  search?.addEventListener('input', renderAdminMessageSearchResults);
+  document.getElementById('adminMessageSearchResults')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-pick-user]');
+    if (!button) return;
+    const uid = button.dataset.pickUser;
+    if (adminMessageSelectedUserIds.has(uid)) adminMessageSelectedUserIds.delete(uid);
+    else adminMessageSelectedUserIds.add(uid);
+    renderAdminMessageRecipients();
+    updateAdminMessageComposer();
+  });
+  document.getElementById('adminMessageSelected')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-remove-user]');
+    if (!button) return;
+    adminMessageSelectedUserIds.delete(button.dataset.removeUser);
+    renderAdminMessageRecipients();
+    updateAdminMessageComposer();
+  });
+  updateAdminMessageComposer();
+}
+
+function renderAdminMessageSearchResults() {
+  const target = document.getElementById('adminMessageSearchResults');
+  if (!target) return;
+  const q = String(document.getElementById('adminMessageSearch')?.value || '').trim().toLowerCase();
+  if (!q) { target.innerHTML = '<small>اكتب للبحث عن المستخدمين.</small>'; return; }
+  const normalizedQuery = q.replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+  const users = adminUsersCache.filter(user => {
+    if (user.role !== 'user' || user.banned || adminMessageSelectedUserIds.has(user.id)) return false;
+    return [user.name, user.email, user.phone].some(value => String(value || '').toLowerCase().replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).includes(normalizedQuery));
+  }).slice(0, 12);
+  if (!users.length) { target.innerHTML = '<small>لا توجد نتائج مطابقة.</small>'; return; }
+  target.innerHTML = users.map(user => `<button type="button" class="admin-message-result" data-pick-user="${escapeHtml(user.id)}">
+    <strong>${escapeHtml(user.name || 'مستخدم')}</strong><span>${escapeHtml(user.email || user.phone || '—')}</span><i class="fa fa-plus"></i></button>`).join('');
+}
+
+function renderAdminMessageRecipients() {
+  const target = document.getElementById('adminMessageSelected');
+  if (!target) return;
+  const chosen = [...adminMessageSelectedUserIds].map(uid => adminUsersCache.find(user => user.id === uid)).filter(Boolean);
+  target.innerHTML = chosen.length ? `<div class="admin-message-selected-label">المحددون (${chosen.length})</div>` + chosen.map(user =>
+    `<button type="button" class="admin-message-chip" data-remove-user="${escapeHtml(user.id)}">${escapeHtml(user.name || 'مستخدم')} <i class="fa fa-xmark"></i></button>`
+  ).join('') : '<small>لم يتم اختيار مستلمين بعد.</small>';
+  renderAdminMessageSearchResults();
+}
+
+function updateAdminMessageComposer() {
+  const kind = document.getElementById('adminMessageKind')?.value || 'welcome';
+  const audience = document.getElementById('adminMessageAudience');
+  if (kind === 'private' && audience) audience.value = 'selected';
+  const welcome = kind === 'welcome';
+  const selected = audience?.value === 'selected';
+  const welcomeHint = document.getElementById('adminWelcomeHint');
+  const audienceWrap = document.getElementById('adminMessageAudienceWrap');
+  const picker = document.getElementById('adminMessageRecipientPicker');
+  const push = document.getElementById('adminMessagePushWrap');
+  const submit = document.getElementById('adminMessageSubmit');
+  if (welcomeHint) welcomeHint.hidden = !welcome;
+  if (audienceWrap) audienceWrap.hidden = welcome;
+  if (picker) picker.hidden = welcome || !selected;
+  if (push) push.hidden = welcome;
+  if (submit) submit.innerHTML = welcome ? '<i class="fa fa-floppy-disk"></i> حفظ قالب الترحيب' : '<i class="fa fa-paper-plane"></i> مراجعة وإرسال';
+  renderAdminMessageRecipients();
+  updateAdminMessagePreview();
+}
+
+function formatAdminMessageMarkup(value) {
+  return escapeHtml(String(value || ''))
+    .replace(/\*\*([^*\n]{1,160})\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]\n]{1,120})\]\((https?:\/\/[^\s)<>]{1,500})\)/gi, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\n/g, '<br>');
+}
+
+function updateAdminMessagePreview() {
+  const preview = document.getElementById('adminMessagePreview');
+  const title = document.getElementById('adminMessageTitle')?.value.trim() || 'عنوان الرسالة';
+  const body = document.getElementById('adminMessageBody')?.value.trim() || '';
+  if (preview) preview.innerHTML = `<strong>${escapeHtml(title)}</strong><div>${formatAdminMessageMarkup(body) || 'ستظهر المعاينة هنا'}</div>`;
+}
+
+function insertAdminMessageText(text) {
+  const field = document.getElementById('adminMessageBody');
+  if (!field) return;
+  field.setRangeText(text, field.selectionStart, field.selectionEnd, 'end');
+  field.focus(); updateAdminMessagePreview();
+}
+
+function wrapAdminMessageSelection(before, after) {
+  const field = document.getElementById('adminMessageBody');
+  if (!field) return;
+  const start = field.selectionStart, end = field.selectionEnd;
+  const selected = field.value.slice(start, end) || 'نص عريض';
+  field.setRangeText(before + selected + after, start, end, 'select');
+  field.focus(); updateAdminMessagePreview();
+}
+
+function insertAdminMessageLink() {
+  const field = document.getElementById('adminMessageBody');
+  if (!field) return;
+  const url = prompt('أدخل رابطًا يبدأ بـ https://');
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url.trim())) { showToast('الرابط يجب أن يبدأ بـ https://', 'bad'); return; }
+  const start = field.selectionStart, end = field.selectionEnd;
+  const label = field.value.slice(start, end) || 'افتح الرابط';
+  field.setRangeText(`[${label}](${url.trim()})`, start, end, 'end');
+  field.focus(); updateAdminMessagePreview();
+}
+
+function countAdminMessageRecipients(audience) {
+  if (audience === 'selected') return adminMessageSelectedUserIds.size;
+  return adminUsersCache.filter(user => user.role === 'user' && (audience === 'all' || (audience === 'active' && !user.banned) || (audience === 'banned' && user.banned))).length;
+}
+
+async function submitAdminMessage() {
+  if (!isAdmin || !currentUser) { showToast('يجب تسجيل الدخول بحساب المدير', 'bad'); return; }
+  const kind = document.getElementById('adminMessageKind')?.value || 'welcome';
+  const title = document.getElementById('adminMessageTitle')?.value.trim() || '';
+  const body = document.getElementById('adminMessageBody')?.value.trim() || '';
+  const status = document.getElementById('adminMessageStatus');
+  if (!title || !body) { showToast('أدخل عنوان الرسالة ومحتواها', 'bad'); return; }
+  if (kind === 'welcome') {
+    adminConfirm('سيُفعّل هذا النص كقالب ترحيب للحسابات الجديدة فقط. هل تريد حفظه؟', async () => {
+      await sendAdminMessageRequest({ action: 'save-welcome', title, body }, status, 'تم حفظ قالب الترحيب وتفعيله للحسابات الجديدة.');
+    }, false);
+    return;
+  }
+
+  const audience = kind === 'private' ? 'selected' : document.getElementById('adminMessageAudience')?.value || 'all';
+  const selectedUserIds = audience === 'selected' ? [...adminMessageSelectedUserIds] : [];
+  if (kind === 'private' && selectedUserIds.length !== 1) { showToast('اختر مستخدمًا واحدًا للرسالة الخاصة', 'bad'); return; }
+  if (audience === 'selected' && !selectedUserIds.length) { showToast('اختر مستلمًا واحدًا على الأقل', 'bad'); return; }
+  const recipientCount = countAdminMessageRecipients(audience);
+  if (!recipientCount) { showToast('لا يوجد مستلمون مطابقون', 'bad'); return; }
+  if (recipientCount > 500) { showToast('الحد الأقصى 500 مستلم في الإرسال الواحد', 'bad'); return; }
+  const kinds = { gift: 'هدية أو عرض خاص', general: 'رسالة عامة', private: 'رسالة خاصة' };
+  const labels = { all: 'جميع الحسابات', active: 'المستخدمون غير المحظورين', banned: 'المستخدمون المحظورون', selected: `المستخدمون المحددون (${recipientCount})` };
+  const sendPush = !!document.getElementById('adminMessageSendPush')?.checked;
+  const confirmation = `سيتم إرسال «${escapeHtml(kinds[kind])}» بعنوان «${escapeHtml(title)}» إلى <strong>${recipientCount}</strong> مستلمًا (${escapeHtml(labels[audience])}).<blockquote>${formatAdminMessageMarkup(body.slice(0, 320))}${body.length > 320 ? '…' : ''}</blockquote>${sendPush ? '<br>سيُرسل أيضًا إشعار للأجهزة التي وافق أصحابها عليه.' : '<br>ستصل الرسالة إلى صندوق المستخدم داخل حسابه.'}<br><br>هل تريد المتابعة؟`;
+  adminConfirm(confirmation, async () => {
+    const campaignId = (crypto.randomUUID ? crypto.randomUUID() : `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, '_');
+    await sendAdminMessageRequest({ action: 'dispatch', kind, audience, selectedUserIds, title, body, sendPush, campaignId }, status, null);
+  }, true);
+}
+
+async function sendAdminMessageRequest(payload, statusEl, successText) {
+  const button = document.getElementById('adminMessageSubmit');
+  if (button) { button.disabled = true; button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جارٍ التنفيذ'; }
+  if (statusEl) statusEl.textContent = '';
+  try {
+    const token = await currentUser.getIdToken(true);
+    const response = await fetch('/api/admin-messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok && payload.action !== 'save-welcome') {
+      const messages = {
+        admin_required: 'لا تملك صلاحية تنفيذ هذا الإجراء',
+        recipient_limit_exceeded: 'تجاوز عدد المستلمين الحد الأقصى (500)',
+        no_eligible_recipients: 'لم يتم العثور على مستلمين مؤهلين',
+        hourly_message_limit_reached: 'تم بلوغ الحد الساعي للإرسال، حاول لاحقًا',
+        campaign_already_processed: 'تمت معالجة هذه الرسالة مسبقًا',
+        message_service_unavailable: 'خدمة الرسائل غير متاحة مؤقتًا'
+      };
+      throw new Error(messages[result.error] || 'تعذر إتمام العملية. تحقق من الاتصال ثم أعد المحاولة.');
+    }
+    if (successText) {
+      showToast(successText, 'ok');
+      if (statusEl) statusEl.textContent = successText;
+    } else {
+      const count = Number(result.recipientCount || 0);
+      const pushed = Number(result.pushSent || 0);
+      const message = `تم إرسال الرسالة إلى ${count} مستخدم${payload.sendPush ? result.pushFailed ? '؛ حُفظت في صناديق الحسابات لكن تعذر إرسال بعض إشعارات الأجهزة' : `، ووصل إشعار الجهاز إلى ${pushed} جهاز` : ''}.`;
+      showToast(message, 'ok');
+      if (statusEl) statusEl.textContent = message;
+    }
+  } catch (error) {
+    showToast(error.message || 'تعذر إرسال الرسالة', 'bad');
+    if (statusEl) statusEl.textContent = error.message || 'تعذر إرسال الرسالة';
+  } finally {
+    if (button) { button.disabled = false; updateAdminMessageComposer(); }
+  }
 }
 
 /* ══════════════════════════════════════════

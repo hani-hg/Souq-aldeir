@@ -8,6 +8,49 @@ const AUTH_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const GOOGLE_PROFILE_PENDING_KEY = 'souq_google_profile_pending';
 let googleProfilePending = false;
 let googleAuthBusy = false;
+let myInboxMessages = [];
+let myInboxUnsubscribe = null;
+
+function stopMyInboxListener() {
+  if (myInboxUnsubscribe) myInboxUnsubscribe();
+  myInboxUnsubscribe = null;
+}
+
+function startMyInboxListener(uid) {
+  stopMyInboxListener();
+  if (!uid || (currentUser && currentUser.uid !== uid)) return;
+  myInboxUnsubscribe = db.collection('users').doc(uid).collection('inbox')
+    .orderBy('createdAt', 'desc').limit(30).onSnapshot(snap => {
+      myInboxMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateWarningBadge();
+    }, () => {});
+}
+
+async function deliverConfiguredWelcome(user) {
+  if (!user) return;
+  try {
+    const token = await user.getIdToken();
+    await fetch('/api/admin-messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'deliver-welcome' })
+    });
+  } catch (_) { /* welcome delivery must never interrupt account creation */ }
+}
+
+function formatInboxMessage(value) {
+  return escapeHtml(String(value || ''))
+    .replace(/\*\*([^*\n]{1,160})\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]\n]{1,120})\]\((https?:\/\/[^\s)<>]{1,500})\)/gi, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\n/g, '<br>');
+}
+
+async function markInboxMessageRead(messageId) {
+  if (!currentUser || !/^[A-Za-z0-9_-]{1,220}$/.test(String(messageId))) return;
+  await db.collection('users').doc(currentUser.uid).collection('inbox').doc(messageId).update({ read: true }).catch(() => {});
+  myInboxMessages = myInboxMessages.map(message => message.id === messageId ? { ...message, read: true } : message);
+  updateWarningBadge();
+  openDashboard();
+}
 
 function normalizeAuthEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -134,6 +177,8 @@ function initAuthListener() {
       }
       if (doc && doc.exists && typeof startOnlinePresence === 'function') startOnlinePresence(u.uid);
       else if (typeof stopOnlinePresence === 'function') stopOnlinePresence();
+      if (doc && doc.exists) startMyInboxListener(u.uid);
+      else { stopMyInboxListener(); myInboxMessages = []; }
       const tokenResult = await u.getIdTokenResult(true).catch(() => null);
       isAdmin = tokenResult?.claims?.admin === true;
       document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
@@ -143,6 +188,10 @@ function initAuthListener() {
       if (typeof startFeatureNoticeListener === 'function') startFeatureNoticeListener(u.uid);
     } else {
       if (typeof stopOnlinePresence === 'function') stopOnlinePresence();
+      stopMyInboxListener();
+      myInboxMessages = [];
+      myWarnings = [];
+      updateWarningBadge();
       isAdmin = false;
       document.getElementById('adminNavBtn').style.display = 'none';
       stopChatsListener();
@@ -373,7 +422,11 @@ async function completeGoogleProfile() {
     localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
     closeModal('authModal');
     showToast('مرحبًا ' + name + '! تم إنشاء حسابك عبر Google', 'ok');
-    if (profileCreated && typeof showWelcomeCelebration === 'function') showWelcomeCelebration(name);
+    if (profileCreated) {
+      startMyInboxListener(user.uid);
+      await deliverConfiguredWelcome(user);
+      if (typeof showWelcomeCelebration === 'function') showWelcomeCelebration(name);
+    }
     if (typeof startOnlinePresence === 'function') startOnlinePresence(user.uid);
     loadAds();
   } catch (error) {
@@ -438,6 +491,7 @@ async function doSignup() {
       // of an existing phone index, preserving uniqueness without a paid backend.
       await phoneIndexRef.set({ userId: cred.user.uid, phoneNormalized: phone });
       await cred.user.updateProfile({ displayName: name });
+      startMyInboxListener(cred.user.uid);
       if (typeof startOnlinePresence === 'function') startOnlinePresence(cred.user.uid);
     } catch (setupError) {
       await phoneIndexRef.delete().catch(() => {});
@@ -446,6 +500,7 @@ async function doSignup() {
       throw setupError;
     }
     closeModal('authModal'); showToast('مرحبًا ' + name + '! تم إنشاء حسابك', 'ok');
+    await deliverConfiguredWelcome(cred.user);
     if (typeof showWelcomeCelebration === 'function') showWelcomeCelebration(name);
   } catch(e) {
     const m = {
@@ -527,7 +582,7 @@ async function checkMyWarnings() {
   updateWarningBadge();
 }
 function updateWarningBadge() {
-  const count = myWarnings.length;
+  const count = myWarnings.length + myInboxMessages.filter(message => !message.read).length;
   ['userBadge','userBadgeBottom'].forEach(id => {
     const el = document.getElementById(id); if (!el) return;
     if (count > 0) { el.style.display = 'flex'; el.textContent = count > 9 ? '9+' : count; }
@@ -550,6 +605,9 @@ async function openDashboard() {
   openModal('dashModal');
 
   const myAds = allAds.filter(a => a.userId === currentUser.uid);
+  const inboxSnap = await db.collection('users').doc(currentUser.uid).collection('inbox')
+    .orderBy('createdAt', 'desc').limit(30).get().catch(() => null);
+  myInboxMessages = inboxSnap ? inboxSnap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
   let userDoc = { name: currentUser.displayName || 'مستخدم', phone: '', email: '' };
   try {
     const doc = await db.collection('users').doc(currentUser.uid).get();
@@ -574,6 +632,15 @@ async function openDashboard() {
         <button class="btn btn-red btn-sm" style="margin-top:8px" onclick="ackWarning('${w.id}')">
           فهمت</button>
       </div>`).join('') : ''}
+
+    ${/* ── Messages from administration ── */ myInboxMessages.length ? `
+      <div class="section-label">✉️ رسائل من سوق دير الزور ${myInboxMessages.some(m=>!m.read) ? `<span class="inbox-unread-count">${myInboxMessages.filter(m=>!m.read).length} جديدة</span>` : ''}</div>
+      <div class="user-inbox-list">${myInboxMessages.map(message => `
+        <article class="user-inbox-message ${message.read ? '' : 'unread'}">
+          <div class="user-inbox-heading"><strong>${escapeHtml(message.title || 'رسالة جديدة')}</strong><small>${escapeHtml(message.kind === 'gift' ? 'هدية' : message.kind === 'welcome' ? 'ترحيب' : message.kind === 'private' ? 'رسالة خاصة' : 'رسالة عامة')}</small></div>
+          <div class="user-inbox-body">${formatInboxMessage(message.body || '')}</div>
+          ${message.read ? '' : `<button class="btn btn-outline btn-sm user-inbox-read" onclick="markInboxMessageRead('${escapeHtml(message.id)}')">تمت القراءة</button>`}
+        </article>`).join('')}</div>` : ''}
 
     ${/* ── No-email warning ── */ !hasRealEmail ? `
       <div class="warn-card" style="background:var(--gold-light);border-color:#ffe082">

@@ -97,6 +97,19 @@ service cloud.firestore {
         allow update: if isAdmin() || (signedIn() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']));
         allow create, delete: if isAdmin();
       }
+
+      match /inbox/{messageId} {
+        allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin() || (
+          signedIn()
+          && request.auth.uid == userId
+          && resource.data.read == false
+          && request.resource.data.read == true
+          && request.resource.data.read is bool
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        );
+      }
     }
 
     match /chats/{chatId} {

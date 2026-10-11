@@ -27,6 +27,7 @@ const requiredFiles = [
   'api/notify-telegram.js',
   'api/health.js',
   'api/supabase-config.js',
+  'api/admin-messages.js',
   'supabase/presence_policies.sql',
   'supabase/README.md',
   'package.json',
@@ -34,6 +35,7 @@ const requiredFiles = [
   'manifest.json',
   'sw.js',
   'firestore.rules',
+  'firestore.indexes.json',
   'firebase.json'
 ];
 
@@ -229,6 +231,11 @@ if (!storage.includes('allow read, write: if false')) throw new Error('Firebase 
 if (!privacy.includes('سياسة الخصوصية')) throw new Error('Privacy page is missing');
 if (!fcm.includes('Notification.requestPermission') || !fcm.includes('getToken')) throw new Error('FCM registration is missing');
 if (!notify.includes('verifyFirebaseIdToken') || !notify.includes('sendEachForMulticast')) throw new Error('Secure push endpoint is missing');
+const adminMessagesApi = readFileSync(join(root, 'api/admin-messages.js'), 'utf8');
+if (!adminMessagesApi.includes('customClaims?.admin !== true') || !adminMessagesApi.includes('MAX_RECIPIENTS = 500') || !adminMessagesApi.includes("collection('inbox')") || !adminMessagesApi.includes('deliver-welcome')) throw new Error('Admin messaging API authorization, limits or welcome delivery is missing');
+if (!admin.includes("data-tab=\"messages\"") || !admin.includes('renderMessagesTab') || !admin.includes('submitAdminMessage') || !admin.includes('renderAdminMessageSearchResults')) throw new Error('Admin message center or live user search is missing');
+if (!auth.includes('deliverConfiguredWelcome(user)') || !auth.includes('deliverConfiguredWelcome(cred.user)') || !auth.includes("collection('inbox')")) throw new Error('Automatic welcome delivery or user inbox is not wired');
+if (!rules.includes('match /inbox/{messageId}') || !rules.includes("affectedKeys().hasOnly(['read'])")) throw new Error('Private user inbox access rules are missing');
 if (!styles.includes('html[data-theme="dark"] .fg input:focus') || !styles.includes('input:-webkit-autofill:focus') || !styles.includes('-webkit-text-fill-color:#f3f4f6!important')) throw new Error('Dark mode focused/autofilled form contrast is missing');
 if (!rules.includes('match /phoneIndex/{phoneId}')) throw new Error('Phone index rules are missing');
 if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phoneNormalized == phoneId')) {
@@ -237,7 +244,7 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /featureNotices/{noticeId}') || !rules.includes("affectedKeys().hasOnly(['shown', 'shownAt'])")) throw new Error('Feature notice access rules are missing or too broad');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v16-dark-input-contrast") || !sw.includes("/css/style.css") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v17-admin-messaging") || !sw.includes("/css/style.css") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');
@@ -263,6 +270,9 @@ if (server.includes('process.env.SMTP_APP_PASSWORD') && !server.includes('requir
 if (pkg.scripts?.start !== 'node server/index.js') throw new Error('Node server start script is missing');
 const firebaseConfig = JSON.parse(readFileSync(join(root, 'firebase.json'), 'utf8'));
 if (firebaseConfig.firestore?.rules !== 'firestore.rules') throw new Error('Firebase rules are not wired in firebase.json');
+if (firebaseConfig.firestore?.indexes !== 'firestore.indexes.json') throw new Error('Firestore user indexes are not wired in firebase.json');
+const firestoreIndexes = JSON.parse(readFileSync(join(root, 'firestore.indexes.json'), 'utf8'));
+if (!firestoreIndexes.indexes.some(index => index.collectionGroup === 'users' && index.fields.some(field => field.fieldPath === 'role') && index.fields.some(field => field.fieldPath === 'banned'))) throw new Error('User role/status composite index is missing');
 if (firebaseConfig.storage?.rules !== 'storage.rules') throw new Error('Storage rules are not wired in firebase.json');
 
 console.log(`Static smoke checks passed (${requiredFiles.length} required files, ${scripts.length} scripts).`);
