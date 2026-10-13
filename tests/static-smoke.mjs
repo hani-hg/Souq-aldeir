@@ -196,7 +196,7 @@ if (!admin.includes('window.CATS.push({ n: name, i: icon })') || !admin.includes
 if (!admin.includes('تعذر حفظ الفئات. تحقق من الاتصال وصلاحيات المدير')) {
   throw new Error('Category save failures must be visible to the admin');
 }
-if (!ads.includes('const durationDays = 20')) throw new Error('Ad duration is not fixed at 20 days');
+if (!ads.includes('const durationDays = 3650')) throw new Error('Ad duration is not fixed at 3650 days');
 if (!ads.includes('escapeHtml(ad.description)') || !ads.includes('safeMediaUrl(images[0])')) throw new Error('Ad detail media/text sanitization is missing');
 const adCreateStart = ads.indexOf("db.collection('ads').add({");
 const adCreateBlock = adCreateStart >= 0 ? ads.slice(adCreateStart, adCreateStart + 1400) : '';

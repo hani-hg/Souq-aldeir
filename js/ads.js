@@ -431,7 +431,7 @@ async function doAddAd() {
       throw new Error(uploadError?.message || 'فشل رفع الصور؛ لم يتم نشر الإعلان');
     }
 
-    const durationDays = 20;
+    const durationDays = 3650;
     const expiresAt = new Date(Date.now() + durationDays * 86400000);
     const adRef = db.collection('ads').doc();
     const adData = {
@@ -443,7 +443,7 @@ async function doAddAd() {
       moderationStatus: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-      durationDays: 20
+      durationDays
     };
     if (hidePhone) delete adData.phone;
     const batch = db.batch();
