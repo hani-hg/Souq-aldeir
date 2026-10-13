@@ -48,9 +48,11 @@ service cloud.firestore {
         )
         || (
           signedIn()
+          && resource.data.userId == request.auth.uid
           && resource.data.featured == true
           && resource.data.featuredUntil < request.time
           && request.resource.data.featured == false
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['featured'])
         );
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
