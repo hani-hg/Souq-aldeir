@@ -16,6 +16,7 @@ const requiredFiles = [
   'js/share.js',
   'js/admin.js',
   'js/celebrations.js',
+  'js/audio.js',
   'js/app.js',
   'server/index.js',
   'api/password-reset.js',
@@ -28,6 +29,8 @@ const requiredFiles = [
   'api/health.js',
   'api/supabase-config.js',
   'api/admin-messages.js',
+  'api/audio-sign.js',
+  'api/audio-delete.js',
   'supabase/presence_policies.sql',
   'supabase/README.md',
   'package.json',
@@ -50,7 +53,7 @@ const presence = readFileSync(join(root, 'js/presence.js'), 'utf8');
 const supabaseConfig = readFileSync(join(root, 'api/supabase-config.js'), 'utf8');
 const presencePolicies = readFileSync(join(root, 'supabase/presence_policies.sql'), 'utf8');
 const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]);
-const order = ['js/firebase-config.js', 'js/utils.js', 'js/modal.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/presence.js', 'js/share.js', 'js/admin.js', 'js/celebrations.js', 'js/app.js'];
+const order = ['js/firebase-config.js', 'js/utils.js', 'js/modal.js', 'js/ads.js', 'js/auth.js', 'js/chat.js', 'js/presence.js', 'js/fcm.js', 'js/audio.js', 'js/share.js', 'js/admin.js', 'js/celebrations.js', 'js/app.js'];
 const positions = order.map(file => scripts.indexOf(file));
 if (positions.some(position => position < 0)) throw new Error('A required script is not loaded by index.html');
 if (!positions.every((position, index) => index === 0 || position > positions[index - 1])) {
@@ -65,6 +68,21 @@ if (!presencePolicies.includes("extension = 'presence'") || !presencePolicies.in
 if (!supabaseConfig.includes('SUPABASE_URL') || !supabaseConfig.includes('SUPABASE_ANON_KEY') || !supabaseConfig.includes('isServiceRoleKey') || !supabaseConfig.includes('no-store')) throw new Error('Supabase config endpoint must return public keys only without caching');
 if (!auth.includes('startOnlinePresence(u.uid)') || !auth.includes('stopOnlinePresence()')) throw new Error('Presence lifecycle is not connected to Firebase auth');
 if (!readFileSync(join(root, '.env.example'), 'utf8').includes('SUPABASE_ANON_KEY=')) throw new Error('Supabase public environment variables are undocumented');
+const audio = readFileSync(join(root, 'js/audio.js'), 'utf8');
+const audioSign = readFileSync(join(root, 'api/audio-sign.js'), 'utf8');
+const audioDelete = readFileSync(join(root, 'api/audio-delete.js'), 'utf8');
+if (!html.includes('id="audioToggle"') || !html.includes('js/audio.js') || !audio.includes('loadSiteAudio')) {
+  throw new Error('Audio player UI or initialization is missing');
+}
+if (!audio.includes('2 * 1024 * 1024') || !audio.includes('audio/mpeg') || !audio.includes("collection('settings').doc('audio')")) {
+  throw new Error('Audio upload validation or settings storage is missing');
+}
+if (!audioSign.includes('customClaims?.admin !== true') || !audioSign.includes('2 * 1024 * 1024') || !audioSign.includes("resourceType: 'video'")) {
+  throw new Error('Audio upload API authorization or size limit is missing');
+}
+if (!audioDelete.includes('customClaims?.admin !== true') || !audioDelete.includes('/video/destroy')) {
+  throw new Error('Audio deletion API authorization or Cloudinary resource type is missing');
+}
 const dot = { dataset: { presenceUser: 'user-online' }, hidden: true, title: '', attrs: {}, classList: { contains: () => false }, setAttribute(k, v) { this.attrs[k] = v; } };
 const label = { dataset: { presenceUser: 'user-online' }, hidden: true, attrs: {}, classList: { contains: name => name === 'presence-label' }, setAttribute(k, v) { this.attrs[k] = v; } };
 const presenceContext = { document: { querySelectorAll: () => [dot, label] }, console, window: {} };
@@ -248,7 +266,7 @@ if (!rules.includes('get(/databases/$(database)/documents/users/$(request.auth.u
 if (!rules.includes("hasOnly(['name', 'email', 'phone', 'phoneNormalized', 'blockedUids', 'fcmTokens'])")) throw new Error('User update fields are not restricted');
 if (!rules.includes('match /featureNotices/{noticeId}') || !rules.includes("affectedKeys().hasOnly(['shown', 'shownAt'])")) throw new Error('Feature notice access rules are missing or too broad');
 if (!rules.includes('match /recoveryRequests/{requestId}')) throw new Error('Recovery request rules are missing');
-if (!sw.includes("souq-aldeir-v17-admin-messaging") || !sw.includes("/css/style.css") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
+if (!sw.includes("souq-aldeir-v18-audio") || !sw.includes("/css/style.css") || !sw.includes("/js/presence.js") || !sw.includes("/js/celebrations.js") || !sw.includes("/js/fcm.js") || !sw.includes("/js/audio.js") || !sw.includes("/icons/icon-192.png")) throw new Error('Service worker cache version is stale');
 if (!rules.includes('request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants')) throw new Error('Chat participant rule is missing');
 if (rules.includes("affectedKeys().hasOnly(['views'])")) throw new Error('Anonymous view mutation rule must be removed');
 if (!rules.includes("hasAny(['userEmail', 'role', 'banned', 'views', 'videoUrl'])")) throw new Error('Ad create fields are not restricted');

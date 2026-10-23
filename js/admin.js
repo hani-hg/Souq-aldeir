@@ -1120,6 +1120,7 @@ function renderSettingsTab(ct) {
       <button class="adm-stab" data-stab="terms"      onclick="switchSettingsTab('terms')">الشروط</button>
       <button class="adm-stab" data-stab="seo"        onclick="switchSettingsTab('seo')">SEO</button>
       <button class="adm-stab" data-stab="news"       onclick="switchSettingsTab('news')">الأخبار</button>
+      <button class="adm-stab" data-stab="audio"      onclick="switchSettingsTab('audio')">🎵 المقاطع الصوتية</button>
     </div>
     <div id="settingsTabContent" style="padding-top:14px"></div>`;
   switchSettingsTab('contact');
@@ -1243,6 +1244,14 @@ function switchSettingsTab(stab) {
         const ta = document.getElementById('newsTextarea');
         if (ta && doc.exists && doc.data().items) ta.value = doc.data().items.join('\n');
       }).catch(()=>{});
+      break;
+
+    /* ── المقاطع الصوتية ── */
+    case 'audio':
+      ct.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i><p>جاري التحميل...</p></div>';
+      Promise.resolve(typeof loadSiteAudio === 'function' ? loadSiteAudio() : null)
+        .then(() => { if (typeof renderAudioSettings === 'function') renderAudioSettings(ct); })
+        .catch(() => { ct.innerHTML='<div class="empty-state"><p>تعذر تحميل إعدادات الصوت</p></div>'; });
       break;
   }
 }

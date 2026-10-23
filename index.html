@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://res.cloudinary.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 <script>
   // Apply the saved theme before the page paints to avoid a bright flash.
   if (localStorage.getItem('souq-aldeir-theme') === 'dark') document.documentElement.dataset.theme = 'dark';
@@ -78,6 +78,7 @@
   <div class="nav-btns">
     <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="openAdminPanel()" title="لوحة المدير"><i class="fa fa-shield-alt"></i><span class="badge" id="adminBadge" style="display:none">!</span></button>
     <button class="nav-btn theme-toggle" id="themeToggle" onclick="toggleTheme()" title="تفعيل الوضع الداكن" aria-label="تفعيل الوضع الداكن">🌙</button>
+    <button class="nav-btn audio-toggle" id="audioToggle" onclick="toggleSiteAudio()" title="لا يوجد مقطع صوتي مفعّل" aria-label="لا يوجد مقطع صوتي مفعّل" disabled>🔇</button>
     <button class="nav-btn" id="siteShareBtn" onclick="openSiteShare()" title="مشاركة الموقع" aria-label="مشاركة الموقع"><i class="fa fa-qrcode"></i></button>
     <button class="nav-btn" id="msgNavBtn" onclick="openMessages()" title="الرسائل"><i class="fa fa-comment-dots"></i><span class="badge" id="msgBadge" style="display:none">!</span></button>
     <button class="nav-btn" id="userNavBtn" title="حسابي"><i class="fa fa-user"></i><span class="badge" id="userBadge" style="display:none">!</span></button>
@@ -472,6 +473,7 @@
 <script src="js/chat.js"></script>
 <script src="js/presence.js"></script>
 <script src="js/fcm.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/share.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/celebrations.js"></script>

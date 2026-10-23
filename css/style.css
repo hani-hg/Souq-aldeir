@@ -21,6 +21,8 @@ body{background:var(--bg);color:var(--dark);padding-top:env(safe-area-inset-top)
 .logo-text small{font-size:.65em;opacity:.75;font-weight:400;display:block;}
 .nav-btns{display:flex;gap:8px;}
 .nav-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:.95em;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;}
+.audio-toggle:disabled{opacity:.55;cursor:not-allowed;}
+.audio-toggle.is-playing{background:rgba(255,213,79,.35);}
 .nav-btn .badge{position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;width:16px;height:16px;border-radius:50%;font-size:.6em;display:flex;align-items:center;justify-content:center;}
 
 /* MARQUEE NEWS */

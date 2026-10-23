@@ -3,7 +3,7 @@
    Strategy: Cache-first for static assets, network-first for data.
    ============================================================ */
 
-const CACHE = 'souq-aldeir-v17-admin-messaging';
+const CACHE = 'souq-aldeir-v18-audio';
 const STATIC = [
   '/',
   '/index.html',
@@ -18,6 +18,7 @@ const STATIC = [
   '/js/chat.js',
   '/js/presence.js',
   '/js/fcm.js',
+  '/js/audio.js',
   '/privacy.html',
   '/firebase-messaging-sw.js',
   '/js/share.js',
