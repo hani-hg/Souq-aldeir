@@ -150,6 +150,8 @@ function initAuthWiring() {
 }
 
 function initAuthListener() {
+  // Mobile sign-in uses redirect; consume its result after Google returns.
+  void handleGoogleRedirectResult();
   auth.onAuthStateChanged(async u => {
     currentUser = u;
     if (u) {
@@ -320,6 +322,51 @@ function hideGoogleProfileSetup() {
   document.getElementById('tabReset')?.classList.remove('active');
 }
 
+function googleAuthErrorMessage(error) {
+  const messages = {
+    'auth/operation-not-allowed': 'تسجيل Google غير مفعّل بعد في إعدادات Firebase',
+    'auth/unauthorized-domain': 'النطاق غير مصرح له في Firebase. أضف souqaldeir.com وwww.souqaldeir.com إلى Authorized domains',
+    'auth/account-exists-with-different-credential': 'هذا البريد مرتبط بطريقة دخول أخرى. سجّل بالطريقة الأصلية أولًا',
+    'auth/popup-blocked': 'حظر المتصفح نافذة Google. اسمح بالنوافذ المنبثقة ثم أعد المحاولة',
+    'auth/popup-closed-by-user': 'أُغلقت نافذة Google قبل إتمام تسجيل الدخول',
+    'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
+    'auth/user-disabled': 'هذا الحساب موقوف، تواصل مع الإدارة'
+  };
+  return messages[error?.code] || 'تعذر تسجيل الدخول عبر Google، حاول مجددًا';
+}
+
+async function finishGoogleSignIn(user) {
+  const profile = await db.collection('users').doc(user.uid).get();
+  if (profile.exists) {
+    if (profile.data().banned) {
+      await auth.signOut();
+      throw { code: 'auth/user-disabled' };
+    }
+    googleProfilePending = false;
+    localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+    hideGoogleProfileSetup();
+    closeModal('authModal');
+    showToast('أهلًا بعودتك عبر Google', 'ok');
+  } else {
+    showGoogleProfileSetup(user);
+    showAuthSuccess('تم التحقق من Google. أكمل رقم الهاتف والموافقة على الشروط لإنشاء ملفك.');
+  }
+}
+
+async function handleGoogleRedirectResult() {
+  try {
+    const result = await auth.getRedirectResult();
+    if (result?.user) await finishGoogleSignIn(result.user);
+  } catch (error) {
+    googleProfilePending = false;
+    localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
+    hideGoogleProfileSetup();
+    showAuthError(googleAuthErrorMessage(error));
+  } finally {
+    googleAuthBusy = false;
+  }
+}
+
 async function doGoogleSignIn(button) {
   if (googleAuthBusy) return;
   googleAuthBusy = true;
@@ -338,22 +385,7 @@ async function doGoogleSignIn(button) {
       return;
     }
     const result = await auth.signInWithPopup(provider);
-    const user = result.user;
-    const profile = await db.collection('users').doc(user.uid).get();
-    if (profile.exists) {
-      if (profile.data().banned) {
-        await auth.signOut();
-        throw { code: 'auth/user-disabled' };
-      }
-      googleProfilePending = false;
-      localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
-      hideGoogleProfileSetup();
-      closeModal('authModal');
-      showToast('أهلًا بعودتك عبر Google', 'ok');
-    } else {
-      showGoogleProfileSetup(user);
-      showAuthSuccess('تم التحقق من Google. أكمل رقم الهاتف والموافقة على الشروط لإنشاء ملفك.');
-    }
+    await finishGoogleSignIn(result.user);
   } catch (error) {
     if (auth.currentUser) {
       showGoogleProfileSetup(auth.currentUser);
@@ -362,16 +394,7 @@ async function doGoogleSignIn(button) {
       googleProfilePending = false;
       localStorage.removeItem(GOOGLE_PROFILE_PENDING_KEY);
       hideGoogleProfileSetup();
-      const messages = {
-        'auth/operation-not-allowed': 'تسجيل Google غير مفعّل بعد في إعدادات Firebase',
-        'auth/unauthorized-domain': 'النطاق غير مصرح له في Firebase. أضف souqaldeir.com وwww.souqaldeir.com إلى Authorized domains',
-        'auth/account-exists-with-different-credential': 'هذا البريد مرتبط بطريقة دخول أخرى. سجّل بالطريقة الأصلية أولًا',
-        'auth/popup-blocked': 'حظر المتصفح نافذة Google. اسمح بالنوافذ المنبثقة ثم أعد المحاولة',
-        'auth/popup-closed-by-user': 'أُغلقت نافذة Google قبل إتمام تسجيل الدخول',
-        'auth/network-request-failed': 'تعذر الاتصال بالإنترنت، حاول مجددًا',
-        'auth/user-disabled': 'هذا الحساب موقوف، تواصل مع الإدارة'
-      };
-      showAuthError(messages[error?.code] || 'تعذر تسجيل الدخول عبر Google، حاول مجددًا');
+      showAuthError(googleAuthErrorMessage(error));
     }
   } finally {
     googleAuthBusy = false;
