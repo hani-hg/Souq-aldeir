@@ -2,6 +2,7 @@
 let siteAudioSettings = null;
 let siteAudio = null;
 let audioFirstTouchBound = false;
+const AUDIO_CACHE_KEY = 'souq-aldeir-audio-settings-v1';
 
 function audioEscape(value) {
   return typeof escapeHtml === 'function' ? escapeHtml(String(value ?? '')) : String(value ?? '');
@@ -9,6 +10,40 @@ function audioEscape(value) {
 
 function audioButton() {
   return document.getElementById('audioToggle');
+}
+
+function readCachedAudioSettings() {
+  try {
+    const value = JSON.parse(localStorage.getItem(AUDIO_CACHE_KEY) || 'null');
+    return value && value.url ? value : null;
+  } catch (_) { return null; }
+}
+
+function cacheAudioSettings(settings) {
+  try {
+    if (!settings?.url) localStorage.removeItem(AUDIO_CACHE_KEY);
+    else localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify({
+      url: settings.url, publicId: settings.publicId || '', fileName: settings.fileName || '',
+      bytes: Number(settings.bytes || 0), duration: Number(settings.duration || 0), enabled: settings.enabled === true
+    }));
+  } catch (_) {}
+}
+
+function applyAudioSettings(settings) {
+  if (siteAudio) { siteAudio.pause(); siteAudio.src = ''; }
+  siteAudioSettings = settings?.url ? settings : null;
+  if (siteAudioSettings?.url) {
+    siteAudio = new Audio(siteAudioSettings.url);
+    siteAudio.preload = 'auto';
+    siteAudio.addEventListener('play', updateAudioButton);
+    siteAudio.addEventListener('pause', updateAudioButton);
+    siteAudio.addEventListener('ended', updateAudioButton);
+    siteAudio.addEventListener('error', updateAudioButton);
+    siteAudio.load();
+  } else {
+    siteAudio = null;
+  }
+  updateAudioButton();
 }
 
 function updateAudioButton() {
@@ -61,21 +96,18 @@ function bindAudioFirstTouch() {
 }
 
 async function loadSiteAudio() {
+  const cached = readCachedAudioSettings();
+  if (cached) applyAudioSettings(cached);
+  bindAudioFirstTouch();
   try {
     const doc = await db.collection('settings').doc('audio').get();
-    siteAudioSettings = doc.exists ? doc.data() : null;
-    if (siteAudioSettings?.url) {
-      siteAudio = new Audio(siteAudioSettings.url);
-      siteAudio.preload = 'none';
-      siteAudio.addEventListener('play', updateAudioButton);
-      siteAudio.addEventListener('pause', updateAudioButton);
-      siteAudio.addEventListener('ended', updateAudioButton);
-    }
+    const fresh = doc.exists ? doc.data() : null;
+    applyAudioSettings(fresh);
+    cacheAudioSettings(fresh);
   } catch (_) {
-    siteAudioSettings = null;
+    if (!cached) applyAudioSettings(null);
   }
   updateAudioButton();
-  bindAudioFirstTouch();
 }
 
 async function audioAuthHeaders() {
@@ -160,6 +192,7 @@ async function toggleSiteAudioEnabled() {
   const enabled = !siteAudioSettings.enabled;
   await db.collection('settings').doc('audio').update({ enabled }).catch(() => { throw new Error('toggle-failed'); });
   siteAudioSettings = { ...siteAudioSettings, enabled };
+  cacheAudioSettings(siteAudioSettings);
   updateAudioButton();
   switchSettingsTab('audio');
   showToast(enabled ? 'تم تفعيل التشغيل الصوتي' : 'تم تعطيل التشغيل الصوتي', 'ok');
@@ -173,6 +206,7 @@ function deleteSiteAudio() {
       await db.collection('settings').doc('audio').delete();
       if (siteAudio) { siteAudio.pause(); siteAudio = null; }
       siteAudioSettings = null;
+      cacheAudioSettings(null);
       updateAudioButton();
       switchSettingsTab('audio');
       showToast('تم حذف المقطع الصوتي', 'ok');
